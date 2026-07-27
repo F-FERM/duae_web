@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { Phone, MessageCircle } from "lucide-react";
 import ctaBg from "../../../public/images/service1.webp";
+import { motion } from "framer-motion";
 
 export default function CallToAction() {
   return (
@@ -35,23 +36,50 @@ export default function CallToAction() {
         </p>
 
         <div className="mt-8 flex flex-col items-center justify-center gap-4 sm:flex-row sm:gap-5 md:mt-10">
-          <a
-            href="tel:+971527875262"
-            className="flex h-14 items-center gap-3 bg-[#db5e41] px-8 text-base font-semibold text-white transition hover:bg-[#c74f34] sm:h-16 sm:px-10 sm:text-lg"
-          >
-            <Phone size={20} />
-            TALK TO US
-          </a>
+           <motion.a
+        initial={{ y: 70, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        exit={{ y: 70, opacity: 0 }}
+        transition={{
+          duration: 0.6,
+          delay: 0.55,
+        }}
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.96 }}
+        href="tel:+971527875262"
+        className="group relative flex h-16 overflow-hidden bg-[#db5e41] px-10 text-lg font-semibold text-white"
+      >
+        <span className="absolute inset-0 -translate-x-full bg-black transition-transform duration-500 group-hover:translate-x-0" />
 
-          <a
-            href="https://wa.me/971527875262"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex h-14 items-center gap-3 bg-[#5aa64d] px-8 text-base font-semibold text-white transition hover:bg-[#4a8d41] sm:h-16 sm:px-10 sm:text-lg"
-          >
-            <MessageCircle size={20} />
-            WHATSAPP US
-          </a>
+        <span className="relative z-10 flex items-center gap-3">
+          <Phone size={22} />
+          TALK TO US
+        </span>
+      </motion.a>
+
+      {/* WhatsApp */}
+      <motion.a
+        initial={{ y: 70, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        exit={{ y: 70, opacity: 0 }}
+        transition={{
+          duration: 0.6,
+          delay: 0.7,
+        }}
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.96 }}
+        href="https://wa.me/971527875262"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="group relative flex h-16 overflow-hidden bg-[#5aa64d] px-10 text-lg font-semibold text-white"
+      >
+        <span className="absolute inset-0 translate-x-full bg-white transition-transform duration-500 group-hover:translate-x-0" />
+
+        <span className="relative z-10 flex items-center gap-3 transition-colors duration-500 group-hover:text-black">
+          <MessageCircle size={22} />
+          WHATSAPP US
+        </span>
+      </motion.a>
         </div>
       </div>
     </section>

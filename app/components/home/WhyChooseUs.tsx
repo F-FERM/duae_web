@@ -53,20 +53,44 @@ function DotGrid({ className }: { className?: string }) {
 export default function WhyChooseUs() {
   return (
     <section
-      className="relative overflow-hidden bg-black  bg-center py-16 sm:py-20 md:py-28"
+      className="relative overflow-hidden bg-black bg-center py-16 sm:py-20 md:py-28"
       style={{ backgroundImage: `url(${whyBg.src})` }}
     >
       {/* Subtle background texture */}
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_1px_1px,rgba(255,255,255,0.04)_1px,transparent_0)] bg-[length:24px_24px]" />
 
-      {/* Floating dot patterns — centered horizontally, top and bottom */}
-      <DotGrid className="absolute left-1/4 top-6 -translate-x-1/2 sm:top-10" />
-      <DotGrid className="absolute bottom-6 left-2/3  -translate-x-1/2 sm:bottom-10" />
+      {/* Floating dot patterns — fade/scale in on scroll, then float continuously */}
+      <motion.div
+        initial={{ opacity: 0, scale: 0.6 }}
+        whileInView={{ opacity: 1, scale: 1 }}
+        viewport={{ once: true, amount: 0.5 }}
+        transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+        className="absolute left-1/4 top-6 -translate-x-1/2 sm:top-10"
+      >
+        <DotGrid />
+      </motion.div>
+
+      <motion.div
+        initial={{ opacity: 0, scale: 0.6 }}
+        whileInView={{ opacity: 1, scale: 1 }}
+        viewport={{ once: true, amount: 0.5 }}
+        transition={{ duration: 0.8, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
+        className="absolute bottom-6 left-2/3 -translate-x-1/2 sm:bottom-10"
+      >
+        <DotGrid />
+      </motion.div>
 
       <div className="relative mx-auto max-w-[1100px] px-4">
-        <h2 className="text-center text-3xl font-extrabold text-white sm:text-4xl md:text-5xl">
+        {/* Heading */}
+        <motion.h2
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, amount: 0.5 }}
+          transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+          className="text-center text-3xl font-extrabold text-white sm:text-4xl md:text-5xl"
+        >
           Why Choose Us
-        </h2>
+        </motion.h2>
 
         <div className="relative mt-14 grid grid-cols-1 gap-x-10 gap-y-12 sm:mt-16 md:grid-cols-2 md:gap-y-16 cursor-pointer">
           {/* Horizontal connector between top row cards (desktop only) */}
@@ -74,11 +98,19 @@ export default function WhyChooseUs() {
           {/* Horizontal connector between bottom row cards (desktop only) */}
           <div className="pointer-events-none absolute bottom-[145px] left-1/2 hidden h-[1px] w-10 -translate-x-1/2 bg-[#db5e41] md:block" />
 
-          {features.map((feature) => {
+          {features.map((feature, index) => {
             const Icon = feature.icon;
             return (
-              <div
+              <motion.div
                 key={feature.number}
+                initial={{ opacity: 0, y: 50 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, amount: 0.3 }}
+                transition={{
+                  duration: 0.6,
+                  delay: (index % 2) * 0.15,
+                  ease: [0.22, 1, 0.36, 1],
+                }}
                 className="group relative flex flex-col items-center px-6 pb-10 pt-16 text-center transition-all duration-500 ease-out hover:-translate-y-2 sm:px-10 sm:pt-20"
               >
                 {/* Icon badge */}
@@ -86,14 +118,14 @@ export default function WhyChooseUs() {
                   <Icon className="text-white" size={30} strokeWidth={1.8} />
                 </div>
 
-                <h3 className="text-lg font-bold text-white transition-colors duration-500 group-hover:text-[#db5e41] sm:text-xl">
+                <h3 className="text-[22px] font-bold text-white transition-colors duration-500 group-hover:text-[#db5e41] sm:text-3xl">
                   {feature.title}
                 </h3>
 
-                <p className="mx-auto mt-4 max-w-[320px] text-sm leading-7 text-white/60 sm:text-[15px]">
+                <p className="mx-auto mt-4 max-w-[320px] text-sm leading-7 text-white/60 sm:text-[18px]">
                   {feature.description}
                 </p>
-              </div>
+              </motion.div>
             );
           })}
         </div>

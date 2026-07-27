@@ -21,7 +21,7 @@ export default function OurTeam() {
             Our Team
           </h2>
 
-          <p className="mx-auto mt-3 text-sm  text-gray-600 sm:text-base ">
+          <p className="mx-auto mt-3 text-sm  text-gray-600 sm:text-[18px] ">
             Behind every successful project is our dedicated team, known for
             their creativity, precision, and client-focused approach. With
             over 10 years of industry expertise, masterful detailing, and a

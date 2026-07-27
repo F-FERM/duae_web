@@ -75,59 +75,98 @@ export default function Hero() {
       {/* Content — single instance, animates on `current` change */}
       <div className="relative z-10 mx-auto flex h-full max-w-[1200px] items-center px-5">
         <div className="mx-auto max-w-[900px] text-center text-white">
-          <AnimatePresence mode="wait">
-            <motion.div key={current}>
-              <motion.p
-                initial={{ y: -40, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                exit={{ y: 40, opacity: 0 }}
-                transition={{ duration: 0.6 }}
-                className="mb-6 text-sm uppercase tracking-[5px] text-white/90 md:text-lg"
-              >
-                {slides[current].subtitle}
-              </motion.p>
+        <AnimatePresence mode="wait">
+  <motion.div
+    key={current}
+    initial={{ opacity: 0 }}
+    animate={{ opacity: 1 }}
+    exit={{ opacity: 0 }}
+    transition={{ duration: 0.3 }}
+  >
+    {/* Subtitle */}
+    <motion.p
+      initial={{ y: -40, opacity: 0 }}
+      animate={{ y: 0, opacity: 1 }}
+      exit={{ y: 40, opacity: 0 }}
+      transition={{ duration: 0.6 }}
+      className="mb-6 text-sm uppercase tracking-[5px] text-white/90 md:text-lg"
+    >
+      {slides[current].subtitle}
+    </motion.p>
 
-              <motion.h1
-                initial={{ y: -60, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                exit={{ y: 60, opacity: 0 }}
-                transition={{ duration: 0.7, delay: 0.15 }}
-                className="text-4xl font-bold leading-tight md:text-6xl"
-              >
-                {slides[current].title}
-              </motion.h1>
+    {/* Title */}
+    <motion.h1
+      initial={{ y: -60, opacity: 0 }}
+      animate={{ y: 0, opacity: 1 }}
+      exit={{ y: 60, opacity: 0 }}
+      transition={{ duration: 0.7, delay: 0.15 }}
+      className="text-4xl font-bold leading-tight md:text-6xl"
+    >
+      {slides[current].title}
+    </motion.h1>
 
-              <motion.p
-                initial={{ y: -80, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                exit={{ y: 80, opacity: 0 }}
-                transition={{ duration: 0.8, delay: 0.3 }}
-                className="mx-auto mt-8 max-w-[900px] text-base leading-8 text-white/90 md:text-2xl"
-              >
-                {slides[current].description}
-              </motion.p>
-            </motion.div>
-          </AnimatePresence>
+    {/* Description */}
+    <motion.p
+      initial={{ y: -80, opacity: 0 }}
+      animate={{ y: 0, opacity: 1 }}
+      exit={{ y: 80, opacity: 0 }}
+      transition={{ duration: 0.8, delay: 0.3 }}
+      className="mx-auto mt-8 max-w-[900px] text-base leading-8 text-white/90 md:text-2xl"
+    >
+      {slides[current].description}
+    </motion.p>
 
-          <div className="mt-12 flex flex-col items-center justify-center gap-5 sm:flex-row">
-            <a
-              href="tel:+971527875262"
-              className="flex h-16 items-center gap-3 bg-[#db5e41] px-10 text-lg font-semibold text-white transition hover:bg-[#c74f34]"
-            >
-              <Phone size={22} />
-              TALK TO US
-            </a>
+    {/* Buttons */}
+    <div className="mt-12 flex flex-col items-center justify-center gap-5 sm:flex-row">
+      {/* Talk To Us */}
+      <motion.a
+        initial={{ y: 70, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        exit={{ y: 70, opacity: 0 }}
+        transition={{
+          duration: 0.6,
+          delay: 0.55,
+        }}
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.96 }}
+        href="tel:+971527875262"
+        className="group relative flex h-16 overflow-hidden bg-[#db5e41] px-10 text-lg font-semibold text-white"
+      >
+        <span className="absolute inset-0 -translate-x-full bg-black transition-transform duration-500 group-hover:translate-x-0" />
 
-            <a
-              href="https://wa.me/971527875262"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex h-16 items-center gap-3 bg-[#5aa64d] px-10 text-lg font-semibold text-white transition hover:bg-[#4a8d41]"
-            >
-              <MessageCircle size={22} />
-              WHATSAPP US
-            </a>
-          </div>
+        <span className="relative z-10 flex items-center gap-3">
+          <Phone size={22} />
+          TALK TO US
+        </span>
+      </motion.a>
+
+      {/* WhatsApp */}
+      <motion.a
+        initial={{ y: 70, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        exit={{ y: 70, opacity: 0 }}
+        transition={{
+          duration: 0.6,
+          delay: 0.7,
+        }}
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.96 }}
+        href="https://wa.me/971527875262"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="group relative flex h-16 overflow-hidden bg-[#5aa64d] px-10 text-lg font-semibold text-white"
+      >
+        <span className="absolute inset-0 translate-x-full bg-white transition-transform duration-500 group-hover:translate-x-0" />
+
+        <span className="relative z-10 flex items-center gap-3 transition-colors duration-500 group-hover:text-black">
+          <MessageCircle size={22} />
+          WHATSAPP US
+        </span>
+      </motion.a>
+    </div>
+  </motion.div>
+</AnimatePresence>
+
         </div>
       </div>
 
