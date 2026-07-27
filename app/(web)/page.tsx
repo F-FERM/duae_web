@@ -6,6 +6,7 @@ import StatsSection from "../components/home/CountingSection";
 import Hero from "../components/home/Hero";
 import Milestones from "../components/home/MileStone";
 import OurTeam from "../components/home/OurTeam";
+import OurWorks from "../components/home/OurWorks";
 import Services from "../components/home/ServiceSection";
 import WhyChooseUs from "../components/home/WhyChooseUs";
 import Navbar from "../components/layout/Navbar";
@@ -21,6 +22,7 @@ export default function Home() {
       <Milestones />
       <CallToAction />
       <OurClients />
+      <OurWorks />
       <WhyChooseUs />
       <OurTeam />
       <ContactFormSection />

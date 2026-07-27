@@ -1,6 +1,7 @@
 import { Poppins } from "next/font/google";
 import type { Metadata } from "next";
 import "../globals.css";
+import AdminShell from "./AdminShell";
 
 const poppins = Poppins({
   subsets: ["latin"],
@@ -9,8 +10,8 @@ const poppins = Poppins({
 });
 
 export const metadata: Metadata = {
-  title: "Admin Login | WWD UAE",
-  description: "Login to the admin panel",
+  title: "Admin | WWD UAE",
+  description: "Admin panel for content management",
 };
 
 export default function AdminLayout({
@@ -20,10 +21,8 @@ export default function AdminLayout({
 }) {
   return (
     <html lang="en">
-      <body
-        className={`${poppins.variable} font-sans bg-[#f3f4f6] text-slate-900`}
-      >
-        {children}
+      <body className={`${poppins.variable} font-sans text-slate-900`}>
+        <AdminShell>{children}</AdminShell>
       </body>
     </html>
   );
