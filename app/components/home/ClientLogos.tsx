@@ -42,7 +42,7 @@ export default function OurClients() {
             ease: "easeInOut",
           }}
         >
-          <Image src={patternBg} alt=""  className="object-cover" />
+          <Image src={patternBg} alt="" className="object-cover" />
         </motion.div>
       </div>
 
