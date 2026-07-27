@@ -147,7 +147,7 @@ export default function Footer() {
                 <span className="text-[20px] font-semibold text-white">
                   Follow us on:
                 </span>
-              <div className="flex items-center gap-5">
+              <div className="flex items-center gap-2">
 
 
                 <a
@@ -166,7 +166,7 @@ export default function Footer() {
 
               </div>
 
-              <div className="mt-10 space-y-7">
+              <div className="mt-10 space-y-4">
 
                 <div className="flex items-start gap-5">
 
