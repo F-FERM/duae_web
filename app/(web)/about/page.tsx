@@ -1,9 +1,9 @@
+import CoreValues from "@/app/components/about/CoreValues";
+import Vision from "@/app/components/about/Vision";
 import AboutDetailSection from "../../components/about/about-section";
 import HeroAbout from "../../components/about/about-us";
 import WhatWeDo from "../../components/about/WhatWeDo";
 import WhyChooseUsLight from "../../components/about/Why-choose-us";
-import Milestones from "../../components/home/MileStone";
-import WhyChooseUs from "../../components/home/WhyChooseUs";
 import Navbar from "../../components/layout/Navbar";
 
 export default function About() {
@@ -13,8 +13,8 @@ export default function About() {
       <HeroAbout />
       <AboutDetailSection />
       <WhatWeDo />
-      <WhyChooseUs />
-      <Milestones />
+      <Vision />
+      <CoreValues />
       <WhyChooseUsLight />
     </>
   );

@@ -112,7 +112,7 @@ export default function ContactFormSection() {
                                 placeholder="Phone"
                                 value={formData.phone}
                                 onChange={handleChange}
-                                className="border border-t-0 border-gray-200 px-4 py-3.5 text-sm text-[#0c1526] placeholder:text-gray-500 focus:outline-none focus:ring-1 focus:ring-[#db5e41] sm:py-4 sm:border-t-0"
+                                className="border border-gray-200 px-4 py-3.5 text-sm text-[#0c1526] placeholder:text-gray-500 focus:outline-none focus:ring-1 focus:ring-[#db5e41] sm:py-4 sm:border-r-1"
                             />
                         </div>
 

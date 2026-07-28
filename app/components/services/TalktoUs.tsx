@@ -36,50 +36,51 @@ export default function CallToAction() {
                 </p>
 
                 <div className="mt-8 flex flex-col items-center justify-center gap-4 sm:flex-row sm:gap-5 md:mt-10">
-                    <motion.a
-                        initial={{ y: 70, opacity: 0 }}
-                        animate={{ y: 0, opacity: 1 }}
-                        exit={{ y: 70, opacity: 0 }}
-                        transition={{
-                            duration: 0.6,
-                            delay: 0.55,
-                        }}
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.96 }}
-                        href="tel:+971527875262"
-                        className="group relative flex h-16 overflow-hidden bg-[#db5e41] px-10 text-lg font-semibold text-white"
-                    >
-                        <span className="absolute inset-0 -translate-x-full bg-black transition-transform duration-500 group-hover:translate-x-0" />
+                     {/* Call */}
+  <motion.a
+    initial={{ y: 70, opacity: 0 }}
+    animate={{ y: 0, opacity: 1 }}
+    exit={{ y: 70, opacity: 0 }}
+    transition={{
+      duration: 0.6,
+      delay: 0.55,
+    }}
+    whileHover={{ scale: 1.03 }}
+    whileTap={{ scale: 0.96 }}
+    href="tel:+971527875262"
+    className="group relative flex h-14 w-full sm:w-auto items-center justify-center overflow-hidden rounded-full bg-[#db5e41] px-8 text-base font-semibold text-white shadow-lg shadow-[#db5e41]/20 transition-shadow duration-300 hover:shadow-xl hover:shadow-[#db5e41]/30"
+  >
+    <span className="absolute inset-0 -translate-x-full rounded-full bg-black transition-transform duration-500 ease-out group-hover:translate-x-0" />
 
-                        <span className="relative z-10 flex items-center gap-3">
-                            <Phone size={22} />
-                            TALK TO US
-                        </span>
-                    </motion.a>
+    <span className="relative z-10 flex items-center gap-3">
+      <Phone size={20} />
+      TALK TO US
+    </span>
+  </motion.a>
 
-                    {/* WhatsApp */}
-                    <motion.a
-                        initial={{ y: 70, opacity: 0 }}
-                        animate={{ y: 0, opacity: 1 }}
-                        exit={{ y: 70, opacity: 0 }}
-                        transition={{
-                            duration: 0.6,
-                            delay: 0.7,
-                        }}
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.96 }}
-                        href="https://wa.me/971527875262"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="group relative flex h-16 overflow-hidden bg-[#5aa64d] px-10 text-lg font-semibold text-white"
-                    >
-                        <span className="absolute inset-0 translate-x-full bg-white transition-transform duration-500 group-hover:translate-x-0" />
+  {/* WhatsApp */}
+  <motion.a
+    initial={{ y: 70, opacity: 0 }}
+    animate={{ y: 0, opacity: 1 }}
+    exit={{ y: 70, opacity: 0 }}
+    transition={{
+      duration: 0.6,
+      delay: 0.7,
+    }}
+    whileHover={{ scale: 1.03 }}
+    whileTap={{ scale: 0.96 }}
+    href="https://wa.me/971527875262"
+    target="_blank"
+    rel="noopener noreferrer"
+    className="group relative flex h-14 w-full sm:w-auto items-center justify-center overflow-hidden rounded-full bg-[#5aa64d] px-8 text-base font-semibold text-white shadow-lg shadow-[#5aa64d]/20 transition-shadow duration-300 hover:shadow-xl hover:shadow-[#5aa64d]/30"
+  >
+    <span className="absolute inset-0 translate-x-full rounded-full bg-white transition-transform duration-500 ease-out group-hover:translate-x-0" />
 
-                        <span className="relative z-10 flex items-center gap-3 transition-colors duration-500 group-hover:text-black">
-                            <MessageCircle size={22} />
-                            WHATSAPP US
-                        </span>
-                    </motion.a>
+    <span className="relative z-10 flex items-center gap-3 transition-colors duration-500 group-hover:text-black">
+      <MessageCircle size={20} />
+      WHATSAPP US
+    </span>
+  </motion.a>
                 </div>
             </div>
         </section>

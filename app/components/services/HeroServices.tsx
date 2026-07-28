@@ -43,23 +43,23 @@ export default function HeroService() {
                         project reflects innovation, style, and lasting value.
                     </p>
 
-                    <motion.a
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.6, delay: 0.25 }}
-                        whileHover={{ scale: 1.03 }}
-                        whileTap={{ scale: 0.97 }}
-                        href="https://wa.me/971527875262"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="group relative mt-8 flex h-14 w-fit items-center overflow-hidden bg-[#5aa64d] px-8 text-sm font-bold tracking-wide text-white md:text-base"
-                    >
-                        <span className="absolute inset-0 translate-x-full bg-white transition-transform duration-500 group-hover:translate-x-0" />
-                        <span className="relative z-10 flex items-center gap-2 transition-colors duration-500 group-hover:text-black">
-                            <MessageCircle size={20} />
-                            WHATSAPP US
-                        </span>
-                    </motion.a>
+<motion.a
+    initial={{ opacity: 0, y: 20 }}
+    animate={{ opacity: 1, y: 0 }}
+    transition={{ duration: 0.6, delay: 0.25 }}
+    whileHover={{ scale: 1.03 }}
+    whileTap={{ scale: 0.97 }}
+    href="https://wa.me/971527875262"
+    target="_blank"
+    rel="noopener noreferrer"
+    className="group relative mt-8 flex h-14 w-fit items-center overflow-hidden rounded-full bg-[#5aa64d] px-8 text-sm font-bold tracking-wide text-white shadow-lg shadow-[#5aa64d]/20 transition-shadow duration-300 hover:shadow-xl hover:shadow-[#5aa64d]/30 md:text-base"
+>
+    <span className="absolute inset-0 translate-x-full rounded-full bg-white transition-transform duration-500 ease-out group-hover:translate-x-0" />
+    <span className="relative z-10 flex items-center gap-2 transition-colors duration-500 group-hover:text-black">
+        <MessageCircle size={20} />
+        WHATSAPP US
+    </span>
+</motion.a>
                 </motion.div>
             </div>
         </section>

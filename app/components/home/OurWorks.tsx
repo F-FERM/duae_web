@@ -1,105 +1,236 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
+import api from "@/lib/axios";
 
-const workItems = [
-  {
-    image: "/images/slide1.webp",
-    title: "Hoof Cafe",
-    description:
-      "At Hoof Cafe, we provided customized metal works that blended functionality with modern design. From structural elements to decorative finishes, our craftsmanship added durability and a sleek industrial touch.",
-    buttonText: "View Our Works",
-  },
-  {
-    image: "/images/service1.webp",
-    title: "Hoof Cafe",
-    description:
-      "At Hoof Cafe, we provided customized metal works that blended functionality with modern design. From structural elements to decorative finishes, our craftsmanship added durability and a sleek industrial touch.",
-    buttonText: "View Our Works",
-  },
-  {
-    image: "/images/slide1.webp",
-    title: "Hoof Cafe",
-    description:
-      "At Hoof Cafe, we provided customized metal works that blended functionality with modern design. From structural elements to decorative finishes, our craftsmanship added durability and a sleek industrial touch.",
-    buttonText: "View Our Works",
-  },
-  {
-    image: "/images/service1.webp",
-    title: "Hoof Cafe",
-    description:
-      "At Hoof Cafe, we provided customized metal works that blended functionality with modern design. From structural elements to decorative finishes, our craftsmanship added durability and a sleek industrial touch.",
-    buttonText: "View Our Works",
-  },
-];
+interface WorkImageApiItem {
+  _id: string;
+  url: string;
+  title: string;
+  description: string;
+  category: string;
+  order: number;
+}
 
-export default function OurWorks() {
+interface OurWorksApiResponse {
+  introText: string;
+  title: string;
+  buttonText: string;
+  buttonLink: string;
+  featuredTitle: string;
+  featuredDescription: string;
+  featuredImage: string;
+  featuredCategory: string;
+  images: WorkImageApiItem[];
+}
+
+interface WorkItem {
+  id: string;
+  image: string;
+  title: string;
+  description: string;
+  buttonText: string;
+  buttonLink: string;
+}
+
+interface OurWorksData {
+  heading: string;
+  introText: string;
+  items: WorkItem[];
+}
+
+const IMAGE_BASE_URL = process.env.NEXT_PUBLIC_IMAGE_URL || "";
+
+function resolveImage(path: string): string {
+  if (!path) return "/images/service1.webp";
+  if (path.startsWith("http")) return path;
+  return `${IMAGE_BASE_URL}${path.startsWith("/") ? path : `/${path}`}`;
+}
+
+function mapApiToOurWorks(data: OurWorksApiResponse): OurWorksData {
+  return {
+    heading: data.title,
+    introText: data.introText,
+    items: [...(data.images || [])]
+      .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
+      .map((img) => ({
+        id: img._id,
+        image: resolveImage(img.url),
+        title: img.title,
+        description: img.description,
+        buttonText: data.buttonText,
+        buttonLink: data.buttonLink,
+      })),
+  };
+}
+
+const defaultData: OurWorksData = {
+  heading: "Our Works",
+  introText:
+    "With over 10 years of experience, we have successfully delivered a wide range of projects that showcase our expertise in joinery, fit-out, renovations, and turnkey solutions. From luxury villas to commercial spaces, our works reflect quality, creativity, and attention to detail.",
+  items: [
+    {
+      id: "1",
+      image: "/images/slide1.webp",
+      title: "Hoof Cafe",
+      description:
+        "At Hoof Cafe, we provided customized metal works that blended functionality with modern design. From structural elements to decorative finishes, our craftsmanship added durability and a sleek industrial touch.",
+      buttonText: "View Our Works",
+      buttonLink: "/works",
+    },
+    {
+      id: "2",
+      image: "/images/service1.webp",
+      title: "Hoof Cafe",
+      description:
+        "At Hoof Cafe, we provided customized metal works that blended functionality with modern design. From structural elements to decorative finishes, our craftsmanship added durability and a sleek industrial touch.",
+      buttonText: "View Our Works",
+      buttonLink: "/works",
+    },
+    {
+      id: "3",
+      image: "/images/slide1.webp",
+      title: "Hoof Cafe",
+      description:
+        "At Hoof Cafe, we provided customized metal works that blended functionality with modern design. From structural elements to decorative finishes, our craftsmanship added durability and a sleek industrial touch.",
+      buttonText: "View Our Works",
+      buttonLink: "/works",
+    },
+    {
+      id: "4",
+      image: "/images/service1.webp",
+      title: "Hoof Cafe",
+      description:
+        "At Hoof Cafe, we provided customized metal works that blended functionality with modern design. From structural elements to decorative finishes, our craftsmanship added durability and a sleek industrial touch.",
+      buttonText: "View Our Works",
+      buttonLink: "/works",
+    },
+  ],
+};
+
+function OurWorksSkeleton() {
   return (
-    <section className="overflow-hidden bg-white py-16 sm:py-20 md:py-24">
+    <section className="overflow-hidden bg-white">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="grid gap-10 lg:grid-cols-[1.4fr_1.6fr] lg:items-center">
           <div className="relative">
-            <div className="p-10 sm:p-14">
+            <div className="p-6 xs:p-8 sm:p-10 lg:p-14">
+              <div className="h-10 w-40 animate-pulse rounded-md bg-gray-200 xs:h-12 xs:w-48 sm:h-14 sm:w-56 lg:h-16 lg:w-64 xl:h-20 xl:w-72" />
+            </div>
+          </div>
+
+          <div className="space-y-3">
+            <div className="h-4 w-full animate-pulse rounded-md bg-gray-200" />
+            <div className="h-4 w-11/12 animate-pulse rounded-md bg-gray-200" />
+            <div className="h-4 w-2/3 animate-pulse rounded-md bg-gray-200" />
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-10 grid grid-cols-2 gap-0 sm:grid-cols-3 lg:grid-cols-4">
+        {[0, 1, 2, 3].map((i) => (
+          <div
+            key={i}
+            className="h-[260px] w-full animate-pulse bg-slate-200 sm:h-[420px] md:h-[520px] lg:h-[600px] xl:h-[680px]"
+          />
+        ))}
+      </div>
+    </section>
+  );
+}
+
+export default function OurWorks() {
+  const [data, setData] = useState<OurWorksData | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchOurWorks = async () => {
+      try {
+        // NOTE: assumed endpoint — confirm the real path/param names against your API before shipping.
+        const res = await api.get<OurWorksApiResponse>("/home-works");
+        const mapped = mapApiToOurWorks(res.data);
+        setData(mapped.items.length > 0 ? mapped : defaultData);
+      } catch (err) {
+        console.error("Failed to fetch our works section:", err);
+        setData(defaultData);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchOurWorks();
+  }, []);
+
+  if (isLoading) return <OurWorksSkeleton />;
+  if (!data) return null;
+
+  return (
+    <section className="overflow-hidden bg-white">
+      {/* Heading + intro text stay inside the max-width container */}
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="grid gap-10 lg:grid-cols-[1.4fr_1.6fr] lg:items-center">
+          <div className="relative">
+            <div className="p-6 xs:p-8 sm:p-10 lg:p-14">
               <div className="absolute -right-8 top-8 h-24 w-24 rounded-3xl bg-[#f7e4d7] opacity-50 blur-2xl" />
-              <h2 className="relative text-5xl font-semibold leading-tight sm:text-6xl xl:text-7xl">
-                Our Works
+              <h2 className="relative text-3xl font-semibold leading-tight xs:text-4xl sm:text-5xl lg:text-5xl xl:text-7xl">
+                {data.heading}
               </h2>
             </div>
           </div>
 
           <div className="space-y-6 text-slate-900">
-            <p className="text-lg text-gray-600 leading-9 pr-10">
-              With over 10 years of experience, we have successfully delivered a
-              wide range of projects that showcase our expertise in joinery,
-              fit-out, renovations, and turnkey solutions. From luxury villas to
-              commercial spaces, our works reflect quality, creativity, and
-              attention to detail.
+            <p className="text-base text-gray-600 leading-7 sm:text-lg sm:leading-9 lg:pr-10">
+              {data.introText}
             </p>
           </div>
         </div>
+      </div>
 
-        <div className="mt-10 grid sm:grid-cols-2 lg:grid-cols-4">
-          {workItems.map((item, index) => (
-            <div
-              key={`${item.image}-${index}`}
-              className="group relative overflow-hidden  bg-slate-100 shadow-sm"
-              style={{ aspectRatio: "4 / 3" }}
-            >
+      {/* Full-bleed image grid, edge-to-edge with zero gap between columns */}
+      <div className="mt-10 grid grid-cols-2 gap-0 sm:grid-cols-3 lg:grid-cols-4">
+        {data.items.map((item, index) => (
+          <div key={`${item.id}-${index}`} className="group relative block">
+            {/* Image (clipped on its own so the hover card below can overflow it) */}
+            <div className="relative h-[260px] w-full overflow-hidden bg-slate-100 sm:h-[420px] md:h-[520px] lg:h-[600px] xl:h-[680px]">
               <Image
                 src={item.image}
                 alt={item.title}
                 fill
-                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
+                sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
                 className="object-cover transition duration-500 ease-out group-hover:scale-105"
               />
 
-              <div className="absolute inset-0 bg-slate-950/0 transition duration-300 ease-out group-hover:bg-slate-950/30" />
+              {/* Dark overlay on hover */}
+              <div className="absolute inset-0 z-[1] bg-slate-950/0 transition duration-300 ease-out group-hover:bg-slate-950/50" />
+            </div>
 
-              <div
-                className="absolute left-1/2 top-1/2 z-10 w-[92%] max-w-[320px] -translate-x-1/2 transform opacity-0 transition duration-300 ease-out group-hover:opacity-100 group-hover:-translate-y-6"
-                style={{
-                  maxHeight: "calc(100% - 24px)",
-                }}
-              >
-                <div
-                  className="rounded-lg border border-slate-200 bg-white p-6 shadow-[0_30px_80px_rgba(15,23,42,0.12)] overflow-auto"
-                  style={{ maxHeight: "100%" }}
-                >
-                  <div className="flex items-center gap-3">
-                    <span className="h-3 w-3 rounded-full border border-[#f2c4b0] bg-[#fcd5c1]" />
-                    <h3 className="text-2xl font-semibold text-slate-950">
-                      {item.title}
-                    </h3>
-                  </div>
-                  <p className="mt-4 text-sm leading-7 text-slate-600">
-                    {item.description}
-                  </p>
-                  <button className="mt-6 inline-flex w-full items-center justify-center rounded-2xl bg-[#dc5c39] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#bb4e2d]">
+            {/* Hover card: centered over the image, wider than the column so text has room to breathe.
+                Width/padding/text now scale down on small screens so the card never overflows the
+                viewport; from sm: up it renders exactly as before (w-[400px], p-8, text-2xl, etc). */}
+            <div className="pointer-events-none absolute left-1/2 bottom-4 z-30 w-[92vw] max-w-[320px] -translate-x-1/2 translate-y-10 scale-95 opacity-0 transition-all duration-300 ease-out group-hover:translate-y-0 group-hover:scale-100 group-hover:opacity-100 xs:max-w-[360px] sm:bottom-6 sm:w-[400px] sm:max-w-none">
+              <div className="rounded-xl bg-white p-5 shadow-[0_30px_80px_rgba(15,23,42,0.25)] sm:p-8">
+                <div className="flex items-center gap-3">
+                  <span className="h-3 w-3 flex-shrink-0 rounded-full border border-[#f2c4b0] bg-[#fcd5c1]" />
+                  <h3 className="text-lg font-semibold text-slate-900 sm:text-2xl">
+                    {item.title}
+                  </h3>
+                </div>
+
+                <p className="mt-3 text-sm leading-6 text-slate-600 sm:mt-5 sm:text-[15px] sm:leading-8">
+                  {item.description}
+                </p>
+
+                <Link href={item.buttonLink || "/works"} className="pointer-events-auto block">
+                  <button className="mt-5 w-full rounded-2xl bg-[#dc5c39] py-3 text-sm font-semibold text-white transition hover:bg-[#bb4e2d] sm:mt-8 sm:py-4 sm:text-base">
                     {item.buttonText}
                   </button>
-                </div>
+                </Link>
               </div>
             </div>
-          ))}
-        </div>
+          </div>
+        ))}
       </div>
     </section>
   );
