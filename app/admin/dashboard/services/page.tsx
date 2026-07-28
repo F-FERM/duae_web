@@ -82,6 +82,7 @@ interface ContactField {
 }
 
 interface Service {
+    _id: string;
     title: string;
     slug: string;
     shortDescription: string;
@@ -234,10 +235,10 @@ function ServiceEditModal({
     const handleSave = async () => {
         setSaving(true);
         try {
+            // strip _id from body — it belongs only in the URL
             // eslint-disable-next-line @typescript-eslint/no-unused-vars
-            const { ...payload } = form as Service
-            const { ...cleanPayload } = payload as typeof payload
-            await api.patch(`/services/:id`, cleanPayload);
+            const { _id, __v, ...cleanPayload } = form as Service & { __v?: number };
+            await api.patch(`/services/${form._id}`, cleanPayload);
             toast.success("Service updated successfully!");
             onSaved();
             onClose();
@@ -1113,7 +1114,7 @@ export default function ServicesListPage() {
                         <div className="grid grid-cols-1 gap-[16px] xs:grid-cols-2 sm:gap-[18px] lg:grid-cols-3 2xl:grid-cols-4">
                             {services.map((service, index) => (
                                 <motion.div
-                                    key={index}
+                                    key={service._id}
                                     initial={{ opacity: 0, y: 16 }}
                                     animate={{ opacity: 1, y: 0 }}
                                     transition={{ duration: 0.25, delay: index * 0.04 }}
