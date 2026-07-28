@@ -1,4 +1,4 @@
-import axiosInstance from "@/service/axios";
+import api from "@/lib/axios";
 
 export interface FileUploadResult {
   url: string;
@@ -13,7 +13,7 @@ export const fileUpload = async (
     formData.append("file", file);
   });
 
-  const response = await axiosInstance.post("/upload", formData, {
+  const response = await api.post("/upload", formData, {
     headers: {
       "Content-Type": "multipart/form-data",
     },

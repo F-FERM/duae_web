@@ -43,8 +43,8 @@ function resolveImage(path: string): string {
 
 function mapApiToClients(data: HomeContactApiResponse): ClientsData {
   return {
-    title: data.clientsTitle,
-    description: data.clientsDescription,
+    title: data.clientsTitle || defaultData.title,
+    description: data.clientsDescription || defaultData.description,
     items: [...(data.clients || [])]
       .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
       .map((c) => ({
@@ -101,20 +101,27 @@ export default function OurClients() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    let isMounted = true;
+
     const fetchClients = async () => {
       try {
         const res = await api.get<HomeContactApiResponse>("/home-contact");
         const mapped = mapApiToClients(res.data);
-        setData(mapped.items.length > 0 ? mapped : defaultData);
+        if (isMounted) {
+          setData(mapped.items.length > 0 ? mapped : defaultData);
+        }
       } catch (err) {
         console.error("Failed to fetch clients section:", err);
-        setData(defaultData);
+        if (isMounted) setData(defaultData);
       } finally {
-        setIsLoading(false);
+        if (isMounted) setIsLoading(false);
       }
     };
 
     fetchClients();
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   if (isLoading) return <OurClientsSkeleton />;
@@ -212,6 +219,6 @@ export default function OurClients() {
           }
         }
       `}</style>
-    </section>
+    </section >
   );
 }

@@ -7,40 +7,40 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 import {
-    BriefcaseBusiness,
-    ChevronRight,
-    Command,
-    Contact,
-    Home,
-    Info,
-    LogOut,
-    Rss,
-    Settings2
+  BriefcaseBusiness,
+  ChevronRight,
+  Command,
+  Contact,
+  Home,
+  Info,
+  LogOut,
+  Rss,
+  Settings2
 } from "lucide-react";
 
 import { logout } from "@/lib/auth";
 
 import {
-    Sidebar,
-    SidebarContent,
-    SidebarFooter,
-    SidebarGroup,
-    SidebarGroupContent,
-    SidebarGroupLabel,
-    SidebarHeader,
-    SidebarMenu,
-    SidebarMenuButton,
-    SidebarMenuItem,
-    SidebarMenuSub,
-    SidebarMenuSubButton,
-    SidebarMenuSubItem,
-    SidebarRail,
+  Sidebar,
+  SidebarContent,
+  SidebarFooter,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarGroupLabel,
+  SidebarHeader,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarMenuSub,
+  SidebarMenuSubButton,
+  SidebarMenuSubItem,
+  SidebarRail,
 } from "@/components/ui/sidebar";
 
 import {
-    Collapsible,
-    CollapsibleContent,
-    CollapsibleTrigger,
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 
 const data = {
@@ -50,13 +50,12 @@ const data = {
       icon: Home,
       items: [
         { title: "Hero Slides", url: "/admin/dashboard/home/hero-slides" },
-        { title: "Home About", url: "/admin/dashboard/home/about-us-milestone" },
+        { title: "Home services", url: "/admin/dashboard/home/home-services" },
+        { title: "Home About-Milestones", url: "/admin/dashboard/home/about-us-milestone" },
+        { title: "Home Contact Client", url: "/admin/dashboard/home/contact-clients" },
         { title: "Home Works", url: "/admin/dashboard/home/home-works" },
-        { title: "How it works Section", url: "/admin/dashboard/home/how-it-works" },
-        { title: "Why choose us Section", url: "/admin/dashboard/home/why-choose-us" },
-        { title: "Chat Section", url: "/admin/dashboard/home/chat" },
-        { title: "Excellence Section", url: "/admin/dashboard/home/excellence" },
-        { title: "Franchise Section", url: "/admin/dashboard/home/franchise" },
+        { title: "Why choose us -Team", url: "/admin/dashboard/home/why-choose-us" },
+
       ],
     },
     {
@@ -71,7 +70,7 @@ const data = {
       title: "Service",
       icon: BriefcaseBusiness,
       items: [
-       
+
         { title: "Services", url: "/admin/dashboard/service" },
       ],
     },

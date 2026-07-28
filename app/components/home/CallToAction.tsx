@@ -37,7 +37,7 @@ const defaultData: CtaData = {
   whatsappLink: "https://wa.me/971527875262",
 };
 
-// Normalizes talkToUsLink to a tel: link and whatsappLink to a full wa.me URL
+// Normalizes talkToUsLink to a tel: link, a relative route, or passes through
 function resolveTalkLink(link: string): string {
   if (!link) return defaultData.talkToUsLink;
   if (link.startsWith("tel:") || link.startsWith("/")) return link;
@@ -49,9 +49,20 @@ function resolveWhatsappLink(link: string, number: string): string {
   if (link && link.startsWith("http")) return link;
   if (number) {
     const cleaned = number.replace(/[^\d+]/g, "");
-    return `https://wa.me/${cleaned.startsWith('+') ? cleaned.substring(1) : cleaned}`;
+    return `https://wa.me/${cleaned.startsWith("+") ? cleaned.substring(1) : cleaned}`;
   }
   return defaultData.whatsappLink;
+}
+
+function mapApiToCta(res: HomeContactApiResponse): CtaData {
+  return {
+    title: res.title || defaultData.title,
+    description: res.description || defaultData.description,
+    talkToUsText: res.talkToUsText || defaultData.talkToUsText,
+    talkToUsLink: resolveTalkLink(res.talkToUsLink),
+    whatsappText: res.whatsappText || defaultData.whatsappText,
+    whatsappLink: resolveWhatsappLink(res.whatsappLink, res.whatsappNumber),
+  };
 }
 
 function CallToActionSkeleton() {
@@ -75,29 +86,24 @@ export default function CallToAction() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    let isMounted = true;
+
     const fetchCta = async () => {
       try {
         const res = await api.get<HomeContactApiResponse>("/home-contact");
-        setData({
-          title: res.data.title,
-          description: res.data.description,
-          talkToUsText: res.data.talkToUsText,
-          talkToUsLink: resolveTalkLink(res.data.talkToUsLink),
-          whatsappText: res.data.whatsappText,
-          whatsappLink: resolveWhatsappLink(
-            res.data.whatsappLink,
-            res.data.whatsappNumber
-          ),
-        });
+        if (isMounted) setData(mapApiToCta(res.data));
       } catch (err) {
         console.error("Failed to fetch call-to-action section:", err);
-        setData(defaultData);
+        if (isMounted) setData(defaultData);
       } finally {
-        setIsLoading(false);
+        if (isMounted) setIsLoading(false);
       }
     };
 
     fetchCta();
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   if (isLoading) return <CallToActionSkeleton />;
@@ -107,13 +113,7 @@ export default function CallToAction() {
     <section className="relative w-full overflow-hidden">
       {/* Background image */}
       <div className="absolute inset-0">
-        <Image
-          src={ctaBg}
-          alt=""
-          fill
-          className="object-cover"
-          priority={false}
-        />
+        <Image src={ctaBg} alt="" fill className="object-cover" priority={false} />
       </div>
 
       {/* Warm dark overlay tint */}
@@ -131,7 +131,7 @@ export default function CallToAction() {
 
         <div className="mt-8 flex w-full flex-col items-center justify-center gap-4 sm:flex-row sm:gap-5 md:mt-10">
           <div className="flex w-full flex-col items-center gap-4 sm:w-auto sm:flex-row">
-            {/* Call */}
+            {/* Call / Contact */}
             <motion.a
               initial={{ y: 70, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}

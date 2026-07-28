@@ -216,14 +216,14 @@ export default function HomeWorksAdminPage() {
     } catch (err: unknown) {
       const message =
         err &&
-        typeof err === "object" &&
-        "response" in err &&
-        err.response &&
-        typeof err.response === "object" &&
-        "data" in err.response &&
-        err.response.data &&
-        typeof err.response.data === "object" &&
-        "message" in err.response.data
+          typeof err === "object" &&
+          "response" in err &&
+          err.response &&
+          typeof err.response === "object" &&
+          "data" in err.response &&
+          err.response.data &&
+          typeof err.response.data === "object" &&
+          "message" in err.response.data
           ? String(err.response.data.message)
           : "Failed to upload featured image";
       toast.error(message);
@@ -312,15 +312,21 @@ export default function HomeWorksAdminPage() {
     try {
       setSubmitting(true);
 
+      const { buttonLink, ...restForm } = form;
+      const payload = {
+        ...restForm,
+        images: form.images.map(({ _id, createdAt, updatedAt, ...rest }: any) => rest),
+      };
+
       if (editingId) {
         try {
-          await api.patch(`/home-works/${editingId}`, form);
+          await api.patch(`/home-works`, payload);
         } catch {
-          await api.patch("/home-works", form);
+          await api.patch("/home-works", payload);
         }
         toast.success("Home works section updated");
       } else {
-        await api.post("/home-works", form);
+        await api.post("/home-works", payload);
         toast.success("Home works section created");
       }
 
@@ -489,11 +495,10 @@ export default function HomeWorksAdminPage() {
                   <button
                     onClick={() => toggleActive(work)}
                     disabled={togglingId === work._id}
-                    className={`absolute right-[12px] top-[12px] rounded-full px-[10px] py-[5px] text-[11px] font-medium backdrop-blur-sm transition-colors ${
-                      work.isActive
+                    className={`absolute right-[12px] top-[12px] rounded-full px-[10px] py-[5px] text-[11px] font-medium backdrop-blur-sm transition-colors ${work.isActive
                         ? "bg-[#16A34A]/90 text-white"
                         : "bg-black/40 text-white/80"
-                    }`}
+                      }`}
                   >
                     {togglingId === work._id
                       ? "..."

@@ -29,7 +29,7 @@ interface ServiceApiItem {
   image: string;
   icon: string;
   order: number;
-  isFeatured: boolean;
+  isFeatured?: boolean; // optional — API may not send this at all
 }
 
 interface ServiceItem {
@@ -57,7 +57,8 @@ function resolveIcon(icon: string): LucideIcon {
   return iconMap[icon] || Landmark;
 }
 
-// Prefix relative image paths coming from the API with your backend/CDN base URL
+// Prefix relative image paths coming from the API with your backend/CDN base URL.
+// Your current API already returns full Cloudinary URLs, so this just passes them through.
 const IMAGE_BASE_URL = process.env.NEXT_PUBLIC_IMAGE_URL || "";
 
 function resolveImage(path: string): string {
@@ -68,7 +69,7 @@ function resolveImage(path: string): string {
 
 function mapApiToServices(data: ServiceApiItem[]): ServiceItem[] {
   return data
-    .filter((s) => s.isFeatured)
+    .slice()
     .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
     .map((s) => ({
       id: s._id,
@@ -170,20 +171,27 @@ export default function Services() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    let isMounted = true;
+
     const fetchServices = async () => {
       try {
         const res = await api.get<ServiceApiItem[]>("/services/home");
-        const mapped = mapApiToServices(res.data);
-        setServices(mapped.length > 0 ? mapped : defaultServices);
+        const mapped = mapApiToServices(res.data ?? []);
+        if (isMounted) {
+          setServices(mapped.length > 0 ? mapped : defaultServices);
+        }
       } catch (err) {
         console.error("Failed to fetch services:", err);
-        setServices(defaultServices);
+        if (isMounted) setServices(defaultServices);
       } finally {
-        setIsLoading(false);
+        if (isMounted) setIsLoading(false);
       }
     };
 
     fetchServices();
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   if (isLoading) return <ServicesSkeleton />;
@@ -244,15 +252,10 @@ export default function Services() {
                       sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
                       className="object-cover transition-transform duration-700 group-hover:scale-110"
                     />
-
-                    {/* Dark Overlay */}
                     <div className="absolute inset-0 bg-black/20 transition-all duration-500 group-hover:bg-black/50" />
-
-                    {/* Optional Gradient */}
                     <div className="absolute inset-0 bg-gradient-to-t from-black/25 via-transparent to-transparent opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
                   </div>
 
-                  {/* Circular Icon Badge */}
                   <div className="absolute -bottom-5 left-1/2 flex h-10 w-10 -translate-x-1/2 items-center justify-center rounded-full bg-[#0c1526] shadow-md transition-colors duration-500 group-hover:bg-[#db5e41] xs:-bottom-6 xs:h-12 xs:w-12 sm:-bottom-8 sm:h-16 sm:w-16">
                     <Icon
                       className="h-4 w-4 text-white xs:h-5 xs:w-5 sm:h-6 sm:w-6"

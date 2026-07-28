@@ -4,7 +4,16 @@ import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { ArrowRight, MessageSquareMore } from "lucide-react";
+import {
+  ArrowRight,
+  MessageSquareMore,
+  Newspaper,
+  Trophy,
+  Award,
+  Leaf,
+  Sparkles,
+  type LucideIcon,
+} from "lucide-react";
 import imagepattern1 from "../../../public/images/pattern1.png";
 import pattern2 from "../../../public/images/pattern2.png";
 import api from "@/lib/axios";
@@ -22,6 +31,7 @@ interface AboutApiResponse {
   title: string;
   description: string;
   image: string;
+  imageTwo: string;
   buttonText: string;
   buttonLink: string;
   foundedYear: string;
@@ -30,8 +40,21 @@ interface AboutApiResponse {
   teamSize: number;
   milestonesTitle: string;
   milestonesSubtitle: string;
+  milestonesImageOne: string;
+  milestonesImageTwo: string;
   milestones: Milestone[];
   isActive: boolean;
+}
+
+const milestoneIconMap: Record<string, LucideIcon> = {
+  "fa-solid fa-newspaper": Newspaper,
+  "fa-solid fa-trophy": Trophy,
+  "fa-solid fa-award": Award,
+  "fa-solid fa-leaf": Leaf,
+};
+
+function resolveMilestoneIcon(icon: string): LucideIcon {
+  return milestoneIconMap[icon] || Sparkles;
 }
 
 export default function AboutUs() {
@@ -41,41 +64,49 @@ export default function AboutUs() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    let isMounted = true;
+
     const fetchAbout = async () => {
       try {
         const res = await api.get<AboutApiResponse>("/home-about");
-        console.log("About API response:", res.data); // TEMP — check console
-        setData(res.data);
+        if (isMounted) setData(res.data);
       } catch (err) {
         console.error("Failed to fetch about section:", err);
       } finally {
-        setIsLoading(false);
+        if (isMounted) setIsLoading(false);
       }
     };
+
     fetchAbout();
+    return () => {
+      isMounted = false;
+    };
   }, []);
-console.log(data?.image);
 
- useEffect(() => {
-  const node = imageRef.current;
-  if (!node) return;
+  useEffect(() => {
+    const node = imageRef.current;
+    if (!node) return;
 
-  const observer = new IntersectionObserver(
-    ([entry]) => {
-      if (entry.isIntersecting) {
-        setIsVisible(true);
-        observer.disconnect();
-      }
-    },
-    { threshold: 0.1, rootMargin: "0px 0px -80px 0px" }
-  );
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setIsVisible(true);
+          observer.disconnect();
+        }
+      },
+      { threshold: 0.1, rootMargin: "0px 0px -80px 0px" }
+    );
 
-  observer.observe(node);
-  return () => observer.disconnect();
-}, [isLoading, data]); // <-- re-run once loading finishes and data mounts
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [isLoading, data]); // re-run once loading finishes and data mounts
 
   if (isLoading) return <div className="py-28 text-center">Loading...</div>;
   if (!data) return null;
+
+  const milestones = (data.milestones ?? [])
+    .slice()
+    .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
 
   return (
     <section className="relative overflow-hidden bg-[#faf7f6] py-20 md:py-28">
@@ -99,6 +130,7 @@ console.log(data?.image);
         </motion.div>
       </div>
 
+      {/* About block */}
       <div className="relative mx-auto grid max-w-[1220px] grid-cols-1 items-center gap-16 px-4 lg:grid-cols-2 lg:gap-10">
         <div className="relative z-10">
           <h2 className="text-3xl font-bold text-[#0c1526] sm:text-4xl md:text-5xl">
@@ -147,7 +179,7 @@ console.log(data?.image);
 
             <div className="absolute -bottom-14 right-0 h-[260px] w-[190px] overflow-hidden rounded-t-[110px] shadow-xl sm:h-[300px] sm:w-[220px] lg:right-[-8px]">
               <Image
-                src={data.image}
+                src={data.imageTwo || data.image}
                 alt="Wood World Decor craftsman"
                 fill
                 priority
@@ -173,6 +205,8 @@ console.log(data?.image);
           </motion.div>
         </div>
       </div>
+
+
     </section>
   );
 }

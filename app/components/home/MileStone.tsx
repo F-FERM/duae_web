@@ -25,6 +25,8 @@ interface MilestoneApiItem {
 interface AboutApiResponse {
   milestonesTitle: string;
   milestonesSubtitle: string;
+  milestonesImageOne?: string;
+  milestonesImageTwo?: string;
   milestones: MilestoneApiItem[];
 }
 
@@ -38,6 +40,8 @@ interface MilestoneItem {
 interface MilestonesData {
   title: string;
   subtitle: string;
+  imageOne: string | null; // null → fall back to the static local image
+  imageTwo: string | null;
   items: MilestoneItem[];
 }
 
@@ -56,7 +60,9 @@ function mapApiToMilestones(data: AboutApiResponse): MilestonesData {
   return {
     title: data.milestonesTitle,
     subtitle: data.milestonesSubtitle,
-    items: [...data.milestones]
+    imageOne: data.milestonesImageOne || null,
+    imageTwo: data.milestonesImageTwo || null,
+    items: [...(data.milestones ?? [])]
       .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
       .map((m) => ({
         id: m._id,
@@ -70,6 +76,8 @@ function mapApiToMilestones(data: AboutApiResponse): MilestonesData {
 const defaultData: MilestonesData = {
   title: "Our Milestones",
   subtitle: "Recognized Among the Top Global Design Installations",
+  imageOne: null,
+  imageTwo: null,
   items: [
     {
       id: "1",
@@ -128,39 +136,47 @@ export default function Milestones() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    let isMounted = true;
+
     const fetchMilestones = async () => {
       try {
         const res = await api.get<AboutApiResponse>("/home-about");
         const mapped = mapApiToMilestones(res.data);
-        setData(mapped.items.length > 0 ? mapped : defaultData);
+        if (isMounted) {
+          setData(mapped.items.length > 0 ? mapped : defaultData);
+        }
       } catch (err) {
         console.error("Failed to fetch milestones:", err);
-        setData(defaultData);
+        if (isMounted) setData(defaultData);
       } finally {
-        setIsLoading(false);
+        if (isMounted) setIsLoading(false);
       }
     };
 
     fetchMilestones();
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
-useEffect(() => {
-  const node = imageRef.current;
-  if (!node) return;
+  useEffect(() => {
+    const node = imageRef.current;
+    if (!node) return;
 
-  const observer = new IntersectionObserver(
-    ([entry]) => {
-      if (entry.isIntersecting) {
-        setIsVisible(true);
-        observer.disconnect();
-      }
-    },
-    { threshold: 0.1, rootMargin: "0px 0px -80px 0px" }
-  );
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setIsVisible(true);
+          observer.disconnect();
+        }
+      },
+      { threshold: 0.1, rootMargin: "0px 0px -80px 0px" }
+    );
 
-  observer.observe(node);
-  return () => observer.disconnect();
-}, [isLoading, data]); // <-- was [], now re-runs once real content mounts
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [isLoading, data]); // re-runs once real content mounts
+
   if (isLoading) return <MilestonesSkeleton />;
   if (!data) return null;
 
@@ -191,12 +207,13 @@ useEffect(() => {
               <span className="h-[58px] w-[3px] rounded-full bg-[#0c1526] xs:h-[70px] sm:h-20" />
             </div>
 
-            {/* Top image */}
+            {/* Top image — API image if available, static fallback otherwise */}
             <div className="absolute left-6 top-0 h-[62%] w-[72%] overflow-hidden rounded-t-[56px] xs:left-8 xs:rounded-t-[70px] sm:h-[64%] sm:rounded-t-[90px]">
               <Image
-                src={milestoneTop}
+                src={data.imageOne || milestoneTop}
                 alt="Of Palm Pavilion installation"
                 fill
+                sizes="(max-width: 640px) 72vw, 36vw"
                 className="object-cover"
               />
             </div>
@@ -204,9 +221,10 @@ useEffect(() => {
             {/* Bottom image, overlapping */}
             <div className="absolute bottom-0 left-11 h-[52%] w-[72%] overflow-hidden shadow-xl xs:left-14 sm:left-16">
               <Image
-                src={milestoneBottom}
+                src={data.imageTwo || milestoneBottom}
                 alt="Of Palm Pavilion detail"
                 fill
+                sizes="(max-width: 640px) 72vw, 36vw"
                 className="object-cover"
               />
             </div>
@@ -232,8 +250,8 @@ useEffect(() => {
               const Icon = item.icon;
               return (
                 <li key={item.id} className="flex items-start gap-3 xs:gap-4">
-                  <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center cursor-pointer justify-center hover:bg-[#db5e41]  rounded-full border border-[#db5e41]/40 bg-[#db5e41]/10 xs:h-6 xs:w-6">
-                    <Check className="text-[#db5e41] hover:text-white" size={12} strokeWidth={2.5} />
+                  <span className="mt-0.5 flex h-5 w-5 shrink-0 cursor-pointer items-center justify-center rounded-full border border-[#db5e41]/40 bg-[#db5e41]/10 hover:bg-[#db5e41] xs:h-6 xs:w-6">
+                    <Icon className="text-[#db5e41] hover:text-white" size={12} strokeWidth={2.5} />
                   </span>
                   <div>
                     <p className="text-sm font-semibold leading-6 text-[#0c1526] xs:text-[15px] xs:leading-7 md:text-[18px]">
