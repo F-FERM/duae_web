@@ -51,6 +51,7 @@ const data = {
       items: [
         { title: "Hero Slides", url: "/admin/dashboard/home/hero-slides" },
         { title: "Home About", url: "/admin/dashboard/home/about-us-milestone" },
+        { title: "Home Works", url: "/admin/dashboard/home/home-works" },
         { title: "How it works Section", url: "/admin/dashboard/home/how-it-works" },
         { title: "Why choose us Section", url: "/admin/dashboard/home/why-choose-us" },
         { title: "Chat Section", url: "/admin/dashboard/home/chat" },
