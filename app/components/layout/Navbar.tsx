@@ -5,10 +5,53 @@ import { MessageCircle } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { useState, useEffect } from "react";
 
-const navLinks = [
+type SubMenu = {
+  label: string;
+  href: string;
+};
+
+type MenuItem = {
+  label: string;
+  href: string;
+  subItems?: {
+    label: string;
+    href: string;
+    subItems?: SubMenu[];
+  }[];
+};
+
+const navLinks: MenuItem[] = [
   { label: "Home", href: "/" },
   { label: "About Us", href: "/about" },
-  { label: "Services", href: "/services" },
+  {
+    label: "Services",
+    href: "/services",
+    subItems: [
+      { label: "Joinery", href: "/services/joinery" },
+      {
+        label: "Fit-Out",
+        href: "/services/fitout-solutions",
+        subItems: [
+          { label: "Commercial Fit-Out", href: "/services/commercial-fit-out" },
+          { label: "Residential Fit-Out", href: "/services/residential-fit-out" },
+        ],
+      },
+      { label: "Turnkey Fit-Out", href: "/services/turnkey-solutions" },
+      {
+        label: "Renovation",
+        href: "/services/renovation-services",
+        subItems: [
+          { label: "Villa Renovation", href: "/services/villa-renovations" },
+          { label: "Apartment Renovation", href: "/services/apartment-renovations" },
+          { label: "Home Renovation", href: "/services/home-renovation" },
+          { label: "Kitchen Renovation", href: "/services/kitchen-renovation" },
+          { label: "Bathroom Renovation", href: "/services/bathroom-renovation" },
+        ],
+      },
+      { label: "Metal Works", href: "/services/metal-works" },
+      { label: "Upholstery", href: "/services/upholstery" },
+    ],
+  },
   { label: "Our Works", href: "/our-works" },
   { label: "Blogs", href: "/blogs" },
   { label: "Contact Us", href: "/contact" },
@@ -32,11 +75,16 @@ export default function Navbar() {
       {/* Nav Links */}
       <ul className="flex items-center gap-10 pl-8">
         {navLinks.map((link) => {
-          const isActive = pathname === link.href;
+          const isActive = pathname === link.href || (link.subItems && pathname.startsWith(link.href));
           return (
-            <li key={link.href}>
+            <li key={link.href} className="group relative">
               <Link
                 href={link.href}
+                onClick={(e) => {
+                  if (link.subItems) {
+                    e.preventDefault();
+                  }
+                }}
                 className={`inline-block py-7 text-[18px] font-medium transition ${
                   isActive
                     ? "text-[#db5e41]"
@@ -45,6 +93,42 @@ export default function Navbar() {
               >
                 {link.label}
               </Link>
+
+              {/* Level 1 Dropdown */}
+              {link.subItems && (
+                <div className="absolute left-0 top-full z-50 hidden w-[240px] bg-white py-3 shadow-[0_10px_30px_rgba(0,0,0,0.1)] group-hover:block">
+                  <ul className="flex flex-col">
+                    {link.subItems.map((subItem) => (
+                      <li key={subItem.href} className="group/sub relative transition-colors hover:bg-[#db5e41]">
+                        <Link
+                          href={subItem.href}
+                          className="block px-6 py-3.5 text-[15px] font-medium text-[#202020] transition-colors group-hover/sub:text-white"
+                        >
+                          {subItem.label}
+                        </Link>
+                        
+                        {/* Level 2 Dropdown */}
+                        {subItem.subItems && (
+                          <div className="absolute left-full -top-3 z-50 hidden w-[240px] bg-white py-3 shadow-[0_10px_30px_rgba(0,0,0,0.1)] group-hover/sub:block">
+                            <ul className="flex flex-col">
+                              {subItem.subItems.map((nested) => (
+                                <li key={nested.href} className="group/nested transition-colors hover:bg-[#db5e41]">
+                                  <Link
+                                    href={nested.href}
+                                    className="block px-6 py-3.5 text-[15px] font-medium text-[#202020] transition-colors group-hover/nested:text-white"
+                                  >
+                                    {nested.label}
+                                  </Link>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
             </li>
           );
         })}

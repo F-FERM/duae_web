@@ -70,8 +70,8 @@ const data = {
       title: "Service",
       icon: BriefcaseBusiness,
       items: [
-        { title: "Service Hero Section", url: "/admin/dashboard/service" },
-        { title: "Services", url: "/admin/dashboard/service/services" },
+       
+        { title: "Services", url: "/admin/dashboard/service" },
       ],
     },
     {
