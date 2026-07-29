@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import fallbackBg from "../../../public/images/service1.webp";
+import fallbackBg from "../../../public/images/blog-hero.webp";
 import api from "@/lib/axios";
 
 interface BlogApiItem {
@@ -78,7 +78,7 @@ export default function HeroOurblogs() {
     <section className="relative mb-19 w-full overflow-hidden">
       <div className="absolute inset-0">
         <Image
-          src={data.bgImage}
+          src={fallbackBg}
           alt=""
           fill
           className="object-cover"
