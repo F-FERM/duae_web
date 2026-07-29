@@ -9,17 +9,28 @@ import api from "@/lib/axios";
 import work1 from "../../../public/images/slide1.webp";
 import bgTexture from "../../../public/images/services-one-bg.jpg"; // swap path if different
 
+interface TrustedImage {
+  title: string;
+  description: string;
+  url: string;
+}
+
+interface TrustedJoineryWorks {
+  title: string;
+  description: string;
+  images: TrustedImage[];
+}
+
 interface ServiceDetailApiResponse {
   title?: string;
   fullDescription?: string;
-  // Just in case they add a gallery field later
-  gallery?: string[];
+  trustedJoineryWorks?: TrustedJoineryWorks;
 }
 
 interface JoineryWorksData {
   title: string;
   description: string;
-  images: string[];
+  images: TrustedImage[];
 }
 
 const IMAGE_BASE_URL = process.env.NEXT_PUBLIC_IMAGE_URL || "";
@@ -34,7 +45,11 @@ const defaultData: JoineryWorksData = {
   title: "Trusted Joinery Works in Dubai",
   description:
     "As a premier joinery company in Dubai, we specialize in delivering high-quality craftsmanship tailored to your unique needs. Our expertise in joinery works in Dubai covers a wide range of services designed for commercial, residential, and hospitality projects. From bespoke furniture and detailed wood paneling to complete fit-out solutions, we combine precision, durability, and aesthetic excellence to transform every space into a statement of style and functionality.",
-  images: [work1.src, work1.src, work1.src, work1.src, work1.src, work1.src],
+  images: Array.from({ length: 6 }).map((_, i) => ({
+    title: `Project ${i + 1}`,
+    description: "Quality joinery works tailored to your needs.",
+    url: work1.src,
+  })),
 };
 
 function JoineryWorksSkeleton() {
@@ -71,15 +86,22 @@ export default function JoineryWorks({ slug }: { slug?: string }) {
         const res = await api.get<ServiceDetailApiResponse>(
           `/services/detail/${slug}`
         );
+        
+        const trusted = res.data.trustedJoineryWorks;
 
         setData({
-          title: res.data.title
-            ? `Trusted ${res.data.title} Works in Dubai`
-            : defaultData.title,
-          description: res.data.fullDescription || defaultData.description,
+          title: trusted?.title || (res.data.title ? `Trusted ${res.data.title} Works in Dubai` : defaultData.title),
+          description: trusted?.description || res.data.fullDescription || defaultData.description,
           images:
-            res.data.gallery && res.data.gallery.length > 0
-              ? res.data.gallery.map((img) => resolveImage(img, work1.src))
+            trusted?.images && trusted.images.length > 0
+              ? trusted.images.map((img: any) => {
+                  const isString = typeof img === "string";
+                  return {
+                    title: isString ? "" : img.title,
+                    description: isString ? "" : img.description,
+                    url: resolveImage(isString ? img : img.url, work1.src),
+                  };
+                })
               : defaultData.images,
         });
       } catch (err) {
@@ -108,31 +130,37 @@ export default function JoineryWorks({ slug }: { slug?: string }) {
           {data.title}
         </h2>
 
-        <p className="mx-auto mt-3 text-sm leading-7 text-gray-600 sm:text-base sm:leading-8 md:text-lg">
+        <p className="mx-auto mt-3 max-w-[900px] text-sm leading-7 text-gray-600 sm:text-base sm:leading-8 md:text-lg text-center">
           {data.description}
         </p>
 
         <div className="mt-10 grid grid-cols-1 gap-4 sm:grid-cols-2 md:mt-14 md:gap-6 lg:grid-cols-3">
-          {data.images.map((imgSrc, index) => (
-            <motion.div
-              key={index}
-              initial={{ opacity: 0, y: 24 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, amount: 0.2 }}
-              transition={{ duration: 0.5, delay: (index % 3) * 0.1 }}
-              className="group relative h-[260px] w-full overflow-hidden sm:h-[300px] md:h-[380px]"
-            >
-              <Image
-                src={imgSrc}
-                alt={`Work ${index + 1}`}
-                fill
-                unoptimized={imgSrc.startsWith("http")}
-                sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                className="object-cover transition-transform duration-500 ease-out group-hover:scale-110"
-              />
-              <div className="absolute inset-0 bg-black/0 transition-colors duration-300 ease-out group-hover:bg-black/60" />
+          {data.images.map((img, index) => {
+            const imgUrl = img?.url || "";
+            return (
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, y: 24 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, amount: 0.2 }}
+                transition={{ duration: 0.5, delay: (index % 3) * 0.1 }}
+                className="group relative h-[260px] w-full overflow-hidden sm:h-[300px] md:h-[380px] rounded-lg shadow-sm"
+              >
+                <Image
+                  src={imgUrl || bgTexture.src}
+                  alt={img?.title || `Work ${index + 1}`}
+                  fill
+                  unoptimized={imgUrl.startsWith("http")}
+                  sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                  className="object-cover transition-transform duration-700 ease-out group-hover:scale-110"
+                />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent transition-opacity duration-300 opacity-0 group-hover:opacity-100 flex flex-col justify-end p-6">
+                <h3 className="text-xl font-bold text-white translate-y-4 group-hover:translate-y-0 transition-transform duration-300 ease-out">{img.title}</h3>
+                <p className="text-sm text-gray-300 mt-2 translate-y-4 group-hover:translate-y-0 transition-transform duration-300 delay-75 ease-out">{img.description}</p>
+              </div>
             </motion.div>
-          ))}
+            );
+          })}
         </div>
       </div>
     </section>

@@ -226,14 +226,13 @@ export default async function Footer() {
                       {data.phone1}
                     </a>
 
-                    {data.phone2 && data.phone2 !== data.phone1 && (
+                  
                       <a
                         href={`tel:${data.phone2}`}
                         className="mt-2 block text-[15px] text-white/70 hover:text-[#db5e41] sm:text-[17px]"
                       >
                         {data.phone2}
                       </a>
-                    )}
                   </div>
                 </div>
 

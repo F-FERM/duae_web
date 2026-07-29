@@ -8,7 +8,7 @@ import fallbackTeamPhoto from "../../../public/images/service1.webp";
 interface OurTeamApiResponse {
   teamTitle: string;
   teamDescription: string;
-  teamImage: string;
+  teamImage: string | string[];
   teamButtonText: string;
   teamButtonLink: string;
   teamSize: number;
@@ -28,24 +28,28 @@ interface OurTeamData {
 
 const IMAGE_BASE_URL = process.env.NEXT_PUBLIC_IMAGE_URL || "";
 
-function resolveImage(path: string): string {
+function resolveImage(path: string | undefined): string {
   if (!path) return fallbackTeamPhoto.src;
   if (path.startsWith("http")) return path;
   return `${IMAGE_BASE_URL}${path.startsWith("/") ? path : `/${path}`}`;
 }
 
 function mapApiToOurTeam(data: OurTeamApiResponse): OurTeamData {
-  const resolved = resolveImage(data.teamImage);
-  // NOTE: the API only provides a single teamImage, but the UI shows a
-  // 3-photo grid — repeating the one image until the backend exposes an
-  // array of team photos.
+  const images = Array.isArray(data.teamImage) ? data.teamImage : [data.teamImage];
+  const resolvedImages = images.map((img) => resolveImage(img));
+
+  // Pad to at least 3 images if we don't have enough
+  while (resolvedImages.length < 3) {
+    resolvedImages.push(resolvedImages[0] || fallbackTeamPhoto.src);
+  }
+
   return {
     heading: data.teamTitle,
     description: data.teamDescription,
     photos: [
-      { image: resolved, alt: "Wood World Decor team at work" },
-      { image: resolved, alt: "Wood World Decor team group photo" },
-      { image: resolved, alt: "Wood World Decor craftsman detailing" },
+      { image: resolvedImages[0], alt: "Wood World Decor team at work" },
+      { image: resolvedImages[1], alt: "Wood World Decor team group photo" },
+      { image: resolvedImages[2], alt: "Wood World Decor craftsman detailing" },
     ],
   };
 }

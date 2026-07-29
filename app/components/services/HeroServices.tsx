@@ -41,7 +41,7 @@ const defaultData: HeroServiceData = {
 
 function HeroServiceSkeleton() {
   return (
-    <section className="relative -mt-10 h-[520px] w-full animate-pulse overflow-hidden bg-gray-300 lg:h-[620px]">
+    <section className="relative mt-0 min-h-[560px] w-full animate-pulse overflow-hidden bg-gray-300 py-16 sm:py-20 md:-mt-10 md:h-[520px] md:min-h-0 md:py-0 lg:h-[620px]">
       <div className="relative z-10 mx-auto flex h-full max-w-[1200px] items-center px-5 md:px-10">
         <div className="max-w-[560px] space-y-5">
           <div className="h-9 w-3/4 rounded-md bg-white/20 md:h-12" />
@@ -87,7 +87,7 @@ export default function HeroService({ slug }: { slug: string }) {
   if (isLoading) return <HeroServiceSkeleton />;
 
   return (
-    <section className="relative -mt-10 h-[520px] w-full overflow-hidden lg:h-[620px]">
+    <section className="relative mt-0 min-h-[560px] w-full overflow-hidden py-16 sm:py-20 md:-mt-10 md:h-[520px] md:min-h-0 md:py-0 lg:h-[620px]">
       <div className="absolute inset-0">
         <Image
           src={data.image}
@@ -111,7 +111,7 @@ export default function HeroService({ slug }: { slug: string }) {
             {data.title}
           </h1>
 
-          <p className="mt-5 text-[18px] leading-7 text-white/90 md:text-[20px]">
+          <p className="mt-5 text-[16px] leading-7 text-white/90 sm:text-[18px] md:text-[20px]">
             {data.subtitle}
           </p>
 

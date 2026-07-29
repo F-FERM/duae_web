@@ -50,6 +50,7 @@ const data = {
       icon: Home,
       items: [
         { title: "Hero Slides", url: "/admin/dashboard/home/hero-slides" },
+        { title: "Stats", url: "/admin/dashboard/home/stats" },
         { title: "Home services", url: "/admin/dashboard/home/home-services" },
         { title: "Home About-Milestones", url: "/admin/dashboard/home/about-us-milestone" },
         { title: "Home Contact Client", url: "/admin/dashboard/home/contact-clients" },

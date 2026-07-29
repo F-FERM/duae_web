@@ -46,14 +46,27 @@ interface StatFields {
 interface WhoWeServeItem {
   title: string;
   description: string;
-  image: string;
+  image?: string;
   icon: string;
+  link?: string | null;
+}
+
+interface WhoWeServe {
+  title: string;
+  description: string;
+  items: WhoWeServeItem[];
 }
 
 interface WhatIsIncludedItem {
   title: string;
   description: string;
   icon: string;
+}
+
+interface WhatIsIncluded {
+  title: string;
+  description: string;
+  items: WhatIsIncludedItem[];
 }
 
 interface ProcessStep {
@@ -66,7 +79,7 @@ interface ProcessStep {
 interface MaterialItem {
   name: string;
   description: string;
-  image: string;
+  image?: string;
   icon: string;
 }
 
@@ -74,7 +87,7 @@ interface WhyChooseItem {
   title: string;
   description: string;
   icon: string;
-  image: string;
+  image?: string;
 }
 
 interface FaqItem {
@@ -119,18 +132,14 @@ interface Service {
   createdAt: string;
   updatedAt: string;
   stats: StatFields;
-  whoWeServeTitle: string;
-  whoWeServeDescription: string;
-  whoWeServe: WhoWeServeItem[];
-  whatIsIncludedTitle: string;
-  whatIsIncludedDescription: string;
-  whatIsIncluded: WhatIsIncludedItem[];
+  whoWeServe: WhoWeServe;
+  whatIsIncluded: WhatIsIncluded;
   cta: {
     title: string;
     subtitle: string;
     buttonText: string;
     whatsappText: string;
-    image: string;
+    image?: string;
   };
   about: {
     title: string;
@@ -627,10 +636,15 @@ function WhoWeServeTab({
   setForm: React.Dispatch<React.SetStateAction<Service>>;
   setField: (path: string, value: unknown) => void;
 }) {
+  const [uploadingIdx, setUploadingIdx] = useState<number | null>(null);
+  const section = form.whoWeServe ?? { title: "", description: "", items: [] };
+
   const updateItem = (idx: number, key: keyof WhoWeServeItem, val: string) => {
     setForm((prev) => {
       const clone = deepClone(prev);
-      clone.whoWeServe[idx][key] = val;
+      if (!clone.whoWeServe) clone.whoWeServe = { title: "", description: "", items: [] };
+      if (!clone.whoWeServe.items) clone.whoWeServe.items = [];
+      clone.whoWeServe.items[idx][key] = val;
       return clone;
     });
   };
@@ -638,7 +652,9 @@ function WhoWeServeTab({
   const addItem = () => {
     setForm((prev) => {
       const clone = deepClone(prev);
-      clone.whoWeServe.push({ title: "", description: "", image: "", icon: "" });
+      if (!clone.whoWeServe) clone.whoWeServe = { title: "", description: "", items: [] };
+      if (!clone.whoWeServe.items) clone.whoWeServe.items = [];
+      clone.whoWeServe.items.push({ title: "", description: "", image: "", icon: "", link: null });
       return clone;
     });
   };
@@ -646,7 +662,9 @@ function WhoWeServeTab({
   const removeItem = (idx: number) => {
     setForm((prev) => {
       const clone = deepClone(prev);
-      clone.whoWeServe.splice(idx, 1);
+      if (clone.whoWeServe?.items) {
+        clone.whoWeServe.items.splice(idx, 1);
+      }
       return clone;
     });
   };
@@ -654,18 +672,27 @@ function WhoWeServeTab({
   return (
     <div className="flex flex-col gap-[16px]">
       <Field label="Section Title">
-        <input className={inputCls} value={form.whoWeServeTitle || ''} onChange={(e) => setField("whoWeServeTitle", e.target.value)} />
+        <input className={inputCls} value={section.title} onChange={(e) => setField("whoWeServe.title", e.target.value)} />
       </Field>
       <Field label="Section Description">
-        <textarea className={textareaCls} value={form.whoWeServeDescription || ''} onChange={(e) => setField("whoWeServeDescription", e.target.value)} />
+        <textarea className={textareaCls} value={section.description} onChange={(e) => setField("whoWeServe.description", e.target.value)} />
       </Field>
       <p className="text-[11px] font-semibold uppercase tracking-widest text-[#888888]">Items</p>
-      {(form.whoWeServe ?? []).map((item, idx) => (
+      {(section.items ?? []).map((item, idx) => (
         <ItemCard key={idx} title={item.title || `Item ${idx + 1}`} onRemove={() => removeItem(idx)}>
           <div className="grid gap-[12px] sm:grid-cols-2">
             <Field label="Title"><input className={inputCls} value={item.title} onChange={(e) => updateItem(idx, "title", e.target.value)} /></Field>
             <Field label="Icon"><input className={inputCls} value={item.icon} onChange={(e) => updateItem(idx, "icon", e.target.value)} /></Field>
-            <Field label="Image Path"><input className={inputCls} value={item.image} onChange={(e) => updateItem(idx, "image", e.target.value)} /></Field>
+            <div className="sm:col-span-2">
+              <ImageUpload
+                value={item.image || ''}
+                onChange={(url) => updateItem(idx, "image", url)}
+                label="Image"
+                uploading={uploadingIdx === idx}
+                setUploading={(loading) => setUploadingIdx(loading ? idx : null)}
+              />
+            </div>
+            <Field label="Link"><input className={inputCls} value={item.link || ''} onChange={(e) => updateItem(idx, "link", e.target.value)} placeholder="/services/..." /></Field>
             <div className="sm:col-span-2">
               <Field label="Description"><textarea className={textareaCls} value={item.description} onChange={(e) => updateItem(idx, "description", e.target.value)} /></Field>
             </div>
@@ -686,10 +713,14 @@ function WhatIsIncludedTab({
   setForm: React.Dispatch<React.SetStateAction<Service>>;
   setField: (path: string, value: unknown) => void;
 }) {
+  const section = form.whatIsIncluded ?? { title: "", description: "", items: [] };
+
   const updateItem = (idx: number, key: keyof WhatIsIncludedItem, val: string) => {
     setForm((prev) => {
       const clone = deepClone(prev);
-      clone.whatIsIncluded[idx][key] = val;
+      if (!clone.whatIsIncluded) clone.whatIsIncluded = { title: "", description: "", items: [] };
+      if (!clone.whatIsIncluded.items) clone.whatIsIncluded.items = [];
+      clone.whatIsIncluded.items[idx][key] = val;
       return clone;
     });
   };
@@ -697,7 +728,9 @@ function WhatIsIncludedTab({
   const addItem = () => {
     setForm((prev) => {
       const clone = deepClone(prev);
-      clone.whatIsIncluded.push({ title: "", description: "", icon: "" });
+      if (!clone.whatIsIncluded) clone.whatIsIncluded = { title: "", description: "", items: [] };
+      if (!clone.whatIsIncluded.items) clone.whatIsIncluded.items = [];
+      clone.whatIsIncluded.items.push({ title: "", description: "", icon: "" });
       return clone;
     });
   };
@@ -705,7 +738,9 @@ function WhatIsIncludedTab({
   const removeItem = (idx: number) => {
     setForm((prev) => {
       const clone = deepClone(prev);
-      clone.whatIsIncluded.splice(idx, 1);
+      if (clone.whatIsIncluded?.items) {
+        clone.whatIsIncluded.items.splice(idx, 1);
+      }
       return clone;
     });
   };
@@ -713,13 +748,13 @@ function WhatIsIncludedTab({
   return (
     <div className="flex flex-col gap-[16px]">
       <Field label="Section Title">
-        <input className={inputCls} value={form.whatIsIncludedTitle || ''} onChange={(e) => setField("whatIsIncludedTitle", e.target.value)} />
+        <input className={inputCls} value={section.title} onChange={(e) => setField("whatIsIncluded.title", e.target.value)} />
       </Field>
       <Field label="Section Description">
-        <textarea className={textareaCls} value={form.whatIsIncludedDescription || ''} onChange={(e) => setField("whatIsIncludedDescription", e.target.value)} />
+        <textarea className={textareaCls} value={section.description} onChange={(e) => setField("whatIsIncluded.description", e.target.value)} />
       </Field>
       <p className="text-[11px] font-semibold uppercase tracking-widest text-[#888888]">Items</p>
-      {(form.whatIsIncluded ?? []).map((item, idx) => (
+      {(section.items ?? []).map((item, idx) => (
         <ItemCard key={idx} title={item.title || `Item ${idx + 1}`} onRemove={() => removeItem(idx)}>
           <div className="grid gap-[12px] sm:grid-cols-2">
             <Field label="Title"><input className={inputCls} value={item.title} onChange={(e) => updateItem(idx, "title", e.target.value)} /></Field>
@@ -759,7 +794,7 @@ function CtaTab({
       <Field label="WhatsApp Text"><input className={inputCls} value={cta.whatsappText} onChange={(e) => setField("cta.whatsappText", e.target.value)} /></Field>
       <div className="sm:col-span-2">
         <ImageUpload
-          value={cta.image}
+          value={cta.image || ''}
           onChange={(url) => setField("cta.image", url)}
           label="CTA Image"
           uploading={uploading}
@@ -823,6 +858,8 @@ function ProcessTab({
   const updateStep = (idx: number, key: keyof ProcessStep, val: string) => {
     setForm((prev) => {
       const clone = deepClone(prev);
+      if (!clone.process) clone.process = { title: "", description: "", steps: [] };
+      if (!clone.process.steps) clone.process.steps = [];
       clone.process.steps[idx][key] = val;
       return clone;
     });
@@ -831,6 +868,8 @@ function ProcessTab({
   const addStep = () => {
     setForm((prev) => {
       const clone = deepClone(prev);
+      if (!clone.process) clone.process = { title: "", description: "", steps: [] };
+      if (!clone.process.steps) clone.process.steps = [];
       const n = clone.process.steps.length + 1;
       clone.process.steps.push({ step: String(n).padStart(2, "0"), title: "", description: "", icon: "" });
       return clone;
@@ -840,7 +879,9 @@ function ProcessTab({
   const removeStep = (idx: number) => {
     setForm((prev) => {
       const clone = deepClone(prev);
-      clone.process.steps.splice(idx, 1);
+      if (clone.process?.steps) {
+        clone.process.steps.splice(idx, 1);
+      }
       return clone;
     });
   };
@@ -879,10 +920,13 @@ function MaterialsTab({
   setField: (path: string, value: unknown) => void;
 }) {
   const section = form.materials ?? { title: "", description: "", items: [] };
+  const [uploadingIdx, setUploadingIdx] = useState<number | null>(null);
 
   const updateItem = (idx: number, key: keyof MaterialItem, val: string) => {
     setForm((prev) => {
       const clone = deepClone(prev);
+      if (!clone.materials) clone.materials = { title: "", description: "", items: [] };
+      if (!clone.materials.items) clone.materials.items = [];
       clone.materials.items[idx][key] = val;
       return clone;
     });
@@ -891,6 +935,8 @@ function MaterialsTab({
   const addItem = () => {
     setForm((prev) => {
       const clone = deepClone(prev);
+      if (!clone.materials) clone.materials = { title: "", description: "", items: [] };
+      if (!clone.materials.items) clone.materials.items = [];
       clone.materials.items.push({ name: "", description: "", image: "", icon: "" });
       return clone;
     });
@@ -899,7 +945,9 @@ function MaterialsTab({
   const removeItem = (idx: number) => {
     setForm((prev) => {
       const clone = deepClone(prev);
-      clone.materials.items.splice(idx, 1);
+      if (clone.materials?.items) {
+        clone.materials.items.splice(idx, 1);
+      }
       return clone;
     });
   };
@@ -914,7 +962,15 @@ function MaterialsTab({
           <div className="grid gap-[12px] sm:grid-cols-2">
             <Field label="Name"><input className={inputCls} value={item.name} onChange={(e) => updateItem(idx, "name", e.target.value)} /></Field>
             <Field label="Icon"><input className={inputCls} value={item.icon} onChange={(e) => updateItem(idx, "icon", e.target.value)} /></Field>
-            <Field label="Image Path"><input className={inputCls} value={item.image} onChange={(e) => updateItem(idx, "image", e.target.value)} /></Field>
+            <div className="sm:col-span-2">
+              <ImageUpload
+                value={item.image || ''}
+                onChange={(url) => updateItem(idx, "image", url)}
+                label="Image"
+                uploading={uploadingIdx === idx}
+                setUploading={(loading) => setUploadingIdx(loading ? idx : null)}
+              />
+            </div>
             <div className="sm:col-span-2">
               <Field label="Description"><textarea className={textareaCls} value={item.description} onChange={(e) => updateItem(idx, "description", e.target.value)} /></Field>
             </div>
@@ -936,10 +992,13 @@ function WhyChooseUsTab({
   setField: (path: string, value: unknown) => void;
 }) {
   const section = form.whyChooseUs ?? { title: "", items: [] };
+  const [uploadingIdx, setUploadingIdx] = useState<number | null>(null);
 
   const updateItem = (idx: number, key: keyof WhyChooseItem, val: string) => {
     setForm((prev) => {
       const clone = deepClone(prev);
+      if (!clone.whyChooseUs) clone.whyChooseUs = { title: "", items: [] };
+      if (!clone.whyChooseUs.items) clone.whyChooseUs.items = [];
       clone.whyChooseUs.items[idx][key] = val;
       return clone;
     });
@@ -948,6 +1007,8 @@ function WhyChooseUsTab({
   const addItem = () => {
     setForm((prev) => {
       const clone = deepClone(prev);
+      if (!clone.whyChooseUs) clone.whyChooseUs = { title: "", items: [] };
+      if (!clone.whyChooseUs.items) clone.whyChooseUs.items = [];
       clone.whyChooseUs.items.push({ title: "", description: "", icon: "", image: "" });
       return clone;
     });
@@ -956,7 +1017,9 @@ function WhyChooseUsTab({
   const removeItem = (idx: number) => {
     setForm((prev) => {
       const clone = deepClone(prev);
-      clone.whyChooseUs.items.splice(idx, 1);
+      if (clone.whyChooseUs?.items) {
+        clone.whyChooseUs.items.splice(idx, 1);
+      }
       return clone;
     });
   };
@@ -970,7 +1033,15 @@ function WhyChooseUsTab({
           <div className="grid gap-[12px] sm:grid-cols-2">
             <Field label="Title"><input className={inputCls} value={item.title} onChange={(e) => updateItem(idx, "title", e.target.value)} /></Field>
             <Field label="Icon"><input className={inputCls} value={item.icon} onChange={(e) => updateItem(idx, "icon", e.target.value)} /></Field>
-            <Field label="Image Path"><input className={inputCls} value={item.image} onChange={(e) => updateItem(idx, "image", e.target.value)} /></Field>
+            <div className="sm:col-span-2">
+              <ImageUpload
+                value={item.image || ''}
+                onChange={(url) => updateItem(idx, "image", url)}
+                label="Image"
+                uploading={uploadingIdx === idx}
+                setUploading={(loading) => setUploadingIdx(loading ? idx : null)}
+              />
+            </div>
             <div className="sm:col-span-2">
               <Field label="Description"><textarea className={textareaCls} value={item.description} onChange={(e) => updateItem(idx, "description", e.target.value)} /></Field>
             </div>
@@ -992,6 +1063,7 @@ function FaqsTab({
   const updateFaq = (idx: number, key: keyof FaqItem, val: string) => {
     setForm((prev) => {
       const clone = deepClone(prev);
+      if (!clone.faqs) clone.faqs = [];
       clone.faqs[idx][key] = val;
       return clone;
     });
@@ -1000,6 +1072,7 @@ function FaqsTab({
   const addFaq = () => {
     setForm((prev) => {
       const clone = deepClone(prev);
+      if (!clone.faqs) clone.faqs = [];
       clone.faqs.push({ question: "", answer: "" });
       return clone;
     });
@@ -1008,7 +1081,9 @@ function FaqsTab({
   const removeFaq = (idx: number) => {
     setForm((prev) => {
       const clone = deepClone(prev);
-      clone.faqs.splice(idx, 1);
+      if (clone.faqs) {
+        clone.faqs.splice(idx, 1);
+      }
       return clone;
     });
   };
@@ -1067,6 +1142,8 @@ function SeoTab({
   const updateKeyword = (idx: number, val: string) => {
     setForm((prev) => {
       const clone = deepClone(prev);
+      if (!clone.seo) clone.seo = { metaTitle: "", metaDescription: "", keywords: [] };
+      if (!clone.seo.keywords) clone.seo.keywords = [];
       clone.seo.keywords[idx] = val;
       return clone;
     });
@@ -1075,6 +1152,8 @@ function SeoTab({
   const addKeyword = () => {
     setForm((prev) => {
       const clone = deepClone(prev);
+      if (!clone.seo) clone.seo = { metaTitle: "", metaDescription: "", keywords: [] };
+      if (!clone.seo.keywords) clone.seo.keywords = [];
       clone.seo.keywords.push("");
       return clone;
     });
@@ -1083,7 +1162,9 @@ function SeoTab({
   const removeKeyword = (idx: number) => {
     setForm((prev) => {
       const clone = deepClone(prev);
-      clone.seo.keywords.splice(idx, 1);
+      if (clone.seo?.keywords) {
+        clone.seo.keywords.splice(idx, 1);
+      }
       return clone;
     });
   };
@@ -1126,10 +1207,13 @@ function TrustedWorksTab({
   setField: (path: string, value: unknown) => void;
 }) {
   const trusted = form.trustedJoineryWorks ?? { title: "", description: "", images: [] };
+  const [uploadingIdx, setUploadingIdx] = useState<number | null>(null);
 
   const updateImage = (idx: number, key: keyof TrustedImage, val: string) => {
     setForm((prev) => {
       const clone = deepClone(prev);
+      if (!clone.trustedJoineryWorks) clone.trustedJoineryWorks = { title: "", description: "", images: [] };
+      if (!clone.trustedJoineryWorks.images) clone.trustedJoineryWorks.images = [];
       clone.trustedJoineryWorks.images[idx][key] = val;
       return clone;
     });
@@ -1138,6 +1222,8 @@ function TrustedWorksTab({
   const addImage = () => {
     setForm((prev) => {
       const clone = deepClone(prev);
+      if (!clone.trustedJoineryWorks) clone.trustedJoineryWorks = { title: "", description: "", images: [] };
+      if (!clone.trustedJoineryWorks.images) clone.trustedJoineryWorks.images = [];
       clone.trustedJoineryWorks.images.push({ url: "", title: "", description: "" });
       return clone;
     });
@@ -1146,7 +1232,9 @@ function TrustedWorksTab({
   const removeImage = (idx: number) => {
     setForm((prev) => {
       const clone = deepClone(prev);
-      clone.trustedJoineryWorks.images.splice(idx, 1);
+      if (clone.trustedJoineryWorks?.images) {
+        clone.trustedJoineryWorks.images.splice(idx, 1);
+      }
       return clone;
     });
   };
@@ -1159,14 +1247,28 @@ function TrustedWorksTab({
       <Field label="Section Description">
         <textarea className={textareaCls} value={trusted.description} onChange={(e) => setField("trustedJoineryWorks.description", e.target.value)} />
       </Field>
-      <p className="text-[11px] font-semibold uppercase tracking-widest text-[#888888]">Images ({trusted.images.length})</p>
+      <p className="text-[11px] font-semibold uppercase tracking-widest text-[#888888]">
+        Images ({trusted.images.length})
+      </p>
       {(trusted.images ?? []).map((img, idx) => (
         <ItemCard key={idx} title={img.title || `Image ${idx + 1}`} onRemove={() => removeImage(idx)}>
           <div className="grid gap-[12px] sm:grid-cols-2">
-            <Field label="URL"><input className={inputCls} value={img.url} onChange={(e) => updateImage(idx, "url", e.target.value)} placeholder="https://..." /></Field>
-            <Field label="Title"><input className={inputCls} value={img.title} onChange={(e) => updateImage(idx, "title", e.target.value)} /></Field>
             <div className="sm:col-span-2">
-              <Field label="Description"><textarea className={textareaCls} value={img.description} onChange={(e) => updateImage(idx, "description", e.target.value)} /></Field>
+              <ImageUpload
+                value={img.url}
+                onChange={(url) => updateImage(idx, "url", url)}
+                label="Image URL"
+                uploading={uploadingIdx === idx}
+                setUploading={(loading) => setUploadingIdx(loading ? idx : null)}
+              />
+            </div>
+            <Field label="Title">
+              <input className={inputCls} value={img.title} onChange={(e) => updateImage(idx, "title", e.target.value)} />
+            </Field>
+            <div className="sm:col-span-2">
+              <Field label="Description">
+                <textarea className={textareaCls} value={img.description} onChange={(e) => updateImage(idx, "description", e.target.value)} />
+              </Field>
             </div>
           </div>
         </ItemCard>
