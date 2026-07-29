@@ -49,11 +49,7 @@ interface WhoWeServeItem {
   link?: string | null;
 }
 
-interface WhoWeServe {
-  title: string;
-  description: string;
-  items: WhoWeServeItem[];
-}
+// Removed WhoWeServe interface since it's just an array of WhoWeServeItem
 
 interface WhatIsIncludedItem {
   title: string;
@@ -61,11 +57,7 @@ interface WhatIsIncludedItem {
   icon: string;
 }
 
-interface WhatIsIncluded {
-  title: string;
-  description: string;
-  items: WhatIsIncludedItem[];
-}
+// Removed WhatIsIncluded interface since it's just an array of WhatIsIncludedItem
 
 interface ProcessStep {
   step: string;
@@ -130,8 +122,8 @@ interface Service {
   createdAt: string;
   updatedAt: string;
   stats: StatFields;
-  whoWeServe: WhoWeServe;
-  whatIsIncluded: WhatIsIncluded;
+  whoWeServe: WhoWeServeItem[];
+  whatIsIncluded: WhatIsIncludedItem[];
   cta: {
     title: string;
     subtitle: string;
@@ -424,17 +416,11 @@ function ServiceEditModal({
         clientsLabel: "Happy Clients",
       };
     }
-    if (!cloned.whoWeServe) {
-      cloned.whoWeServe = { title: "", description: "", items: [] };
+    if (!cloned.whoWeServe || !Array.isArray(cloned.whoWeServe)) {
+      cloned.whoWeServe = [];
     }
-    if (!cloned.whoWeServe.items) {
-      cloned.whoWeServe.items = [];
-    }
-    if (!cloned.whatIsIncluded) {
-      cloned.whatIsIncluded = { title: "", description: "", items: [] };
-    }
-    if (!cloned.whatIsIncluded.items) {
-      cloned.whatIsIncluded.items = [];
+    if (!cloned.whatIsIncluded || !Array.isArray(cloned.whatIsIncluded)) {
+      cloned.whatIsIncluded = [];
     }
     if (!cloned.cta) {
       cloned.cta = { title: "", subtitle: "", buttonText: "", whatsappText: "", image: "" };
@@ -895,22 +881,18 @@ function WhoWeServeTab({
 }) {
   const [uploadingIdx, setUploadingIdx] = useState<number | null>(null);
   
-  const whoWeServe = form.whoWeServe ?? { title: "", description: "", items: [] };
-  const items = whoWeServe.items ?? [];
+  const items = Array.isArray(form.whoWeServe) ? form.whoWeServe : [];
 
   const updateItem = (idx: number, key: keyof WhoWeServeItem, val: string) => {
     setForm((prev) => {
       const clone = deepClone(prev);
-      if (!clone.whoWeServe) {
-        clone.whoWeServe = { title: "", description: "", items: [] };
+      if (!Array.isArray(clone.whoWeServe)) {
+        clone.whoWeServe = [];
       }
-      if (!clone.whoWeServe.items) {
-        clone.whoWeServe.items = [];
+      if (!clone.whoWeServe[idx]) {
+        clone.whoWeServe[idx] = { title: "", description: "", image: "", icon: "", link: null };
       }
-      if (!clone.whoWeServe.items[idx]) {
-        clone.whoWeServe.items[idx] = { title: "", description: "", image: "", icon: "", link: null };
-      }
-      clone.whoWeServe.items[idx][key] = val;
+      clone.whoWeServe[idx][key] = val;
       return clone;
     });
   };
@@ -918,13 +900,10 @@ function WhoWeServeTab({
   const addItem = () => {
     setForm((prev) => {
       const clone = deepClone(prev);
-      if (!clone.whoWeServe) {
-        clone.whoWeServe = { title: "", description: "", items: [] };
+      if (!Array.isArray(clone.whoWeServe)) {
+        clone.whoWeServe = [];
       }
-      if (!clone.whoWeServe.items) {
-        clone.whoWeServe.items = [];
-      }
-      clone.whoWeServe.items.push({ 
+      clone.whoWeServe.push({ 
         title: "", 
         description: "", 
         image: "", 
@@ -938,8 +917,8 @@ function WhoWeServeTab({
   const removeItem = (idx: number) => {
     setForm((prev) => {
       const clone = deepClone(prev);
-      if (clone.whoWeServe?.items) {
-        clone.whoWeServe.items.splice(idx, 1);
+      if (Array.isArray(clone.whoWeServe)) {
+        clone.whoWeServe.splice(idx, 1);
       }
       return clone;
     });
@@ -950,34 +929,20 @@ function WhoWeServeTab({
 
   return (
     <div className="flex flex-col gap-[16px]">
-      <Field label="Section Title" hasChanged={hasChanged("whoWeServe.title")}>
-        <input 
-          className={getInputClass("whoWeServe.title")} 
-          value={whoWeServe.title} 
-          onChange={(e) => setField("whoWeServe.title", e.target.value)} 
-        />
-      </Field>
-      <Field label="Section Description" hasChanged={hasChanged("whoWeServe.description")}>
-        <textarea 
-          className={getTextareaClass("whoWeServe.description")} 
-          value={whoWeServe.description} 
-          onChange={(e) => setField("whoWeServe.description", e.target.value)} 
-        />
-      </Field>
       <p className="text-[11px] font-semibold uppercase tracking-widest text-[#888888]">Items ({items.length})</p>
       {items.map((item, idx) => (
         <ItemCard key={idx} title={item.title || `Item ${idx + 1}`} onRemove={() => removeItem(idx)}>
           <div className="grid gap-[12px] sm:grid-cols-2">
-            <Field label="Title" hasChanged={hasChanged(`whoWeServe.items.${idx}.title`)}>
+            <Field label="Title" hasChanged={hasChanged(`whoWeServe.${idx}.title`)}>
               <input 
-                className={getInputClass(`whoWeServe.items.${idx}.title`)} 
+                className={getInputClass(`whoWeServe.${idx}.title`)} 
                 value={item.title || ''} 
                 onChange={(e) => updateItem(idx, "title", e.target.value)} 
               />
             </Field>
-            <Field label="Icon" hasChanged={hasChanged(`whoWeServe.items.${idx}.icon`)}>
+            <Field label="Icon" hasChanged={hasChanged(`whoWeServe.${idx}.icon`)}>
               <input 
-                className={getInputClass(`whoWeServe.items.${idx}.icon`)} 
+                className={getInputClass(`whoWeServe.${idx}.icon`)} 
                 value={item.icon || ''} 
                 onChange={(e) => updateItem(idx, "icon", e.target.value)} 
                 placeholder="fa-solid fa-building" 
@@ -990,21 +955,21 @@ function WhoWeServeTab({
                 label="Image"
                 uploading={uploadingIdx === idx}
                 setUploading={(loading) => setUploadingIdx(loading ? idx : null)}
-                hasChanged={hasChanged(`whoWeServe.items.${idx}.image`)}
+                hasChanged={hasChanged(`whoWeServe.${idx}.image`)}
               />
             </div>
-            <Field label="Link" hasChanged={hasChanged(`whoWeServe.items.${idx}.link`)}>
+            <Field label="Link" hasChanged={hasChanged(`whoWeServe.${idx}.link`)}>
               <input 
-                className={getInputClass(`whoWeServe.items.${idx}.link`)} 
+                className={getInputClass(`whoWeServe.${idx}.link`)} 
                 value={item.link || ''} 
                 onChange={(e) => updateItem(idx, "link", e.target.value)} 
                 placeholder="/services/..." 
               />
             </Field>
             <div className="sm:col-span-2">
-              <Field label="Description" hasChanged={hasChanged(`whoWeServe.items.${idx}.description`)}>
+              <Field label="Description" hasChanged={hasChanged(`whoWeServe.${idx}.description`)}>
                 <textarea 
-                  className={getTextareaClass(`whoWeServe.items.${idx}.description`)} 
+                  className={getTextareaClass(`whoWeServe.${idx}.description`)} 
                   value={item.description || ''} 
                   onChange={(e) => updateItem(idx, "description", e.target.value)} 
                 />
@@ -1029,22 +994,18 @@ function WhatIsIncludedTab({
   setField: (path: string, value: unknown) => void;
   hasChanged: (path: string) => boolean;
 }) {
-  const whatIsIncluded = form.whatIsIncluded ?? { title: "", description: "", items: [] };
-  const items = whatIsIncluded.items ?? [];
+  const items = Array.isArray(form.whatIsIncluded) ? form.whatIsIncluded : [];
 
   const updateItem = (idx: number, key: keyof WhatIsIncludedItem, val: string) => {
     setForm((prev) => {
       const clone = deepClone(prev);
-      if (!clone.whatIsIncluded) {
-        clone.whatIsIncluded = { title: "", description: "", items: [] };
+      if (!Array.isArray(clone.whatIsIncluded)) {
+        clone.whatIsIncluded = [];
       }
-      if (!clone.whatIsIncluded.items) {
-        clone.whatIsIncluded.items = [];
+      if (!clone.whatIsIncluded[idx]) {
+        clone.whatIsIncluded[idx] = { title: "", description: "", icon: "" };
       }
-      if (!clone.whatIsIncluded.items[idx]) {
-        clone.whatIsIncluded.items[idx] = { title: "", description: "", icon: "" };
-      }
-      clone.whatIsIncluded.items[idx][key] = val;
+      clone.whatIsIncluded[idx][key] = val;
       return clone;
     });
   };
@@ -1052,13 +1013,14 @@ function WhatIsIncludedTab({
   const addItem = () => {
     setForm((prev) => {
       const clone = deepClone(prev);
-      if (!clone.whatIsIncluded) {
-        clone.whatIsIncluded = { title: "", description: "", items: [] };
+      if (!Array.isArray(clone.whatIsIncluded)) {
+        clone.whatIsIncluded = [];
       }
-      if (!clone.whatIsIncluded.items) {
-        clone.whatIsIncluded.items = [];
-      }
-      clone.whatIsIncluded.items.push({ title: "", description: "", icon: "" });
+      clone.whatIsIncluded.push({ 
+        title: "", 
+        description: "", 
+        icon: "" 
+      });
       return clone;
     });
   };
@@ -1066,8 +1028,8 @@ function WhatIsIncludedTab({
   const removeItem = (idx: number) => {
     setForm((prev) => {
       const clone = deepClone(prev);
-      if (clone.whatIsIncluded?.items) {
-        clone.whatIsIncluded.items.splice(idx, 1);
+      if (Array.isArray(clone.whatIsIncluded)) {
+        clone.whatIsIncluded.splice(idx, 1);
       }
       return clone;
     });
@@ -1078,42 +1040,28 @@ function WhatIsIncludedTab({
 
   return (
     <div className="flex flex-col gap-[16px]">
-      <Field label="Section Title" hasChanged={hasChanged("whatIsIncluded.title")}>
-        <input 
-          className={getInputClass("whatIsIncluded.title")} 
-          value={whatIsIncluded.title} 
-          onChange={(e) => setField("whatIsIncluded.title", e.target.value)} 
-        />
-      </Field>
-      <Field label="Section Description" hasChanged={hasChanged("whatIsIncluded.description")}>
-        <textarea 
-          className={getTextareaClass("whatIsIncluded.description")} 
-          value={whatIsIncluded.description} 
-          onChange={(e) => setField("whatIsIncluded.description", e.target.value)} 
-        />
-      </Field>
       <p className="text-[11px] font-semibold uppercase tracking-widest text-[#888888]">Items ({items.length})</p>
       {items.map((item, idx) => (
         <ItemCard key={idx} title={item.title || `Item ${idx + 1}`} onRemove={() => removeItem(idx)}>
           <div className="grid gap-[12px] sm:grid-cols-2">
-            <Field label="Title" hasChanged={hasChanged(`whatIsIncluded.items.${idx}.title`)}>
+            <Field label="Title" hasChanged={hasChanged(`whatIsIncluded.${idx}.title`)}>
               <input 
-                className={getInputClass(`whatIsIncluded.items.${idx}.title`)} 
+                className={getInputClass(`whatIsIncluded.${idx}.title`)} 
                 value={item.title || ''} 
                 onChange={(e) => updateItem(idx, "title", e.target.value)} 
               />
             </Field>
-            <Field label="Icon" hasChanged={hasChanged(`whatIsIncluded.items.${idx}.icon`)}>
+            <Field label="Icon" hasChanged={hasChanged(`whatIsIncluded.${idx}.icon`)}>
               <input 
-                className={getInputClass(`whatIsIncluded.items.${idx}.icon`)} 
+                className={getInputClass(`whatIsIncluded.${idx}.icon`)} 
                 value={item.icon || ''} 
                 onChange={(e) => updateItem(idx, "icon", e.target.value)} 
               />
             </Field>
             <div className="sm:col-span-2">
-              <Field label="Description" hasChanged={hasChanged(`whatIsIncluded.items.${idx}.description`)}>
+              <Field label="Description" hasChanged={hasChanged(`whatIsIncluded.${idx}.description`)}>
                 <textarea 
-                  className={getTextareaClass(`whatIsIncluded.items.${idx}.description`)} 
+                  className={getTextareaClass(`whatIsIncluded.${idx}.description`)} 
                   value={item.description || ''} 
                   onChange={(e) => updateItem(idx, "description", e.target.value)} 
                 />
