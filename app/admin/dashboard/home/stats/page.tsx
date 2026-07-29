@@ -137,7 +137,7 @@ export default function HomeHeroStatsPage() {
       // Singleton resource: PATCH updates the single stats document if it
       // exists, otherwise falls back to creating it via POST.
       if (stats?._id) {
-        await api.patch(`/home-hero/stats/${stats._id}`, form);
+        await api.patch(`/home-hero/stats`, form);
       } else {
         await api.patch("/home-hero/stats", form);
       }

@@ -170,7 +170,7 @@ export default function OurClients() {
                     width={140}
                     height={60}
                     unoptimized
-                    className="max-h-[42px] w-auto object-contain opacity-90 grayscale transition duration-300 hover:opacity-100 hover:grayscale-0 xs:max-h-[50px] sm:max-h-[60px]"
+                    className="max-h-[42px] w-auto object-contain opacity-90  transition duration-300 hover:opacity-100 hover:grayscale-0 xs:max-h-[50px] sm:max-h-[60px]"
                   />
                 );
 

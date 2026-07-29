@@ -165,7 +165,7 @@ export default function Navbar() {
       {/* WhatsApp CTA with orange padding frame */}
       <div className="flex items-center bg-[#db5e41] p-3">
         <a
-          href="https://wa.me/971527875262"
+          href="https://wa.me/+971527875262"
           target="_blank"
           rel="noopener noreferrer"
           className="flex h-full items-center gap-3 bg-[#5aa64d] px-4 text-[16px] font-semibold text-white transition hover:bg-[#4a8d41]"
@@ -189,7 +189,7 @@ export default function Navbar() {
       </button>
 
       <a
-        href="https://wa.me/971527875262"
+        href="https://wa.me/+971527875262"
         target="_blank"
         rel="noopener noreferrer"
         className="flex items-center gap-2 bg-[#5aa64d] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#4a8d41]"

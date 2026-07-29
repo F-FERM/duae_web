@@ -44,7 +44,7 @@ interface HomeWhyChooseResponse {
   items: WhyChooseItem[];
   teamTitle: string;
   teamDescription: string;
-  teamImage: string;
+  teamImage: string[];
   teamButtonText: string;
   teamButtonLink: string;
   teamSize: number;
@@ -89,7 +89,7 @@ const EMPTY_FORM: HomeWhyChooseResponse = {
   items: [],
   teamTitle: "Our Team",
   teamDescription: "",
-  teamImage: "",
+  teamImage: [],
   teamButtonText: "Get Started Now!",
   teamButtonLink: "/contact",
   teamSize: 0,
@@ -149,7 +149,7 @@ export default function HomeWhyChooseAdminPage() {
           items: [...(data.items || [])].sort((a, b) => (a.order ?? 0) - (b.order ?? 0)),
           teamTitle: data.teamTitle || "Our Team",
           teamDescription: data.teamDescription || "",
-          teamImage: data.teamImage || "",
+          teamImage: Array.isArray(data.teamImage) ? data.teamImage : [],
           teamButtonText: data.teamButtonText || "",
           teamButtonLink: data.teamButtonLink || "/contact",
           teamSize: data.teamSize || 0,
@@ -195,7 +195,7 @@ export default function HomeWhyChooseAdminPage() {
         ),
         teamTitle: sectionData.teamTitle || "Our Team",
         teamDescription: sectionData.teamDescription || "",
-        teamImage: sectionData.teamImage || "",
+        teamImage: Array.isArray(sectionData.teamImage) ? sectionData.teamImage : [],
         teamButtonText: sectionData.teamButtonText || "",
         teamButtonLink: sectionData.teamButtonLink || "/contact",
         teamSize: sectionData.teamSize || 0,
@@ -221,20 +221,32 @@ export default function HomeWhyChooseAdminPage() {
   };
 
   const handleTeamImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
 
     try {
       setUploadingTeamImage(true);
-      const result = await fileUpload(file);
-      setForm((prev) => ({ ...prev, teamImage: result.url }));
-      toast.success("Team image uploaded");
+      const uploads = await Promise.all(
+        Array.from(files).map((file) => fileUpload(file))
+      );
+      const newUrls = uploads.map((result) => result.url);
+      setForm((prev) => ({ ...prev, teamImage: [...prev.teamImage, ...newUrls] }));
+      toast.success(
+        newUrls.length > 1 ? "Team images uploaded" : "Team image uploaded"
+      );
     } catch {
       toast.error("Failed to upload team image");
     } finally {
       setUploadingTeamImage(false);
       if (teamImageInputRef.current) teamImageInputRef.current.value = "";
     }
+  };
+
+  const removeTeamImage = (index: number) => {
+    setForm((prev) => ({
+      ...prev,
+      teamImage: prev.teamImage.filter((_, i) => i !== index),
+    }));
   };
 
   const openAddItem = () => {
@@ -304,8 +316,8 @@ export default function HomeWhyChooseAdminPage() {
     if (!form.teamTitle.trim() || !form.teamDescription.trim()) {
       return toast.error("Team title and description are required");
     }
-    if (!form.teamImage.trim()) {
-      return toast.error("Team image is required");
+    if (form.teamImage.length === 0) {
+      return toast.error("At least one team image is required");
     }
     if (form.items.length === 0) {
       return toast.error("Add at least one why choose us item");
@@ -440,9 +452,9 @@ export default function HomeWhyChooseAdminPage() {
           <div className="space-y-[16px]">
             <Card className="overflow-hidden rounded-[18px] border border-white/60 bg-white/80 shadow-[0_10px_40px_rgba(0,0,0,0.06)] sm:rounded-[22px]">
               <div className="relative h-[220px] w-full overflow-hidden bg-[#F1E4D8] sm:h-[260px]">
-                {sectionData.teamImage ? (
+                {sectionData.teamImage && sectionData.teamImage.length > 0 ? (
                   <Image
-                    src={resolveImage(sectionData.teamImage)}
+                    src={resolveImage(sectionData.teamImage[0])}
                     alt={sectionData.teamTitle}
                     fill
                     unoptimized
@@ -451,6 +463,12 @@ export default function HomeWhyChooseAdminPage() {
                 ) : (
                   <div className="flex h-full w-full items-center justify-center">
                     <ImageIcon className="h-[26px] w-[26px] text-[#C2410C]/40" />
+                  </div>
+                )}
+
+                {sectionData.teamImage && sectionData.teamImage.length > 1 && (
+                  <div className="absolute bottom-[12px] right-[12px] rounded-full bg-black/50 px-[10px] py-[5px] text-[11px] font-medium text-white backdrop-blur-sm">
+                    +{sectionData.teamImage.length - 1} more
                   </div>
                 )}
 
@@ -807,23 +825,40 @@ export default function HomeWhyChooseAdminPage() {
 
                     <div>
                       <Label className="mb-[8px] flex items-center gap-[6px] text-[13px] font-medium text-[#2A2A2A]">
-                        <ImagePlus className="h-[13px] w-[13px]" /> Team Image
+                        <ImagePlus className="h-[13px] w-[13px]" /> Team Images
                       </Label>
-                      {form.teamImage && (
-                        <div className="relative mb-[10px] h-[140px] w-full overflow-hidden rounded-[12px] bg-[#F1E4D8] sm:h-[160px]">
-                          <Image
-                            src={resolveImage(form.teamImage)}
-                            alt="Team preview"
-                            fill
-                            unoptimized
-                            className="object-cover"
-                          />
+
+                      {form.teamImage.length > 0 && (
+                        <div className="mb-[10px] grid grid-cols-2 gap-[10px] xs:grid-cols-3">
+                          {form.teamImage.map((img, index) => (
+                            <div
+                              key={`${img}-${index}`}
+                              className="group relative h-[100px] w-full overflow-hidden rounded-[12px] bg-[#F1E4D8] sm:h-[110px]"
+                            >
+                              <Image
+                                src={resolveImage(img)}
+                                alt={`Team preview ${index + 1}`}
+                                fill
+                                unoptimized
+                                className="object-cover"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => removeTeamImage(index)}
+                                className="absolute right-[6px] top-[6px] flex h-[22px] w-[22px] items-center justify-center rounded-full bg-black/60 text-white opacity-0 transition-opacity group-hover:opacity-100 focus:opacity-100"
+                              >
+                                <X className="h-[12px] w-[12px]" />
+                              </button>
+                            </div>
+                          ))}
                         </div>
                       )}
+
                       <input
                         ref={teamImageInputRef}
                         type="file"
                         accept="image/*"
+                        multiple
                         onChange={handleTeamImageUpload}
                         className="hidden"
                       />
@@ -839,7 +874,9 @@ export default function HomeWhyChooseAdminPage() {
                         ) : (
                           <UploadCloud className="h-[14px] w-[14px]" />
                         )}
-                        {form.teamImage ? "Replace Team Image" : "Upload Team Image"}
+                        {form.teamImage.length > 0
+                          ? "Add More Images"
+                          : "Upload Team Images"}
                       </Button>
                     </div>
                   </div>
