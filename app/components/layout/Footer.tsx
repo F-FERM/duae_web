@@ -77,8 +77,8 @@ function getSocialIcon(platform: string): SocialIconComponent {
 async function getFooterData(): Promise<FooterData | null> {
   try {
     const res = await fetch(`${API_BASE}/footer`, {
-      // No cache — footer is CMS-managed and should always be fresh.
-      cache: "no-store",
+      // Use ISR to allow static building while keeping data fresh (e.g., revalidate every 60s)
+      next: { revalidate: 60 },
     });
     if (!res.ok) {
       console.error(`[Footer] API returned ${res.status} ${res.statusText}`);
