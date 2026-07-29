@@ -170,7 +170,7 @@ export default function WhoWeServe({ slug }: { slug: string }) {
 
             return (
               <motion.div
-                key={item.title}
+                key={index}
                 initial={{ opacity: 0, y: 24 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, amount: 0.2 }}
