@@ -71,7 +71,7 @@ const data = {
       icon: BriefcaseBusiness,
       items: [
 
-        { title: "Services", url: "/admin/dashboard/service" },
+        { title: "Services", url: "/admin/dashboard/services" },
       ],
     },
     {
