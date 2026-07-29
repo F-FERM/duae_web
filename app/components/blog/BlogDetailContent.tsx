@@ -37,22 +37,36 @@ function resolveContent(raw: unknown): string {
                 if (typeof block !== "object" || block === null) return "";
 
                 const b = block as Record<string, unknown>;
+                const blockType = (b._type ?? b.type ?? "") as string;
 
                 // Prefer html field
                 if (typeof b.html === "string" && b.html) return b.html;
 
-                // text / content / value field
+                // text / content / value field — check for subheading type
                 const textVal = b.text ?? b.content ?? b.value ?? b.body ?? b.paragraph;
-                if (typeof textVal === "string" && textVal) return `<p>${textVal}</p>`;
+                if (typeof textVal === "string" && textVal) {
+                    const isSubheading = /sub.?heading/i.test(blockType);
+                    if (isSubheading) return `<h3><strong>${textVal}</strong></h3>`;
+                    return `<p>${textVal}</p>`;
+                }
 
-                // Sanity-style: { _type, children: [{text}] }
+                // Sanity-style: { _type, children: [{text, marks?}] }
                 if (Array.isArray(b.children)) {
                     const inner = (b.children as Record<string, unknown>[])
-                        .map((c) => (typeof c.text === "string" ? c.text : ""))
+                        .map((c) => {
+                            const t = typeof c.text === "string" ? c.text : "";
+                            const marks = Array.isArray(c.marks) ? c.marks as string[] : [];
+                            return marks.includes("strong") || marks.includes("bold")
+                                ? `<strong>${t}</strong>`
+                                : t;
+                        })
                         .join("");
                     if (inner) {
-                        const tag = b._type === "heading" || b.type === "heading" ? "h2" : "p";
-                        return `<${tag}>${inner}</${tag}>`;
+                        const isHeading = blockType === "heading";
+                        const isSubheading = /sub.?heading/i.test(blockType);
+                        if (isSubheading) return `<h3><strong>${inner}</strong></h3>`;
+                        if (isHeading) return `<h2>${inner}</h2>`;
+                        return `<p>${inner}</p>`;
                     }
                 }
 
@@ -71,6 +85,11 @@ interface RelatedBlog {
     title: string;
     date: string;
     href: string;
+}
+
+interface ContactPageData {
+    phone1: string;
+    email: string;
 }
 
 function ContentSkeleton() {
@@ -111,6 +130,7 @@ function ContentSkeleton() {
 export default function BlogDetailContent({ slug }: { slug: string }) {
     const [blog, setBlog] = useState<BlogApiItem | null>(null);
     const [relatedBlogs, setRelatedBlogs] = useState<RelatedBlog[]>([]);
+    const [contact, setContact] = useState<ContactPageData | null>(null);
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
@@ -140,6 +160,19 @@ export default function BlogDetailContent({ slug }: { slug: string }) {
                     }));
 
                 setRelatedBlogs(mapped);
+
+                // Fetch contact details for the Contact Us box
+                api
+                    .get("/contact-page")
+                    .then((contactRes) => {
+                        const contactRaw = Array.isArray(contactRes.data)
+                            ? contactRes.data[0]
+                            : contactRes.data;
+                        if (contactRaw) setContact(contactRaw);
+                    })
+                    .catch((err) => {
+                        console.error("Failed to load contact page content:", err);
+                    });
             } catch (err) {
                 console.error("Failed to fetch blog detail:", err);
             } finally {
@@ -166,11 +199,11 @@ export default function BlogDetailContent({ slug }: { slug: string }) {
 
     return (
         <section className="bg-white py-16 sm:py-20 md:py-24">
-            <div className="px-4">
-                <div className="flex flex-col gap-12 ">
+            <div className="mx-auto max-w-[860px] px-4 sm:px-6 lg:px-8">
+                <div className="flex flex-col gap-12">
 
                     {/* ── Main Article ── */}
-                    <article className="flex-1 min-w-0">
+                    <article className="w-full">
 
                         {/* Orange pill date badge */}
                         <div className="mb-6">
@@ -190,7 +223,7 @@ export default function BlogDetailContent({ slug }: { slug: string }) {
                         {/* Blog content – render as HTML if rich, else as plain paragraphs */}
                         {content ? (
                             <div
-                                className="blog-content"
+                                className="blog-content [&_h2]:font-bold [&_h3]:font-bold [&_h4]:font-bold [&_h5]:font-bold [&_h6]:font-bold"
                                 dangerouslySetInnerHTML={{ __html: content }}
                             />
                         ) : (
@@ -279,18 +312,18 @@ export default function BlogDetailContent({ slug }: { slug: string }) {
                             </h4>
 
                             <a
-                                href="tel:+971527875262"
+                                href={`tel:${contact?.phone1 ?? "+971527875262"}`}
                                 className="relative z-10 mb-2 block text-lg font-bold tracking-wider hover:underline"
                             >
-                                +971 52 787 5262
+                                {contact?.phone1 ?? "+971 52 787 5262"}
                             </a>
 
                             <a
-                                href="mailto:info@wwduae.ae"
+                                href={`mailto:${contact?.email ?? "info@wwduae.ae"}`}
                                 className="relative z-10 flex items-center justify-center gap-1.5 text-sm text-white/85 hover:text-white hover:underline"
                             >
                                 <Mail size={14} />
-                                info@wwduae.ae
+                                {contact?.email ?? "info@wwduae.ae"}
                             </a>
                         </div>
 

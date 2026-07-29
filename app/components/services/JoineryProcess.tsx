@@ -5,7 +5,7 @@ import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronDown } from "lucide-react";
 import api from "@/lib/axios";
-import processImage from "../../../public/images/slide1.webp";
+import processImage from "../../../public/images/joinery13.webp";
 import imagepattern1 from "../../../public/images/patter3.png";
 import pattern2 from "../../../public/images/pattern4.png";
 

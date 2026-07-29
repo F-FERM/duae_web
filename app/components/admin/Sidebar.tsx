@@ -83,7 +83,7 @@ const data = {
       title: "Contact Page",
       icon: Contact,
       items: [
-        { title: "Contact section", url: "/admin/dashboard/contact-section" },
+        { title: "Contact section", url: "/admin/dashboard/contact" },
         { title: "Contact Submission", url: "/admin/dashboard/contact-section/submission" },
       ],
     },

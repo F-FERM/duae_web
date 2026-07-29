@@ -190,7 +190,7 @@ export default function OurWorks() {
 
       {/* Full-bleed image grid, edge-to-edge with zero gap between columns */}
       <div className="mt-10 grid grid-cols-2 gap-0 sm:grid-cols-3 lg:grid-cols-4">
-        {data.items.map((item, index) => (
+        {data.items.slice(0, 4).map((item, index) => (
           <div key={`${item.id}-${index}`} className="group relative block">
             {/* Image (clipped on its own so the hover card below can overflow it) */}
             <div className="relative h-[260px] w-full overflow-hidden bg-slate-100 sm:h-[420px] md:h-[520px] lg:h-[600px] xl:h-[680px]">
