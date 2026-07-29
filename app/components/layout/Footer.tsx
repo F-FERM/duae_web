@@ -13,7 +13,7 @@ import {
 
 import footerBg from "../../../public/images/site-footer-bg.jpg";
 
-const API_BASE = "https://duae-api-production.up.railway.app/api";
+const API_BASE = (process.env.NEXT_PUBLIC_BASE_URL || "").replace(/\/$/, "");
 
 /* -------------------------------------------------------------------------- */
 /*  Types — mirror the API response shape                                     */

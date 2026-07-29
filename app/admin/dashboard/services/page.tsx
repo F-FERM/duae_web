@@ -1,34 +1,32 @@
 "use client";
 
-import { useEffect, useState, useCallback, useId } from "react";
-import Image from "next/image";
-import { motion, AnimatePresence } from "framer-motion";
-import toast, { Toaster } from "react-hot-toast";
+import { AnimatePresence, motion } from "framer-motion";
 import {
-  Layers,
-  ImageIcon,
-  Loader2,
-  GripVertical,
-  Tag,
-  ExternalLink,
-  X,
   ChevronDown,
   ChevronUp,
-  Plus,
-  Trash2,
-  Save,
-  UploadCloud,
-  ImagePlus,
   CircleDot,
+  ExternalLink,
+  GripVertical,
+  ImageIcon,
+  ImagePlus,
+  Layers,
+  Loader2,
+  Plus,
+  Save,
+  Tag,
+  Trash2,
+  UploadCloud,
+  X,
 } from "lucide-react";
+import Image from "next/image";
+import { useCallback, useEffect, useId, useState } from "react";
+import toast, { Toaster } from "react-hot-toast";
 
-import api from "@/lib/axios";
 import { fileUpload } from "@/app/api/admin/upload/upload";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Button } from "@/components/ui/button";
+import api from "@/lib/axios";
 
 // ===================== TYPES =====================
 
