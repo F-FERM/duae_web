@@ -31,7 +31,7 @@ interface WhoWeServeData {
 
 const IMAGE_BASE_URL = process.env.NEXT_PUBLIC_IMAGE_URL || "";
 
-function resolveImage(path: string | undefined, fallback: string): string {
+function resolveImage(path: string | undefined, fallback: string = "") {
   if (!path) return fallback;
   if (path.startsWith("http")) return path;
   return `${IMAGE_BASE_URL}${path.startsWith("/") ? path : `/${path}`}`;
@@ -134,20 +134,22 @@ export default function WhoWeServe({ slug }: { slug: string }) {
 
         <div className="mt-10 grid grid-cols-1 gap-6 sm:grid-cols-2 md:mt-14 lg:grid-cols-3">
           {data.items.map((item, index) => {
-            const imgSrc = resolveImage(item.link, fallbackImg.src);
+            const imgSrc = resolveImage(item?.image);
             const content = (
               <>
-                <div className="relative h-[280px] w-full overflow-hidden md:h-[340px]">
-                  <Image
-                    src={imgSrc}
-                    alt={item.title}
-                    fill
-                    unoptimized={imgSrc.startsWith("http")}
-                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                    className="object-cover transition-transform duration-500 ease-out group-hover:scale-105"
-                  />
-                  <div className="absolute inset-0 bg-black/0 transition-colors duration-300 ease-out group-hover:bg-black/40" />
-                </div>
+                {imgSrc && (
+                  <div className="relative h-[280px] w-full overflow-hidden md:h-[340px]">
+                    <Image
+                      src={imgSrc}
+                      alt={item.title}
+                      fill
+                      unoptimized={imgSrc.startsWith("http")}
+                      sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                      className="object-cover transition-transform duration-500 ease-out group-hover:scale-105"
+                    />
+                    <div className="absolute inset-0 bg-black/0 transition-colors duration-300 ease-out group-hover:bg-black/40" />
+                  </div>
+                )}
 
                 <div className="relative flex flex-col gap-3 p-6 flex-grow">
                   <span className="absolute left-0 top-1/2 h-16 w-[3px] origin-center -translate-y-1/2 scale-y-0 bg-[#c0522f] transition-transform duration-300 ease-out group-hover:scale-y-100" />
