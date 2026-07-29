@@ -1,2 +1,2 @@
 
-export const baseURL = "https://duae-api-production.up.railway.app/api/";
+export const baseURL = process.env.NEXT_PUBLIC_BASE_URL || "";
