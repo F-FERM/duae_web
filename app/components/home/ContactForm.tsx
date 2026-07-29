@@ -105,11 +105,18 @@ export default function ContactFormSection() {
 
     setIsSubmitting(true);
     try {
-      // TODO: wire this up to your actual submit endpoint / API route.
-      console.log("Form submitted:", formData);
+      await api.post("/contact-submissions", {
+        name: formData.name,
+        phone: formData.phone,
+        email: formData.email,
+        message: formData.message,
+      });
       setFormData({ name: "", phone: "", email: "", message: "" });
+      setErrors({});
+      alert("Your message has been sent! We will get back to you shortly.");
     } catch (error) {
       console.error("Failed to submit contact form:", error);
+      alert("Failed to send message. Please try again.");
     } finally {
       setIsSubmitting(false);
     }

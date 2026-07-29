@@ -84,7 +84,7 @@ const data = {
       icon: Contact,
       items: [
         { title: "Contact section", url: "/admin/dashboard/contact" },
-        { title: "Contact Submission", url: "/admin/dashboard/contact-section/submission" },
+        { title: "Contact Submission", url: "/admin/dashboard/contact-submission" },
       ],
     },
     {

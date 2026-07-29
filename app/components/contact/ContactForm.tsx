@@ -70,11 +70,17 @@ export default function GetInTouch() {
 
   const onSubmit = async (formValues: ContactFormValues) => {
     try {
-      // TODO: wire up to actual submission API endpoint
-      console.log("Contact form submitted:", formValues);
+      await api.post("/contact-submissions", {
+        name: formValues.name,
+        phone: formValues.phone,
+        email: formValues.email,
+        message: formValues.message,
+      });
       reset();
+      alert("Your message has been sent! We will get back to you shortly.");
     } catch (error) {
       console.error("Failed to submit contact form:", error);
+      alert("Failed to send message. Please try again.");
     }
   };
 
