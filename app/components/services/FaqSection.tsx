@@ -76,7 +76,7 @@ export default function FAQSection({ slug }: { slug: string }) {
           {faqs.map((faq, index) => {
             const isOpen = openIndex === index;
             return (
-              <div key={faq.question} className="overflow-hidden">
+              <div key={index} className="overflow-hidden">
                 <button
                   type="button"
                   onClick={() => toggle(index)}
