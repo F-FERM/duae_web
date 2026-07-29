@@ -45,8 +45,8 @@ function ChecklistColumn({ items }: { items: IncludedItemApi[] }) {
   return (
     <div className="relative bg-white p-6 shadow-[0_2px_20px_rgba(0,0,0,0.06)] sm:p-8">
       <ul className="flex flex-col gap-5">
-        {items.map((item) => (
-          <li key={item.title} className="flex items-start gap-3">
+        {items.map((item, index) => (
+          <li key={index} className="flex items-start gap-3">
             <span className="mt-1 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#db5e41]/10 text-[#db5e41]">
               <Check size={14} strokeWidth={3} />
             </span>
