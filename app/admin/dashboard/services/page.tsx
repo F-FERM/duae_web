@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useId } from "react";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import toast, { Toaster } from "react-hot-toast";
@@ -263,6 +263,9 @@ function ImageUpload({
   setUploading: (loading: boolean) => void;
   hasChanged?: boolean;
 }) {
+  const uniqueId = useId();
+  const inputId = `upload-${uniqueId}`;
+
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -295,11 +298,11 @@ function ImageUpload({
         type="file"
         accept="image/*"
         className="hidden"
-        id={`upload-${label.replace(/\s/g, '-')}`}
+        id={inputId}
         onChange={handleFileUpload}
       />
       <div
-        onClick={() => !uploading && document.getElementById(`upload-${label.replace(/\s/g, '-')}`)?.click()}
+        onClick={() => !uploading && document.getElementById(inputId)?.click()}
         className={`
           relative flex h-[100px] w-full cursor-pointer items-center justify-center overflow-hidden rounded-[12px] border border-dashed border-[#E4C9B4] bg-[#FFF9F4] transition-colors hover:bg-[#FFF4EC]
           ${uploading ? "pointer-events-none opacity-70" : ""}
@@ -329,7 +332,7 @@ function ImageUpload({
         )}
       </div>
       <Input
-        value={value}
+        value={value || ""}
         onChange={(e) => onChange(e.target.value)}
         placeholder="Or paste image URL"
         className={`mt-[4px] h-[36px] rounded-[10px] border-[#E4E4E4] bg-white text-[12px] focus-visible:ring-[#EA580C]/30 ${hasChanged ? "border-2 border-[#EA580C] bg-[#FFF9F4]" : ""}`}
@@ -408,7 +411,80 @@ function ServiceEditModal({
   onClose: () => void;
   onSaved: () => void;
 }) {
-  const [form, setForm] = useState<Service>(() => deepClone(initialService));
+  const [form, setForm] = useState<Service>(() => {
+    const cloned = deepClone(initialService);
+    // Ensure all nested objects exist
+    if (!cloned.stats) {
+      cloned.stats = {
+        yearsOfExcellence: 0,
+        yearsLabel: "Years of Excellence",
+        skilledProfessionals: 0,
+        professionalsLabel: "Skilled professionals",
+        successfulProjects: 0,
+        projectsLabel: "Successful projects",
+        happyClients: 0,
+        clientsLabel: "Happy Clients",
+      };
+    }
+    if (!cloned.whoWeServe) {
+      cloned.whoWeServe = { title: "", description: "", items: [] };
+    }
+    if (!cloned.whoWeServe.items) {
+      cloned.whoWeServe.items = [];
+    }
+    if (!cloned.whatIsIncluded) {
+      cloned.whatIsIncluded = { title: "", description: "", items: [] };
+    }
+    if (!cloned.whatIsIncluded.items) {
+      cloned.whatIsIncluded.items = [];
+    }
+    if (!cloned.cta) {
+      cloned.cta = { title: "", subtitle: "", buttonText: "", whatsappText: "", image: "" };
+    }
+    if (!cloned.about) {
+      cloned.about = { title: "", description: "", image: "", foundedYear: "", outlets: 0, teamSize: 0, factoryInfo: "" };
+    }
+    if (!cloned.process) {
+      cloned.process = { title: "", description: "", steps: [] };
+    }
+    if (!cloned.process.steps) {
+      cloned.process.steps = [];
+    }
+    if (!cloned.materials) {
+      cloned.materials = { title: "", description: "", items: [] };
+    }
+    if (!cloned.materials.items) {
+      cloned.materials.items = [];
+    }
+    if (!cloned.whyChooseUs) {
+      cloned.whyChooseUs = { title: "", items: [] };
+    }
+    if (!cloned.whyChooseUs.items) {
+      cloned.whyChooseUs.items = [];
+    }
+    if (!cloned.faqs) {
+      cloned.faqs = [];
+    }
+    if (!cloned.contact) {
+      cloned.contact = { title: "", description: "", fields: [] };
+    }
+    if (!cloned.contact.fields) {
+      cloned.contact.fields = [];
+    }
+    if (!cloned.seo) {
+      cloned.seo = { metaTitle: "", metaDescription: "", keywords: [] };
+    }
+    if (!cloned.seo.keywords) {
+      cloned.seo.keywords = [];
+    }
+    if (!cloned.trustedJoineryWorks) {
+      cloned.trustedJoineryWorks = { title: "", description: "", images: [] };
+    }
+    if (!cloned.trustedJoineryWorks.images) {
+      cloned.trustedJoineryWorks.images = [];
+    }
+    return cloned;
+  });
   const [originalForm] = useState<Service>(() => deepClone(initialService));
   const [activeTab, setActiveTab] = useState<TabName>("Basic");
   const [saving, setSaving] = useState(false);
@@ -833,9 +909,10 @@ function WhoWeServeTab({
       if (!clone.whoWeServe.items) {
         clone.whoWeServe.items = [];
       }
-      if (clone.whoWeServe.items[idx]) {
-        clone.whoWeServe.items[idx][key] = val;
+      if (!clone.whoWeServe.items[idx]) {
+        clone.whoWeServe.items[idx] = { title: "", description: "", image: "", icon: "", link: null };
       }
+      clone.whoWeServe.items[idx][key] = val;
       return clone;
     });
   };
@@ -966,9 +1043,10 @@ function WhatIsIncludedTab({
       if (!clone.whatIsIncluded.items) {
         clone.whatIsIncluded.items = [];
       }
-      if (clone.whatIsIncluded.items[idx]) {
-        clone.whatIsIncluded.items[idx][key] = val;
+      if (!clone.whatIsIncluded.items[idx]) {
+        clone.whatIsIncluded.items[idx] = { title: "", description: "", icon: "" };
       }
+      clone.whatIsIncluded.items[idx][key] = val;
       return clone;
     });
   };
@@ -1177,9 +1255,10 @@ function ProcessTab({
       const clone = deepClone(prev);
       if (!clone.process) clone.process = { title: "", description: "", steps: [] };
       if (!clone.process.steps) clone.process.steps = [];
-      if (clone.process.steps[idx]) {
-        clone.process.steps[idx][key] = val;
+      if (!clone.process.steps[idx]) {
+        clone.process.steps[idx] = { step: "", title: "", description: "", icon: "" };
       }
+      clone.process.steps[idx][key] = val;
       return clone;
     });
   };
@@ -1262,9 +1341,10 @@ function MaterialsTab({
       const clone = deepClone(prev);
       if (!clone.materials) clone.materials = { title: "", description: "", items: [] };
       if (!clone.materials.items) clone.materials.items = [];
-      if (clone.materials.items[idx]) {
-        clone.materials.items[idx][key] = val;
+      if (!clone.materials.items[idx]) {
+        clone.materials.items[idx] = { name: "", description: "", image: "", icon: "" };
       }
+      clone.materials.items[idx][key] = val;
       return clone;
     });
   };
@@ -1351,9 +1431,10 @@ function WhyChooseUsTab({
       const clone = deepClone(prev);
       if (!clone.whyChooseUs) clone.whyChooseUs = { title: "", items: [] };
       if (!clone.whyChooseUs.items) clone.whyChooseUs.items = [];
-      if (clone.whyChooseUs.items[idx]) {
-        clone.whyChooseUs.items[idx][key] = val;
+      if (!clone.whyChooseUs.items[idx]) {
+        clone.whyChooseUs.items[idx] = { title: "", description: "", icon: "", image: "" };
       }
+      clone.whyChooseUs.items[idx][key] = val;
       return clone;
     });
   };
@@ -1432,9 +1513,10 @@ function FaqsTab({
     setForm((prev) => {
       const clone = deepClone(prev);
       if (!clone.faqs) clone.faqs = [];
-      if (clone.faqs[idx]) {
-        clone.faqs[idx][key] = val;
+      if (!clone.faqs[idx]) {
+        clone.faqs[idx] = { question: "", answer: "" };
       }
+      clone.faqs[idx][key] = val;
       return clone;
     });
   };
@@ -1531,9 +1613,7 @@ function SeoTab({
       const clone = deepClone(prev);
       if (!clone.seo) clone.seo = { metaTitle: "", metaDescription: "", keywords: [] };
       if (!clone.seo.keywords) clone.seo.keywords = [];
-      if (clone.seo.keywords[idx] !== undefined) {
-        clone.seo.keywords[idx] = val;
-      }
+      clone.seo.keywords[idx] = val;
       return clone;
     });
   };
@@ -1611,9 +1691,10 @@ function TrustedWorksTab({
       const clone = deepClone(prev);
       if (!clone.trustedJoineryWorks) clone.trustedJoineryWorks = { title: "", description: "", images: [] };
       if (!clone.trustedJoineryWorks.images) clone.trustedJoineryWorks.images = [];
-      if (clone.trustedJoineryWorks.images[idx]) {
-        clone.trustedJoineryWorks.images[idx][key] = val;
+      if (!clone.trustedJoineryWorks.images[idx]) {
+        clone.trustedJoineryWorks.images[idx] = { url: "", title: "", description: "" };
       }
+      clone.trustedJoineryWorks.images[idx][key] = val;
       return clone;
     });
   };
