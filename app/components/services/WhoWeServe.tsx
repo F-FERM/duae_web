@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { motion } from "framer-motion";
 import api from "@/lib/axios";
 import fallbackImg from "../../../public/images/slide1.webp";
@@ -9,9 +10,9 @@ import fallbackImg from "../../../public/images/slide1.webp";
 interface WhoWeServeItemApi {
   title: string;
   description: string;
-  image: string;
-  icon: string;
-  link: string;
+  image?: string;
+  icon?: string;
+  link?: string;
 }
 
 interface ServiceDetailApiResponse {
@@ -30,7 +31,7 @@ interface WhoWeServeData {
 
 const IMAGE_BASE_URL = process.env.NEXT_PUBLIC_IMAGE_URL || "";
 
-function resolveImage(path: string, fallback: string): string {
+function resolveImage(path: string | undefined, fallback: string): string {
   if (!path) return fallback;
   if (path.startsWith("http")) return path;
   return `${IMAGE_BASE_URL}${path.startsWith("/") ? path : `/${path}`}`;
@@ -127,22 +128,15 @@ export default function WhoWeServe({ slug }: { slug: string }) {
           {data.title}
         </h2>
 
-        <p className="mx-auto mt-3 text-sm leading-7 text-gray-600 sm:text-base sm:leading-8 md:text-lg">
+        <p className="mx-auto mt-3 text-sm leading-7 text-gray-600 sm:text-base sm:leading-8 md:text-lg text-center max-w-4xl">
           {data.description}
         </p>
 
         <div className="mt-10 grid grid-cols-1 gap-6 sm:grid-cols-2 md:mt-14 lg:grid-cols-3">
           {data.items.map((item, index) => {
-            const imgSrc = resolveImage(item.image, fallbackImg.src);
-            return (
-              <motion.div
-                key={item.title}
-                initial={{ opacity: 0, y: 24 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, amount: 0.2 }}
-                transition={{ duration: 0.5, delay: index * 0.1 }}
-                className="group flex flex-col bg-white shadow-[0_2px_20px_rgba(0,0,0,0.08)]"
-              >
+            const imgSrc = resolveImage(item.link, fallbackImg.src);
+            const content = (
+              <>
                 <div className="relative h-[280px] w-full overflow-hidden md:h-[340px]">
                   <Image
                     src={imgSrc}
@@ -155,15 +149,39 @@ export default function WhoWeServe({ slug }: { slug: string }) {
                   <div className="absolute inset-0 bg-black/0 transition-colors duration-300 ease-out group-hover:bg-black/40" />
                 </div>
 
-                <div className="relative flex flex-col gap-3 p-6">
+                <div className="relative flex flex-col gap-3 p-6 flex-grow">
                   <span className="absolute left-0 top-1/2 h-16 w-[3px] origin-center -translate-y-1/2 scale-y-0 bg-[#c0522f] transition-transform duration-300 ease-out group-hover:scale-y-100" />
-                  <h3 className="text-xl font-bold text-[#0d1b2a] md:text-2xl">
-                    {item.title}
-                  </h3>
+                  <div className="flex items-center gap-3">
+                    {item.icon && (
+                      <i className={`${item.icon} text-xl text-[#c0522f]`}></i>
+                    )}
+                    <h3 className="text-xl font-bold text-[#0d1b2a] md:text-2xl">
+                      {item.title}
+                    </h3>
+                  </div>
                   <p className="text-sm leading-7 text-[#0d1b2a]/70 md:text-base">
                     {item.description}
                   </p>
                 </div>
+              </>
+            );
+
+            return (
+              <motion.div
+                key={item.title}
+                initial={{ opacity: 0, y: 24 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, amount: 0.2 }}
+                transition={{ duration: 0.5, delay: index * 0.1 }}
+                className="group flex flex-col bg-white shadow-[0_2px_20px_rgba(0,0,0,0.08)] h-full"
+              >
+                {item.link ? (
+                  <Link href={item.link} className="flex flex-col h-full">
+                    {content}
+                  </Link>
+                ) : (
+                  <div className="flex flex-col h-full">{content}</div>
+                )}
               </motion.div>
             );
           })}

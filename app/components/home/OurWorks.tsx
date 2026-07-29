@@ -222,7 +222,7 @@ export default function OurWorks() {
                   {item.description}
                 </p>
 
-                <Link href={item.buttonLink || "/works"} className="pointer-events-auto block">
+                <Link href={item.buttonLink || "/our-works"} className="pointer-events-auto block">
                   <button className="mt-5 w-full rounded-2xl bg-[#dc5c39] py-3 text-sm font-semibold text-white transition hover:bg-[#bb4e2d] sm:mt-8 sm:py-4 sm:text-base">
                     {item.buttonText}
                   </button>

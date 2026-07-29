@@ -186,7 +186,7 @@ export default function Hero() {
                 transition={{ duration: 0.6 }}
                 className="mb-3 text-[11px] uppercase tracking-[3px] text-white/90 sm:mb-4 sm:text-sm sm:tracking-[4px] md:mb-6 md:text-base lg:text-lg lg:tracking-[5px]"
               >
-                {slides[current].subtitle}
+                {slides[current].title}
               </motion.p>
 
               {/* Title */}
@@ -197,7 +197,7 @@ export default function Hero() {
                 transition={{ duration: 0.7, delay: 0.15 }}
                 className="text-2xl font-bold leading-tight sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl"
               >
-                {slides[current].title}
+                {slides[current].subtitle}
               </motion.h1>
 
               {/* Description */}

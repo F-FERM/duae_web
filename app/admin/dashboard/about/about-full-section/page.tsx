@@ -548,31 +548,68 @@ export default function AboutServicesPage() {
           </p>
         </div>
 
-        <Button
-          onClick={openCreateModal}
-          className="
-            flex
-            h-[46px]
-            w-full
-            items-center
-            justify-center
-            gap-[8px]
-            rounded-[14px]
-            bg-[#EA580C]
-            text-[14px]
-            font-medium
-            text-white
-            hover:bg-[#EA580C]
-            hover:shadow-[0_14px_30px_rgba(234,88,12,0.3)]
-            sm:h-[48px]
-            sm:w-auto
-            sm:px-[22px]
-            sm:text-[15px]
-          "
-        >
-          <Plus className="h-[18px] w-[18px]" />
-          {aboutData ? "Edit Content" : "Create About Services"}
-        </Button>
+        <div className="flex flex-col gap-[10px] sm:flex-row sm:items-center">
+          <Button
+            onClick={openCreateModal}
+            className="
+              flex
+              h-[46px]
+              w-full
+              items-center
+              justify-center
+              gap-[8px]
+              rounded-[14px]
+              bg-[#111111]
+              text-[14px]
+              font-medium
+              text-white
+              hover:bg-[#333333]
+              hover:shadow-md
+              sm:h-[48px]
+              sm:w-auto
+              sm:px-[22px]
+              sm:text-[15px]
+            "
+          >
+            {aboutData ? (
+              <><Pencil className="h-[16px] w-[16px]" /> Edit Content Text</>
+            ) : (
+              <><Plus className="h-[18px] w-[18px]" /> Create About Services</>
+            )}
+          </Button>
+
+          {aboutData && (
+            <Button
+              onClick={handleSubmit}
+              disabled={submitting}
+              className="
+                flex
+                h-[46px]
+                w-full
+                items-center
+                justify-center
+                gap-[8px]
+                rounded-[14px]
+                bg-[#EA580C]
+                text-[14px]
+                font-medium
+                text-white
+                hover:bg-[#EA580C]
+                hover:shadow-[0_14px_30px_rgba(234,88,12,0.3)]
+                sm:h-[48px]
+                sm:w-auto
+                sm:px-[22px]
+                sm:text-[15px]
+              "
+            >
+              {submitting ? (
+                <Loader2 className="h-[18px] w-[18px] animate-spin" />
+              ) : (
+                <><Settings className="h-[16px] w-[16px]" /> Save All Changes</>
+              )}
+            </Button>
+          )}
+        </div>
       </div>
 
       {/* CONTENT */}

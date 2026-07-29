@@ -218,10 +218,9 @@ export default function Services() {
             Our Services
           </h2>
           <p className="mx-auto mt-2 text-sm leading-6 text-gray-600 xs:leading-7 sm:text-base sm:leading-8 md:text-lg">
-            At Wood World Decor, we bring expertise and craftsmanship together
-            to offer complete solutions for your space. Our comprehensive
-            services ensure every detail is perfected, from joinery to fit
-            outs and beyond.
+          At Wood World Decor, we bring expertise and craftsmanship together to offer complete solutions for your space. Our comprehensive services ensure every detail is perfected, from joinery to fit outs and beyond.
+
+
           </p>
         </motion.div>
 

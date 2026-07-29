@@ -312,7 +312,7 @@ export default function HomeWorksAdminPage() {
     try {
       setSubmitting(true);
 
-      const { buttonLink, ...restForm } = form;
+      const {  ...restForm } = form;
       const payload = {
         ...restForm,
         images: form.images.map(({ _id, createdAt, updatedAt, ...rest }: any) => rest),
