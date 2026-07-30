@@ -94,12 +94,12 @@ export default function JoineryWorks({ slug }: { slug?: string }) {
           description: trusted?.description || res.data.fullDescription || defaultData.description,
           images:
             trusted?.images && trusted.images.length > 0
-              ? trusted.images.map((img: any) => {
+              ? trusted.images.map((img) => {
                   const isString = typeof img === "string";
                   return {
                     title: isString ? "" : img.title,
                     description: isString ? "" : img.description,
-                    url: resolveImage(isString ? img : img.url, work1.src),
+                    url: resolveImage(isString ? img : img?.url, work1.src),
                   };
                 })
               : defaultData.images,
