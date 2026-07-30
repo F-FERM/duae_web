@@ -33,6 +33,7 @@ import { Textarea } from "@/components/ui/textarea";
 type BlogContentType = "heading" | "subheading" | "paragraph" | "list";
 
 interface BlogContent {
+  id: string; // stable id, independent of array position — used as React key
   type: BlogContentType;
   content: string;
   items: string[];
@@ -92,7 +93,16 @@ const CONTENT_TYPES: BlogContentType[] = [
   "list",
 ];
 
+function makeId(): string {
+  if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
+    return crypto.randomUUID();
+  }
+  // Fallback for environments without crypto.randomUUID
+  return `id-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+}
+
 const EMPTY_CONTENT: BlogContent = {
+  id: "",
   type: "paragraph",
   content: "",
   items: [],
@@ -152,6 +162,16 @@ function getErrorMessage(err: unknown, fallback: string): string {
   return fallback;
 }
 
+// Ensures every content block has a stable id (backfills legacy records that
+// were saved before the id field existed).
+function withStableIds(content: BlogContent[] | undefined | null): BlogContent[] {
+  if (!content) return [];
+  return content.map((block) => ({
+    ...block,
+    id: block.id || makeId(),
+  }));
+}
+
 export default function BlogAdminPage() {
   const [blogs, setBlogs] = useState<Blog[]>([]);
   const [loading, setLoading] = useState(true);
@@ -173,17 +193,28 @@ export default function BlogAdminPage() {
   const [listItemInput, setListItemInput] = useState("");
   const [showContentForm, setShowContentForm] = useState(false);
   const [contentDraft, setContentDraft] = useState<BlogContent>(EMPTY_CONTENT);
-  const [editingContentIndex, setEditingContentIndex] = useState<number | null>(null);
+  // Tracks the block being edited by its stable id (not array index), since
+  // the index of every later block shifts whenever an earlier block is
+  // added or removed.
+  const [editingContentId, setEditingContentId] = useState<string | null>(null);
 
   const thumbInputRef = useRef<HTMLInputElement>(null);
   const detailInputRef = useRef<HTMLInputElement>(null);
   const avatarInputRef = useRef<HTMLInputElement>(null);
+  const contentFormRef = useRef<HTMLDivElement>(null);
 
   const fetchBlogs = async () => {
     try {
       setLoading(true);
-      const res = await api.get<Blog[]>("/blogs", { params: { limit: "100" } });
-      const sorted = [...(Array.isArray(res.data) ? res.data : [])].sort(
+      const res = await api.get<Blog[] | { data?: Blog[]; blogs?: Blog[]; items?: Blog[] }>("/blogs", { params: { limit: "100" } });
+      // API may return a plain array OR a paginated object like { blogs: [...] } or { data: [...] }
+      const raw: Blog[] = Array.isArray(res.data)
+        ? res.data
+        : (res.data as { data?: Blog[]; blogs?: Blog[]; items?: Blog[] }).data ??
+          (res.data as { data?: Blog[]; blogs?: Blog[]; items?: Blog[] }).blogs ??
+          (res.data as { data?: Blog[]; blogs?: Blog[]; items?: Blog[] }).items ??
+          [];
+      const sorted = [...raw].sort(
         (a, b) => (a.order ?? 0) - (b.order ?? 0)
       );
       setBlogs(sorted);
@@ -197,6 +228,16 @@ export default function BlogAdminPage() {
   useEffect(() => {
     fetchBlogs();
   }, []);
+
+  // The content-block edit/add form renders above the block list. Without
+  // this, clicking "Edit" on a block further down the list opens the form
+  // off-screen (above the current scroll position), which looks like the
+  // button did nothing. Scroll it into view whenever it opens.
+  useEffect(() => {
+    if (showContentForm && contentFormRef.current) {
+      contentFormRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+  }, [showContentForm, editingContentId]);
 
   const openCreateModal = () => {
     setEditingId(null);
@@ -219,7 +260,7 @@ export default function BlogAdminPage() {
         title: data.title || "",
         slug: data.slug || "",
         excerpt: data.excerpt || "",
-        content: data.content || [],
+        content: withStableIds(data.content),
         image: data.image || "",
         detailImages: data.detailImages || [],
         date: data.date || "",
@@ -246,7 +287,7 @@ export default function BlogAdminPage() {
     setEditingId(null);
     setForm(EMPTY_FORM);
     setShowContentForm(false);
-    setEditingContentIndex(null);
+    setEditingContentId(null);
     setContentDraft(EMPTY_CONTENT);
   };
 
@@ -334,15 +375,18 @@ export default function BlogAdminPage() {
   };
 
   const openAddContent = () => {
-    setContentDraft({ ...EMPTY_CONTENT });
-    setEditingContentIndex(null);
+    setContentDraft({ ...EMPTY_CONTENT, id: makeId() });
+    setEditingContentId(null);
     setListItemInput("");
     setShowContentForm(true);
   };
 
   const openEditContent = (index: number) => {
-    setContentDraft(form.content[index]);
-    setEditingContentIndex(index);
+    const block = form.content[index];
+    // Defensive: guarantee an id even if somehow missing
+    const safeBlock = block.id ? block : { ...block, id: makeId() };
+    setContentDraft(safeBlock);
+    setEditingContentId(safeBlock.id);
     setListItemInput("");
     setShowContentForm(true);
   };
@@ -359,16 +403,20 @@ export default function BlogAdminPage() {
     }
 
     setForm((prev) => {
-      const content = [...prev.content];
-      if (editingContentIndex !== null) {
-        content[editingContentIndex] = contentDraft;
-      } else {
-        content.push(contentDraft);
-      }
+      const draft = contentDraft.id ? contentDraft : { ...contentDraft, id: makeId() };
+      const existingIndex = editingContentId
+        ? prev.content.findIndex((b) => b.id === editingContentId)
+        : -1;
+
+      const content =
+        existingIndex !== -1
+          ? prev.content.map((b, i) => (i === existingIndex ? draft : b))
+          : [...prev.content, draft];
+
       return { ...prev, content };
     });
     setShowContentForm(false);
-    setEditingContentIndex(null);
+    setEditingContentId(null);
     setContentDraft(EMPTY_CONTENT);
   };
 
@@ -686,7 +734,13 @@ export default function BlogAdminPage() {
                     </div>
 
                     {showContentForm && (
-                      <div className="mt-3 space-y-3 rounded-[12px] border border-[#F0D9C8] bg-[#FFF8F3] p-3">
+                      <div
+                        ref={contentFormRef}
+                        className="mt-3 space-y-3 rounded-[12px] border-2 border-[#EA580C] bg-[#FFF8F3] p-3 shadow-sm"
+                      >
+                        <p className="text-xs font-medium text-[#C2410C]">
+                          {editingContentId ? "Editing block" : "New block"}
+                        </p>
                         <select
                           value={contentDraft.type}
                           onChange={(e) =>
@@ -808,7 +862,7 @@ export default function BlogAdminPage() {
                             variant="outline"
                             onClick={() => {
                               setShowContentForm(false);
-                              setEditingContentIndex(null);
+                              setEditingContentId(null);
                               setContentDraft(EMPTY_CONTENT);
                             }}
                             className="h-9 rounded-[10px]"
@@ -825,8 +879,12 @@ export default function BlogAdminPage() {
                       )}
                       {form.content.map((block, index) => (
                         <div
-                          key={`${block.type}-${index}`}
-                          className="flex items-start justify-between rounded-[10px] border border-[#ECECEC] bg-white p-3"
+                          key={block.id}
+                          className={`flex items-start justify-between rounded-[10px] border bg-white p-3 transition-colors ${
+                            showContentForm && editingContentId === block.id
+                              ? "border-[#EA580C] ring-2 ring-[#EA580C]/30"
+                              : "border-[#ECECEC]"
+                          }`}
                         >
                           <div>
                             <p className="text-[10px] font-medium uppercase tracking-wide text-[#C2410C]">
@@ -853,12 +911,19 @@ export default function BlogAdminPage() {
                             <Button
                               type="button"
                               variant="outline"
-                              onClick={() =>
+                              onClick={() => {
                                 setForm((prev) => ({
                                   ...prev,
                                   content: prev.content.filter((_, i) => i !== index),
-                                }))
-                              }
+                                }));
+                                // If the removed block was open in the editor, close the editor too
+                                if (editingContentId === block.id) {
+                                  setShowContentForm(false);
+                                  setEditingContentId(null);
+                                  setContentDraft(EMPTY_CONTENT);
+                                }
+                                toast.success("Block removed");
+                              }}
                               className="h-8 px-2 text-xs text-[#DC2626]"
                             >
                               Remove
