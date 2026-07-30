@@ -5,67 +5,126 @@ import { MessageCircle, Menu, X, ChevronDown } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { useState, useEffect } from "react";
 
-type SubMenu = {
+// ─── Types ────────────────────────────────────────────────────────────────────
+
+interface ServiceTreeChild {
+  _id: string;
+  title: string;
+  slug: string;
+}
+
+interface ServiceTreeNode {
+  _id: string;
+  title: string;
+  slug: string;
+  children: ServiceTreeChild[];
+}
+
+interface NavSubItem {
   label: string;
   href: string;
-};
+  subItems?: NavSubItem[];
+}
 
-type MenuItem = {
+interface MenuItem {
   label: string;
   href: string;
-  subItems?: {
-    label: string;
-    href: string;
-    subItems?: SubMenu[];
-  }[];
-};
+  subItems?: NavSubItem[];
+}
 
-const navLinks: MenuItem[] = [
+// ─── Static nav links (non-services) ─────────────────────────────────────────
+
+const staticLinks: Omit<MenuItem, "subItems">[] = [
   { label: "Home", href: "/" },
   { label: "About Us", href: "/about" },
-  {
-    label: "Services",
-    href: "/services",
-    subItems: [
-      { label: "Joinery", href: "/services/joinery" },
-      {
-        label: "Fit-Out",
-        href: "/services/fitout-solutions",
-        subItems: [
-          { label: "Commercial Fit-Out", href: "/services/commercial-fit-out" },
-          { label: "Residential Fit-Out", href: "/services/residential-fit-out" },
-        ],
-      },
-      { label: "Turnkey Fit-Out", href: "/services/turnkey-solutions" },
-      {
-        label: "Renovation",
-        href: "/services/renovation-services",
-        subItems: [
-          { label: "Villa Renovation", href: "/services/villa-renovations" },
-          { label: "Apartment Renovation", href: "/services/apartment-renovations" },
-          { label: "Home Renovation", href: "/services/home-renovation" },
-          { label: "Kitchen Renovation", href: "/services/kitchen-renovation" },
-          { label: "Bathroom Renovation", href: "/services/bathroom-renovation" },
-        ],
-      },
-      { label: "Metal Works", href: "/services/metal-works" },
-      { label: "Upholstery", href: "/services/upholstery" },
-    ],
-  },
   { label: "Our Works", href: "/our-works" },
   { label: "Blogs", href: "/blogs" },
   { label: "Contact Us", href: "/contact" },
 ];
+
+// ─── API endpoint ─────────────────────────────────────────────────────────────
+// ASSUMPTION: this is a separate host from your shared `api` axios instance,
+// so calling it directly with fetch rather than going through `api.get`.
+// If `api`'s baseURL already points at duae-api-production, swap this back to
+// `api.get<ServiceTreeNode[]>("/services/tree")`.
+const SERVICES_TREE_URL = "https://duae-api-production.up.railway.app/api/services/tree";
+
+// ─── Build the Services menu entry from the tree API data ────────────────────
+
+function buildServicesMenu(tree: ServiceTreeNode[]): MenuItem {
+  const subItems: NavSubItem[] = tree.map((parent) => {
+    const entry: NavSubItem = {
+      label: parent.title,
+      href: `/services/${parent.slug}`,
+    };
+
+    if (parent.children && parent.children.length > 0) {
+      entry.subItems = parent.children.map((child) => ({
+        label: child.title,
+        href: `/services/${child.slug}`,
+      }));
+    }
+
+    return entry;
+  });
+
+  return {
+    label: "Services",
+    href: "/services",
+    subItems,
+  };
+}
+
+// ─── Fallback services nav (shown while loading or on API error) ──────────────
+
+const fallbackServicesMenu: MenuItem = {
+  label: "Services",
+  href: "/services",
+  subItems: [
+    { label: "Joinery", href: "/services/joinery" },
+    { label: "Fit-Out Solutions", href: "/services/fitout-solutions" },
+    { label: "Turnkey Solutions", href: "/services/turnkey-solutions" },
+    { label: "Renovation Services", href: "/services/renovation-services" },
+    { label: "Metal Works", href: "/services/metal-works" },
+    { label: "Upholstery", href: "/services/upholstery" },
+  ],
+};
+
+// ─── Component ────────────────────────────────────────────────────────────────
 
 export default function Navbar() {
   const pathname = usePathname();
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [openMobileGroups, setOpenMobileGroups] = useState<Set<string>>(new Set());
+  const [servicesMenu, setServicesMenu] = useState<MenuItem>(fallbackServicesMenu);
+
+  // Fetch real services tree from API to build the dropdown
+  useEffect(() => {
+    let cancelled = false;
+
+    fetch(SERVICES_TREE_URL)
+      .then((res) => {
+        if (!res.ok) throw new Error(`Failed to fetch services tree: ${res.status}`);
+        return res.json() as Promise<ServiceTreeNode[]>;
+      })
+      .then((tree) => {
+        if (cancelled) return;
+        if (Array.isArray(tree) && tree.length > 0) {
+          setServicesMenu(buildServicesMenu(tree));
+        }
+      })
+      .catch(() => {
+        // Keep fallback on error — already set as default state
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     const handleScroll = () => {
-      // Show the fixed navbar after scrolling past 150px
       setIsScrolled(window.scrollY > 150);
     };
     window.addEventListener("scroll", handleScroll);
@@ -86,6 +145,16 @@ export default function Navbar() {
     setOpenMobileGroups(new Set());
   }, [pathname]);
 
+  // Build final nav links array with Services injected at position 2
+  const navLinks: MenuItem[] = [
+    staticLinks[0], // Home
+    staticLinks[1], // About Us
+    servicesMenu,   // Services (dynamic)
+    staticLinks[2], // Our Works
+    staticLinks[3], // Blogs
+    staticLinks[4], // Contact Us
+  ];
+
   const toggleMobileGroup = (key: string) => {
     setOpenMobileGroups((prev) => {
       const next = new Set(prev);
@@ -103,7 +172,9 @@ export default function Navbar() {
       {/* Nav Links */}
       <ul className="flex items-center gap-6 pl-6 xl:gap-10 xl:pl-8">
         {navLinks.map((link) => {
-          const isActive = pathname === link.href || (link.subItems && pathname.startsWith(link.href));
+          const isActive =
+            pathname === link.href ||
+            (link.subItems && pathname.startsWith("/services") && link.href === "/services");
           return (
             <li key={link.href} className="group relative">
               <Link
@@ -127,7 +198,10 @@ export default function Navbar() {
                 <div className="absolute left-0 top-full z-50 hidden w-[240px] bg-white py-3 shadow-[0_10px_30px_rgba(0,0,0,0.1)] group-hover:block">
                   <ul className="flex flex-col">
                     {link.subItems.map((subItem) => (
-                      <li key={subItem.href} className="group/sub relative transition-colors hover:bg-[#db5e41]">
+                      <li
+                        key={subItem.href}
+                        className="group/sub relative transition-colors hover:bg-[#db5e41]"
+                      >
                         <Link
                           href={subItem.href}
                           className="block px-6 py-3.5 text-[15px] font-medium text-[#202020] transition-colors group-hover/sub:text-white"
@@ -140,7 +214,10 @@ export default function Navbar() {
                           <div className="absolute left-full -top-3 z-50 hidden w-[240px] bg-white py-3 shadow-[0_10px_30px_rgba(0,0,0,0.1)] group-hover/sub:block">
                             <ul className="flex flex-col">
                               {subItem.subItems.map((nested) => (
-                                <li key={nested.href} className="group/nested transition-colors hover:bg-[#db5e41]">
+                                <li
+                                  key={nested.href}
+                                  className="group/nested transition-colors hover:bg-[#db5e41]"
+                                >
                                   <Link
                                     href={nested.href}
                                     className="block px-6 py-3.5 text-[15px] font-medium text-[#202020] transition-colors group-hover/nested:text-white"
@@ -162,7 +239,7 @@ export default function Navbar() {
         })}
       </ul>
 
-      {/* WhatsApp CTA with orange padding frame */}
+      {/* WhatsApp CTA */}
       <div className="flex items-center bg-[#db5e41] p-3">
         <a
           href="https://wa.me/+971527875262"
@@ -230,7 +307,9 @@ export default function Navbar() {
 
         <ul className="flex flex-col px-2 py-2">
           {navLinks.map((link) => {
-            const isActive = pathname === link.href || (link.subItems && pathname.startsWith(link.href));
+            const isActive =
+              pathname === link.href ||
+              (link.subItems && pathname.startsWith("/services") && link.href === "/services");
             const isOpen = openMobileGroups.has(link.href);
 
             return (
