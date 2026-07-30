@@ -49,7 +49,13 @@ interface WhoWeServeItem {
   link?: string | null;
 }
 
-// Removed WhoWeServe interface since it's just an array of WhoWeServeItem
+// FIX: whoWeServe from the API is an object with title/description/items,
+// not a bare array of items. This matches the real shape.
+interface WhoWeServe {
+  title: string;
+  description: string;
+  items: WhoWeServeItem[];
+}
 
 interface WhatIsIncludedItem {
   title: string;
@@ -57,7 +63,13 @@ interface WhatIsIncludedItem {
   icon: string;
 }
 
-// Removed WhatIsIncluded interface since it's just an array of WhatIsIncludedItem
+// FIX: same issue as whoWeServe — whatIsIncluded is an object with
+// title/description/items, not a bare array.
+interface WhatIsIncluded {
+  title: string;
+  description: string;
+  items: WhatIsIncludedItem[];
+}
 
 interface ProcessStep {
   step: string;
@@ -122,8 +134,8 @@ interface Service {
   createdAt: string;
   updatedAt: string;
   stats: StatFields;
-  whoWeServe: WhoWeServeItem[];
-  whatIsIncluded: WhatIsIncludedItem[];
+  whoWeServe: WhoWeServe;
+  whatIsIncluded: WhatIsIncluded;
   cta: {
     title: string;
     subtitle: string;
@@ -416,12 +428,35 @@ function ServiceEditModal({
         clientsLabel: "Happy Clients",
       };
     }
-    if (!cloned.whoWeServe || !Array.isArray(cloned.whoWeServe)) {
-      cloned.whoWeServe = [];
+
+    // FIX: whoWeServe/whatIsIncluded are OBJECTS ({ title, description, items })
+    // in the API response, not bare arrays. The old code checked
+    // Array.isArray(cloned.whoWeServe) and reset it to [] whenever it was an
+    // object — which is always, since the API never sends a bare array. That
+    // wiped out the real data on every modal open. Guard against the object
+    // shape instead, and only default the nested `items` array when missing.
+    if (
+      !cloned.whoWeServe ||
+      typeof cloned.whoWeServe !== "object" ||
+      Array.isArray(cloned.whoWeServe)
+    ) {
+      cloned.whoWeServe = { title: "", description: "", items: [] };
     }
-    if (!cloned.whatIsIncluded || !Array.isArray(cloned.whatIsIncluded)) {
-      cloned.whatIsIncluded = [];
+    if (!Array.isArray(cloned.whoWeServe.items)) {
+      cloned.whoWeServe.items = [];
     }
+
+    if (
+      !cloned.whatIsIncluded ||
+      typeof cloned.whatIsIncluded !== "object" ||
+      Array.isArray(cloned.whatIsIncluded)
+    ) {
+      cloned.whatIsIncluded = { title: "", description: "", items: [] };
+    }
+    if (!Array.isArray(cloned.whatIsIncluded.items)) {
+      cloned.whatIsIncluded.items = [];
+    }
+
     if (!cloned.cta) {
       cloned.cta = { title: "", subtitle: "", buttonText: "", whatsappText: "", image: "" };
     }
@@ -482,14 +517,14 @@ function ServiceEditModal({
     const keys = path.split(".");
     let formValue: any = form;
     let originalValue: any = originalForm;
-    
+
     for (const key of keys) {
       if (formValue === undefined || formValue === null) return false;
       if (originalValue === undefined || originalValue === null) return false;
       formValue = formValue[key];
       originalValue = originalValue[key];
     }
-    
+
     return JSON.stringify(formValue) !== JSON.stringify(originalValue);
   };
 
@@ -497,9 +532,9 @@ function ServiceEditModal({
   const tabHasChanges = (tab: TabName): boolean => {
     switch(tab) {
       case "Basic":
-        return hasChanged("title") || hasChanged("slug") || hasChanged("icon") || 
-               hasChanged("order") || hasChanged("image") || hasChanged("shortDescription") || 
-               hasChanged("fullDescription") || hasChanged("isActive") || hasChanged("isFeatured") || 
+        return hasChanged("title") || hasChanged("slug") || hasChanged("icon") ||
+               hasChanged("order") || hasChanged("image") || hasChanged("shortDescription") ||
+               hasChanged("fullDescription") || hasChanged("isActive") || hasChanged("isFeatured") ||
                hasChanged("parentService");
       case "Hero":
         return hasChanged("heroTitle") || hasChanged("heroSubtitle") || hasChanged("heroImage");
@@ -617,21 +652,21 @@ function ServiceEditModal({
 
         <div className="flex-1 overflow-y-auto p-[20px] sm:p-[28px]">
           {activeTab === "Basic" && (
-            <BasicTab 
-              form={form} 
-              setField={setField} 
-              uploading={uploading} 
-              setUploading={setUploading} 
-              hasChanged={hasChanged} 
+            <BasicTab
+              form={form}
+              setField={setField}
+              uploading={uploading}
+              setUploading={setUploading}
+              hasChanged={hasChanged}
             />
           )}
           {activeTab === "Hero" && (
-            <HeroTab 
-              form={form} 
-              setField={setField} 
-              uploading={uploadingHero} 
-              setUploading={setUploadingHero} 
-              hasChanged={hasChanged} 
+            <HeroTab
+              form={form}
+              setField={setField}
+              uploading={uploadingHero}
+              setUploading={setUploadingHero}
+              hasChanged={hasChanged}
             />
           )}
           {activeTab === "Stats" && (
@@ -644,21 +679,21 @@ function ServiceEditModal({
             <WhatIsIncludedTab form={form} setForm={setForm} setField={setField} hasChanged={hasChanged} />
           )}
           {activeTab === "CTA" && (
-            <CtaTab 
-              form={form} 
-              setField={setField} 
-              uploading={uploadingCta} 
-              setUploading={setUploadingCta} 
-              hasChanged={hasChanged} 
+            <CtaTab
+              form={form}
+              setField={setField}
+              uploading={uploadingCta}
+              setUploading={setUploadingCta}
+              hasChanged={hasChanged}
             />
           )}
           {activeTab === "About" && (
-            <AboutTab 
-              form={form} 
-              setField={setField} 
-              uploading={uploadingAbout} 
-              setUploading={setUploadingAbout} 
-              hasChanged={hasChanged} 
+            <AboutTab
+              form={form}
+              setField={setField}
+              uploading={uploadingAbout}
+              setUploading={setUploadingAbout}
+              hasChanged={hasChanged}
             />
           )}
           {activeTab === "Process" && (
@@ -868,6 +903,9 @@ function StatsTab({
   );
 }
 
+// FIX: whoWeServe is { title, description, items: [] }. All reads/writes go
+// through form.whoWeServe.items instead of form.whoWeServe directly, and the
+// section title/description fields are now editable too.
 function WhoWeServeTab({
   form,
   setForm,
@@ -880,19 +918,23 @@ function WhoWeServeTab({
   hasChanged: (path: string) => boolean;
 }) {
   const [uploadingIdx, setUploadingIdx] = useState<number | null>(null);
-  
-  const items = Array.isArray(form.whoWeServe) ? form.whoWeServe : [];
+
+  const section = form.whoWeServe ?? { title: "", description: "", items: [] };
+  const items = Array.isArray(section.items) ? section.items : [];
 
   const updateItem = (idx: number, key: keyof WhoWeServeItem, val: string) => {
     setForm((prev) => {
       const clone = deepClone(prev);
-      if (!Array.isArray(clone.whoWeServe)) {
-        clone.whoWeServe = [];
+      if (!clone.whoWeServe) {
+        clone.whoWeServe = { title: "", description: "", items: [] };
       }
-      if (!clone.whoWeServe[idx]) {
-        clone.whoWeServe[idx] = { title: "", description: "", image: "", icon: "", link: null };
+      if (!Array.isArray(clone.whoWeServe.items)) {
+        clone.whoWeServe.items = [];
       }
-      clone.whoWeServe[idx][key] = val;
+      if (!clone.whoWeServe.items[idx]) {
+        clone.whoWeServe.items[idx] = { title: "", description: "", image: "", icon: "", link: null };
+      }
+      (clone.whoWeServe.items[idx] as any)[key] = val;
       return clone;
     });
   };
@@ -900,15 +942,18 @@ function WhoWeServeTab({
   const addItem = () => {
     setForm((prev) => {
       const clone = deepClone(prev);
-      if (!Array.isArray(clone.whoWeServe)) {
-        clone.whoWeServe = [];
+      if (!clone.whoWeServe) {
+        clone.whoWeServe = { title: "", description: "", items: [] };
       }
-      clone.whoWeServe.push({ 
-        title: "", 
-        description: "", 
-        image: "", 
-        icon: "", 
-        link: null 
+      if (!Array.isArray(clone.whoWeServe.items)) {
+        clone.whoWeServe.items = [];
+      }
+      clone.whoWeServe.items.push({
+        title: "",
+        description: "",
+        image: "",
+        icon: "",
+        link: null,
       });
       return clone;
     });
@@ -917,8 +962,8 @@ function WhoWeServeTab({
   const removeItem = (idx: number) => {
     setForm((prev) => {
       const clone = deepClone(prev);
-      if (Array.isArray(clone.whoWeServe)) {
-        clone.whoWeServe.splice(idx, 1);
+      if (Array.isArray(clone.whoWeServe?.items)) {
+        clone.whoWeServe.items.splice(idx, 1);
       }
       return clone;
     });
@@ -929,23 +974,38 @@ function WhoWeServeTab({
 
   return (
     <div className="flex flex-col gap-[16px]">
+      <Field label="Section Title" hasChanged={hasChanged("whoWeServe.title")}>
+        <input
+          className={getInputClass("whoWeServe.title")}
+          value={section.title}
+          onChange={(e) => setField("whoWeServe.title", e.target.value)}
+        />
+      </Field>
+      <Field label="Section Description" hasChanged={hasChanged("whoWeServe.description")}>
+        <textarea
+          className={getTextareaClass("whoWeServe.description")}
+          value={section.description}
+          onChange={(e) => setField("whoWeServe.description", e.target.value)}
+        />
+      </Field>
+
       <p className="text-[11px] font-semibold uppercase tracking-widest text-[#888888]">Items ({items.length})</p>
       {items.map((item, idx) => (
         <ItemCard key={idx} title={item.title || `Item ${idx + 1}`} onRemove={() => removeItem(idx)}>
           <div className="grid gap-[12px] sm:grid-cols-2">
-            <Field label="Title" hasChanged={hasChanged(`whoWeServe.${idx}.title`)}>
-              <input 
-                className={getInputClass(`whoWeServe.${idx}.title`)} 
-                value={item.title || ''} 
-                onChange={(e) => updateItem(idx, "title", e.target.value)} 
+            <Field label="Title" hasChanged={hasChanged(`whoWeServe.items.${idx}.title`)}>
+              <input
+                className={getInputClass(`whoWeServe.items.${idx}.title`)}
+                value={item.title || ''}
+                onChange={(e) => updateItem(idx, "title", e.target.value)}
               />
             </Field>
-            <Field label="Icon" hasChanged={hasChanged(`whoWeServe.${idx}.icon`)}>
-              <input 
-                className={getInputClass(`whoWeServe.${idx}.icon`)} 
-                value={item.icon || ''} 
-                onChange={(e) => updateItem(idx, "icon", e.target.value)} 
-                placeholder="fa-solid fa-building" 
+            <Field label="Icon" hasChanged={hasChanged(`whoWeServe.items.${idx}.icon`)}>
+              <input
+                className={getInputClass(`whoWeServe.items.${idx}.icon`)}
+                value={item.icon || ''}
+                onChange={(e) => updateItem(idx, "icon", e.target.value)}
+                placeholder="fa-solid fa-building"
               />
             </Field>
             <div className="sm:col-span-2">
@@ -955,23 +1015,23 @@ function WhoWeServeTab({
                 label="Image"
                 uploading={uploadingIdx === idx}
                 setUploading={(loading) => setUploadingIdx(loading ? idx : null)}
-                hasChanged={hasChanged(`whoWeServe.${idx}.image`)}
+                hasChanged={hasChanged(`whoWeServe.items.${idx}.image`)}
               />
             </div>
-            <Field label="Link" hasChanged={hasChanged(`whoWeServe.${idx}.link`)}>
-              <input 
-                className={getInputClass(`whoWeServe.${idx}.link`)} 
-                value={item.link || ''} 
-                onChange={(e) => updateItem(idx, "link", e.target.value)} 
-                placeholder="/services/..." 
+            <Field label="Link" hasChanged={hasChanged(`whoWeServe.items.${idx}.link`)}>
+              <input
+                className={getInputClass(`whoWeServe.items.${idx}.link`)}
+                value={item.link || ''}
+                onChange={(e) => updateItem(idx, "link", e.target.value)}
+                placeholder="/services/..."
               />
             </Field>
             <div className="sm:col-span-2">
-              <Field label="Description" hasChanged={hasChanged(`whoWeServe.${idx}.description`)}>
-                <textarea 
-                  className={getTextareaClass(`whoWeServe.${idx}.description`)} 
-                  value={item.description || ''} 
-                  onChange={(e) => updateItem(idx, "description", e.target.value)} 
+              <Field label="Description" hasChanged={hasChanged(`whoWeServe.items.${idx}.description`)}>
+                <textarea
+                  className={getTextareaClass(`whoWeServe.items.${idx}.description`)}
+                  value={item.description || ''}
+                  onChange={(e) => updateItem(idx, "description", e.target.value)}
                 />
               </Field>
             </div>
@@ -983,6 +1043,9 @@ function WhoWeServeTab({
   );
 }
 
+// FIX: whatIsIncluded is { title, description, items: [] }. All reads/writes
+// go through form.whatIsIncluded.items, and the section title/description
+// fields are now editable too.
 function WhatIsIncludedTab({
   form,
   setForm,
@@ -994,18 +1057,22 @@ function WhatIsIncludedTab({
   setField: (path: string, value: unknown) => void;
   hasChanged: (path: string) => boolean;
 }) {
-  const items = Array.isArray(form.whatIsIncluded) ? form.whatIsIncluded : [];
+  const section = form.whatIsIncluded ?? { title: "", description: "", items: [] };
+  const items = Array.isArray(section.items) ? section.items : [];
 
   const updateItem = (idx: number, key: keyof WhatIsIncludedItem, val: string) => {
     setForm((prev) => {
       const clone = deepClone(prev);
-      if (!Array.isArray(clone.whatIsIncluded)) {
-        clone.whatIsIncluded = [];
+      if (!clone.whatIsIncluded) {
+        clone.whatIsIncluded = { title: "", description: "", items: [] };
       }
-      if (!clone.whatIsIncluded[idx]) {
-        clone.whatIsIncluded[idx] = { title: "", description: "", icon: "" };
+      if (!Array.isArray(clone.whatIsIncluded.items)) {
+        clone.whatIsIncluded.items = [];
       }
-      clone.whatIsIncluded[idx][key] = val;
+      if (!clone.whatIsIncluded.items[idx]) {
+        clone.whatIsIncluded.items[idx] = { title: "", description: "", icon: "" };
+      }
+      (clone.whatIsIncluded.items[idx] as any)[key] = val;
       return clone;
     });
   };
@@ -1013,13 +1080,16 @@ function WhatIsIncludedTab({
   const addItem = () => {
     setForm((prev) => {
       const clone = deepClone(prev);
-      if (!Array.isArray(clone.whatIsIncluded)) {
-        clone.whatIsIncluded = [];
+      if (!clone.whatIsIncluded) {
+        clone.whatIsIncluded = { title: "", description: "", items: [] };
       }
-      clone.whatIsIncluded.push({ 
-        title: "", 
-        description: "", 
-        icon: "" 
+      if (!Array.isArray(clone.whatIsIncluded.items)) {
+        clone.whatIsIncluded.items = [];
+      }
+      clone.whatIsIncluded.items.push({
+        title: "",
+        description: "",
+        icon: "",
       });
       return clone;
     });
@@ -1028,8 +1098,8 @@ function WhatIsIncludedTab({
   const removeItem = (idx: number) => {
     setForm((prev) => {
       const clone = deepClone(prev);
-      if (Array.isArray(clone.whatIsIncluded)) {
-        clone.whatIsIncluded.splice(idx, 1);
+      if (Array.isArray(clone.whatIsIncluded?.items)) {
+        clone.whatIsIncluded.items.splice(idx, 1);
       }
       return clone;
     });
@@ -1040,30 +1110,45 @@ function WhatIsIncludedTab({
 
   return (
     <div className="flex flex-col gap-[16px]">
+      <Field label="Section Title" hasChanged={hasChanged("whatIsIncluded.title")}>
+        <input
+          className={getInputClass("whatIsIncluded.title")}
+          value={section.title}
+          onChange={(e) => setField("whatIsIncluded.title", e.target.value)}
+        />
+      </Field>
+      <Field label="Section Description" hasChanged={hasChanged("whatIsIncluded.description")}>
+        <textarea
+          className={getTextareaClass("whatIsIncluded.description")}
+          value={section.description}
+          onChange={(e) => setField("whatIsIncluded.description", e.target.value)}
+        />
+      </Field>
+
       <p className="text-[11px] font-semibold uppercase tracking-widest text-[#888888]">Items ({items.length})</p>
       {items.map((item, idx) => (
         <ItemCard key={idx} title={item.title || `Item ${idx + 1}`} onRemove={() => removeItem(idx)}>
           <div className="grid gap-[12px] sm:grid-cols-2">
-            <Field label="Title" hasChanged={hasChanged(`whatIsIncluded.${idx}.title`)}>
-              <input 
-                className={getInputClass(`whatIsIncluded.${idx}.title`)} 
-                value={item.title || ''} 
-                onChange={(e) => updateItem(idx, "title", e.target.value)} 
+            <Field label="Title" hasChanged={hasChanged(`whatIsIncluded.items.${idx}.title`)}>
+              <input
+                className={getInputClass(`whatIsIncluded.items.${idx}.title`)}
+                value={item.title || ''}
+                onChange={(e) => updateItem(idx, "title", e.target.value)}
               />
             </Field>
-            <Field label="Icon" hasChanged={hasChanged(`whatIsIncluded.${idx}.icon`)}>
-              <input 
-                className={getInputClass(`whatIsIncluded.${idx}.icon`)} 
-                value={item.icon || ''} 
-                onChange={(e) => updateItem(idx, "icon", e.target.value)} 
+            <Field label="Icon" hasChanged={hasChanged(`whatIsIncluded.items.${idx}.icon`)}>
+              <input
+                className={getInputClass(`whatIsIncluded.items.${idx}.icon`)}
+                value={item.icon || ''}
+                onChange={(e) => updateItem(idx, "icon", e.target.value)}
               />
             </Field>
             <div className="sm:col-span-2">
-              <Field label="Description" hasChanged={hasChanged(`whatIsIncluded.${idx}.description`)}>
-                <textarea 
-                  className={getTextareaClass(`whatIsIncluded.${idx}.description`)} 
-                  value={item.description || ''} 
-                  onChange={(e) => updateItem(idx, "description", e.target.value)} 
+              <Field label="Description" hasChanged={hasChanged(`whatIsIncluded.items.${idx}.description`)}>
+                <textarea
+                  className={getTextareaClass(`whatIsIncluded.items.${idx}.description`)}
+                  value={item.description || ''}
+                  onChange={(e) => updateItem(idx, "description", e.target.value)}
                 />
               </Field>
             </div>
