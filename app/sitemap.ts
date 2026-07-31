@@ -40,7 +40,7 @@ async function getServiceSlugs() {
   try {
     // Fetch from your API
     const response = await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL}/api/services`,
+      `${process.env.NEXT_PUBLIC_API_URL}/services`,
       {
         next: { revalidate: 3600 }, // Revalidate every hour
       },
