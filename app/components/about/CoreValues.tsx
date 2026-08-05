@@ -17,7 +17,7 @@ import milestoneBottom from "../../../public/images/service1.webp";
 
 const IMAGE_BASE_URL = process.env.NEXT_PUBLIC_IMAGE_URL || "";
 
-const IMAGE_ALT = "Interior fit out company in Dubai";
+const IMAGE_ALT = "Interior fit out company in uae";
 
 function resolveImage(path: string, fallback: string): string {
   if (!path) return fallback;
