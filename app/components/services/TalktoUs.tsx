@@ -6,6 +6,7 @@ import { Phone, MessageCircle } from "lucide-react";
 import { motion } from "framer-motion";
 import api from "@/lib/axios";
 import ctaBg from "../../../public/images/service1.webp";
+import { useServiceAltText } from "@/app/(web)/services/useServiceAltText";
 
 interface ServiceDetailApiResponse {
   cta: {
@@ -59,6 +60,8 @@ function CallToActionSkeleton() {
 export default function CallToAction({ slug }: { slug: string }) {
   const [data, setData] = useState<CallToActionData>(defaultData);
   const [isLoading, setIsLoading] = useState(true);
+  const altText = useServiceAltText(slug);
+
 
   useEffect(() => {
     const fetchServiceDetail = async () => {
@@ -91,7 +94,7 @@ export default function CallToAction({ slug }: { slug: string }) {
       <div className="absolute inset-0">
         <Image
           src={data.image}
-          alt=""
+          alt={altText}
           fill
           unoptimized={data.image.startsWith("http")}
           className="object-cover"
