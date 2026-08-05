@@ -17,6 +17,8 @@ import milestoneBottom from "../../../public/images/service1.webp";
 
 const IMAGE_BASE_URL = process.env.NEXT_PUBLIC_IMAGE_URL || "";
 
+const IMAGE_ALT = "Interior fit out company in Dubai";
+
 function resolveImage(path: string, fallback: string): string {
   if (!path) return fallback;
   if (path.startsWith("http")) return path;
@@ -170,7 +172,7 @@ export default function CoreValues() {
             <div className="absolute left-8 top-0 h-[62%] w-[72%] overflow-hidden rounded-t-[70px] sm:h-[64%] sm:rounded-t-[90px]">
               <Image
                 src={data.imageOne}
-                alt="Core values illustration one"
+                alt={IMAGE_ALT}
                 fill
                 unoptimized={data.imageOne.startsWith("http")}
                 className="object-cover"
@@ -181,7 +183,7 @@ export default function CoreValues() {
             <div className="absolute bottom-0 left-14 h-[52%] w-[72%] overflow-hidden shadow-xl sm:left-16">
               <Image
                 src={data.imageTwo}
-                alt="Core values illustration two"
+                alt={IMAGE_ALT}
                 fill
                 unoptimized={data.imageTwo.startsWith("http")}
                 className="object-cover"
