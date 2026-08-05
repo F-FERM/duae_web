@@ -63,6 +63,8 @@ export default function AboutUs() {
   const [data, setData] = useState<AboutApiResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  const IMAGE_ALT = "Interior fit out company in Dubai";
+
   useEffect(() => {
     let isMounted = true;
 
@@ -116,7 +118,12 @@ export default function AboutUs() {
           animate={{ y: [0, -8, 0, 8, 0] }}
           transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
         >
-          <Image src={imagepattern1} alt="" priority className="object-cover" />
+          <Image 
+            src={imagepattern1} 
+            alt={IMAGE_ALT} 
+            priority 
+            className="object-cover" 
+          />
         </motion.div>
       </div>
 
@@ -126,7 +133,12 @@ export default function AboutUs() {
           animate={{ y: [0, -12, 0, 12, 0], rotate: [0, 2, 0, -2, 0] }}
           transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
         >
-          <Image src={pattern2} alt="" priority className="object-cover" />
+          <Image 
+            src={pattern2} 
+            alt={IMAGE_ALT} 
+            priority 
+            className="object-cover" 
+          />
         </motion.div>
       </div>
 
@@ -169,7 +181,7 @@ export default function AboutUs() {
             <div className="relative h-[340px] w-[92%] overflow-hidden sm:h-[400px] lg:h-[440px]">
               <Image
                 src={data.image}
-                alt="Craftsman working with wood"
+                alt={IMAGE_ALT}
                 fill
                 priority
                 sizes="(max-width: 1024px) 92vw, 46vw"
@@ -180,7 +192,7 @@ export default function AboutUs() {
             <div className="absolute -bottom-14 right-0 h-[260px] w-[190px] overflow-hidden rounded-t-[110px] shadow-xl sm:h-[300px] sm:w-[220px] lg:right-[-8px]">
               <Image
                 src={data.imageTwo || data.image}
-                alt="Wood World Decor craftsman"
+                alt={IMAGE_ALT}
                 fill
                 priority
                 sizes="190px"
