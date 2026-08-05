@@ -43,6 +43,8 @@ interface OurWorksData {
 
 const IMAGE_BASE_URL = process.env.NEXT_PUBLIC_IMAGE_URL || "";
 
+const IMAGE_ALT = "Interior fit out company in Dubai";
+
 function resolveImage(path: string): string {
   if (!path) return "/images/service1.webp";
   if (path.startsWith("http")) return path;
@@ -196,7 +198,7 @@ export default function OurWorks() {
             <div className="relative h-[260px] w-full overflow-hidden bg-slate-100 sm:h-[420px] md:h-[520px] lg:h-[600px] xl:h-[680px]">
               <Image
                 src={item.image}
-                alt={item.title}
+                alt={IMAGE_ALT}
                 fill
                 sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
                 className="object-cover transition duration-500 ease-out group-hover:scale-105"
