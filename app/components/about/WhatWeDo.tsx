@@ -40,6 +40,8 @@ interface WhatWeDoData {
   services: ServiceApi[];
 }
 
+const IMAGE_ALT = "Interior fit out company in uae";
+
 // FontAwesome class (from API) -> lucide-react icon
 const iconMap: Record<string, LucideIcon> = {
   "fa-solid fa-building": Building2,
@@ -131,7 +133,12 @@ export default function WhatWeDo() {
           animate={{ y: [0, -8, 0, 8, 0] }}
           transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
         >
-          <Image src={imagepattern1} alt="" priority className="object-cover" />
+          <Image 
+            src={imagepattern1} 
+            alt={IMAGE_ALT} 
+            priority 
+            className="object-cover" 
+          />
         </motion.div>
       </div>
 
@@ -141,7 +148,12 @@ export default function WhatWeDo() {
           animate={{ y: [0, -12, 0, 12, 0], rotate: [0, 2, 0, -2, 0] }}
           transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
         >
-          <Image src={pattern2} alt="" priority className="object-cover" />
+          <Image 
+            src={pattern2} 
+            alt={IMAGE_ALT} 
+            priority 
+            className="object-cover" 
+          />
         </motion.div>
       </div>
 
