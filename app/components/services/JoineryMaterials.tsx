@@ -7,6 +7,7 @@ import { PaintRoller } from "lucide-react";
 import api from "@/lib/axios";
 import imagepattern1 from "../../../public/images/patter3.png";
 import pattern2 from "../../../public/images/pattern4.png";
+import { useServiceAltText } from "@/app/(web)/services/useServiceAltText";
 
 interface MaterialItemApi {
   name: string;
@@ -97,6 +98,8 @@ function MaterialsSkeleton() {
 export default function OurJoineryMaterials({ slug }: { slug: string }) {
   const [data, setData] = useState<MaterialsData>(defaultData);
   const [isLoading, setIsLoading] = useState(true);
+  const altText = useServiceAltText(slug);
+  
 
   useEffect(() => {
     const fetchServiceDetail = async () => {
@@ -130,7 +133,7 @@ export default function OurJoineryMaterials({ slug }: { slug: string }) {
           animate={{ y: [0, -8, 0, 8, 0] }}
           transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
         >
-          <Image src={imagepattern1} alt="" priority className="object-cover" />
+          <Image src={imagepattern1} alt={altText} priority className="object-cover" />
         </motion.div>
       </div>
 
@@ -140,7 +143,7 @@ export default function OurJoineryMaterials({ slug }: { slug: string }) {
           animate={{ y: [0, -12, 0, 12, 0], rotate: [0, 2, 0, -2, 0] }}
           transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
         >
-          <Image src={pattern2} alt="" priority className="object-cover" />
+          <Image src={pattern2} alt={altText} priority className="object-cover" />
         </motion.div>
       </div>
 

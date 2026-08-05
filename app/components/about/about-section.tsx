@@ -26,6 +26,8 @@ interface AboutDetailData {
 
 const IMAGE_BASE_URL = process.env.NEXT_PUBLIC_IMAGE_URL || "";
 
+const IMAGE_ALT = "Interior fit out company in uae";
+
 function resolveImage(path: string): string {
   if (!path) return fallbackMain.src;
   if (path.startsWith("http")) return path;
@@ -168,7 +170,7 @@ export default function AboutDetailSection() {
             <div className="absolute left-6 top-0 h-[46%] w-[80%] overflow-hidden rounded-tl-[70px] shadow-md xs:left-8 xs:rounded-tl-[90px] sm:left-10 sm:rounded-tl-[110px]">
               <Image
                 src={data.image}
-                alt="Wood World Decor office fit-out"
+                alt={IMAGE_ALT}
                 fill
                 priority
                 unoptimized={data.image.startsWith("http")}
@@ -186,7 +188,7 @@ export default function AboutDetailSection() {
             <div className="absolute bottom-[20%] left-0 h-[42%] w-[68%] overflow-hidden shadow-xl sm:bottom-[22%]">
               <Image
                 src={data.image}
-                alt="Wood World Decor kitchen interior"
+                alt={IMAGE_ALT}
                 fill
                 unoptimized={data.image.startsWith("http")}
                 className="object-cover"

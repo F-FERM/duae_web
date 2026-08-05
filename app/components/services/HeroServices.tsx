@@ -6,6 +6,7 @@ import Image from "next/image";
 import { motion } from "framer-motion";
 import api from "@/lib/axios";
 import hero1 from "../../../public/images/slide1.webp";
+import { useServiceAltText } from "@/app/(web)/services/useServiceAltText";
 
 interface ServiceDetailApiResponse {
   heroTitle: string;
@@ -60,6 +61,7 @@ function HeroServiceSkeleton() {
 export default function HeroService({ slug }: { slug: string }) {
   const [data, setData] = useState<HeroServiceData>(defaultData);
   const [isLoading, setIsLoading] = useState(true);
+  const altText = useServiceAltText(slug);
 
   useEffect(() => {
     const fetchServiceDetail = async () => {
@@ -91,7 +93,7 @@ export default function HeroService({ slug }: { slug: string }) {
       <div className="absolute inset-0">
         <Image
           src={data.image}
-          alt={data.title}
+          alt={altText}
           fill
           priority
           unoptimized={data.image.startsWith("http")}

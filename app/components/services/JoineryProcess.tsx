@@ -8,6 +8,7 @@ import api from "@/lib/axios";
 import processImage from "../../../public/images/joinery13.webp";
 import imagepattern1 from "../../../public/images/patter3.png";
 import pattern2 from "../../../public/images/pattern4.png";
+import { useServiceAltText } from "@/app/(web)/services/useServiceAltText";
 
 interface ProcessStepApi {
   step: string;
@@ -121,6 +122,8 @@ export default function OurProcess({ slug }: { slug: string }) {
   const [data, setData] = useState<OurProcessData>(defaultData);
   const [isLoading, setIsLoading] = useState(true);
   const [openIndex, setOpenIndex] = useState(0);
+  const altText = useServiceAltText(slug);
+
 
   useEffect(() => {
     const fetchServiceDetail = async () => {
@@ -154,7 +157,7 @@ export default function OurProcess({ slug }: { slug: string }) {
           animate={{ y: [0, -8, 0, 8, 0] }}
           transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
         >
-          <Image src={imagepattern1} alt="" priority className="object-cover" />
+          <Image src={imagepattern1} alt={altText} priority className="object-cover" />
         </motion.div>
       </div>
 
@@ -164,7 +167,7 @@ export default function OurProcess({ slug }: { slug: string }) {
           animate={{ y: [0, -12, 0, 12, 0], rotate: [0, 2, 0, -2, 0] }}
           transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
         >
-          <Image src={pattern2} alt="" priority className="object-cover" />
+          <Image src={pattern2} alt={altText} priority className="object-cover" />
         </motion.div>
       </div>
 

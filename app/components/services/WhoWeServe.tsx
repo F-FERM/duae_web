@@ -6,6 +6,7 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import api from "@/lib/axios";
 import fallbackImg from "../../../public/images/slide1.webp";
+import { useServiceAltText } from "@/app/(web)/services/useServiceAltText";
 
 interface WhoWeServeItemApi {
   title: string;
@@ -96,6 +97,8 @@ function WhoWeServeSkeleton() {
 export default function WhoWeServe({ slug }: { slug: string }) {
   const [data, setData] = useState<WhoWeServeData>(defaultData);
   const [isLoading, setIsLoading] = useState(true);
+  const altText = useServiceAltText(slug);
+
 
   useEffect(() => {
     const fetchServiceDetail = async () => {
@@ -141,7 +144,7 @@ export default function WhoWeServe({ slug }: { slug: string }) {
                   <div className="relative h-[280px] w-full overflow-hidden md:h-[340px]">
                     <Image
                       src={imgSrc}
-                      alt={item.title}
+                      alt={altText}
                       fill
                       unoptimized={imgSrc.startsWith("http")}
                       sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"

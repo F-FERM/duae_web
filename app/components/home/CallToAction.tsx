@@ -37,6 +37,8 @@ const defaultData: CtaData = {
   whatsappLink: "https://wa.me/971527875262",
 };
 
+const IMAGE_ALT = "Interior fit out company in Dubai";
+
 // Normalizes talkToUsLink to a tel: link, a relative route, or passes through
 function resolveTalkLink(link: string): string {
   if (!link) return defaultData.talkToUsLink;
@@ -113,7 +115,13 @@ export default function CallToAction() {
     <section className="relative w-full overflow-hidden">
       {/* Background image */}
       <div className="absolute inset-0">
-        <Image src={ctaBg} alt="" fill className="object-cover" priority={false} />
+        <Image 
+          src={ctaBg} 
+          alt={IMAGE_ALT} 
+          fill 
+          className="object-cover" 
+          priority={false} 
+        />
       </div>
 
       {/* Warm dark overlay tint */}

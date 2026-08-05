@@ -11,12 +11,69 @@ import JoineryWorks from "../../../components/services/JoiningWorks";
 import CallToAction from "../../../components/services/TalktoUs";
 import WhoWeServe from "../../../components/services/WhoWeServe";
 import WhyChooseUsService from "../../../components/services/WhyChooseService";
+import type { Metadata } from "next";
+import { getServiceMetadata } from "../metadata-config";
 
-export default async function Works({ params }: { params: Promise<{ slug?: string[] }> }) {
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug?: string[] }>;
+}): Promise<Metadata> {
+  const resolvedParams = await params;
+  const slugPath = resolvedParams.slug
+    ? resolvedParams.slug.join("/")
+    : "joinery";
+  const metadata = getServiceMetadata(slugPath);
+
+  const pageUrl = `https://www.wwduae.com/services/${slugPath}`;
+
+  return {
+    title: metadata.title,
+    description: metadata.description,
+    keywords: metadata.keywords,
+    openGraph: {
+      title: metadata.title,
+      description: metadata.description,
+      url: pageUrl,
+      siteName: "Wood World Decor LLC",
+      locale: "en_US",
+      type: "website",
+      images: [
+        {
+          url: `/`,
+          width: 1200,
+          height: 630,
+          alt: metadata.altText,
+        },
+      ],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: metadata.title,
+      description: metadata.description,
+    },
+    alternates: {
+      canonical: pageUrl,
+    },
+    robots: {
+      index: true,
+      follow: true,
+    },
+  };
+}
+
+export default async function Works({
+  params,
+}: {
+  params: Promise<{ slug?: string[] }>;
+}) {
   const resolvedParams = await params;
   // If we have a nested slug like ["fit-out", "commercial"], we join them with a slash
   // If no slug is provided, we default to "joinery"
-  const slugPath = resolvedParams.slug ? resolvedParams.slug.join("/") : "joinery";
+  const slugPath = resolvedParams.slug
+    ? resolvedParams.slug.join("/")
+    : "joinery";
+  const metadata = getServiceMetadata(slugPath);
 
   return (
     <>

@@ -98,6 +98,8 @@ export default function Hero() {
   const [slides, setSlides] = useState<Slide[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
+  const IMAGE_ALT = "Interior fit out company in Dubai";
+
   useEffect(() => {
     const fetchSlides = async () => {
       try {
@@ -160,6 +162,8 @@ export default function Hero() {
                 typeof slide.image === "string" ? slide.image : slide.image.src
               }')`,
             }}
+            role="img"
+            aria-label={IMAGE_ALT}
           />
           <div className="absolute inset-0 bg-black/55" />
           <div className="absolute inset-y-0 left-0 w-[70%] bg-gradient-to-r from-[#071423]/90 to-transparent sm:w-[55%] md:w-[40%]" />

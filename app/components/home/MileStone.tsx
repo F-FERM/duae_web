@@ -45,6 +45,8 @@ interface MilestonesData {
   items: MilestoneItem[];
 }
 
+const IMAGE_ALT = "Interior fit out company in Dubai";
+
 const iconMap: Record<string, LucideIcon> = {
   "fa-solid fa-newspaper": Newspaper,
   "fa-solid fa-trophy": Trophy,
@@ -211,7 +213,7 @@ export default function Milestones() {
             <div className="absolute left-6 top-0 h-[62%] w-[72%] overflow-hidden rounded-t-[56px] xs:left-8 xs:rounded-t-[70px] sm:h-[64%] sm:rounded-t-[90px]">
               <Image
                 src={data.imageOne || milestoneTop}
-                alt="Of Palm Pavilion installation"
+                alt={IMAGE_ALT}
                 fill
                 sizes="(max-width: 640px) 72vw, 36vw"
                 className="object-cover"
@@ -222,7 +224,7 @@ export default function Milestones() {
             <div className="absolute bottom-0 left-11 h-[52%] w-[72%] overflow-hidden shadow-xl xs:left-14 sm:left-16">
               <Image
                 src={data.imageTwo || milestoneBottom}
-                alt="Of Palm Pavilion detail"
+                alt={IMAGE_ALT}
                 fill
                 sizes="(max-width: 640px) 72vw, 36vw"
                 className="object-cover"

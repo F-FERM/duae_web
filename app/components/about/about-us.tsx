@@ -22,6 +22,8 @@ interface HeroAboutData {
 
 const IMAGE_BASE_URL = process.env.NEXT_PUBLIC_IMAGE_URL || "";
 
+const IMAGE_ALT = "Interior fit out company in uae";
+
 function resolveImage(path: string): string {
   if (!path) return fallbackBg.src;
   if (path.startsWith("http")) return path;
@@ -39,7 +41,13 @@ function HeroAboutSkeleton() {
   return (
     <section className="relative w-full overflow-hidden">
       <div className="absolute inset-0">
-        <Image src={fallbackBg} alt="" fill className="object-cover" priority={false} />
+        <Image 
+          src={fallbackBg} 
+          alt={IMAGE_ALT} 
+          fill 
+          className="object-cover" 
+          priority={false} 
+        />
       </div>
       <div className="absolute inset-0 bg-[#3a1f14]/70" />
 
@@ -85,7 +93,7 @@ export default function HeroAbout() {
       <div className="absolute inset-0">
         <Image
           src={data.bgImage}
-          alt=""
+          alt={IMAGE_ALT}
           fill
           className="object-cover"
           unoptimized={data.bgImage.startsWith("http") || data.bgImage.startsWith(IMAGE_BASE_URL)}

@@ -41,6 +41,8 @@ interface ServiceItem {
   href: string;
 }
 
+const IMAGE_ALT = "Interior fit out company in Dubai";
+
 // Maps the FontAwesome class strings coming from the API to Lucide icons
 const iconMap: Record<string, LucideIcon> = {
   "fa-solid fa-hammer": Hammer,
@@ -201,7 +203,13 @@ export default function Services() {
     <section className="relative overflow-hidden py-12 xs:py-14 sm:py-16 md:py-20 lg:py-28">
       {/* Background image + overlay so text stays readable */}
       <div className="absolute inset-0 -z-10">
-        <Image src={bgTexture} alt="" fill priority={false} className="object-cover" />
+        <Image 
+          src={bgTexture} 
+          alt={IMAGE_ALT} 
+          fill 
+          priority={false} 
+          className="object-cover" 
+        />
         <div className="absolute inset-0 bg-[#f7f1ee]/90" />
       </div>
 
@@ -246,7 +254,7 @@ export default function Services() {
                   <div className="relative h-[200px] w-full overflow-hidden xs:h-[220px] sm:h-[260px] md:h-[280px] lg:h-[300px]">
                     <Image
                       src={service.image}
-                      alt={service.title}
+                      alt={IMAGE_ALT}
                       fill
                       sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
                       className="object-cover transition-transform duration-700 group-hover:scale-110"

@@ -35,6 +35,8 @@ interface ClientsData {
 
 const IMAGE_BASE_URL = process.env.NEXT_PUBLIC_IMAGE_URL || "";
 
+const IMAGE_ALT = "Interior fit out company in Dubai";
+
 function resolveImage(path: string): string {
   if (!path) return "/images/service1.webp";
   if (path.startsWith("http")) return path;
@@ -139,7 +141,11 @@ export default function OurClients() {
           animate={{ y: [0, -10, 0, 10, 0], x: [0, 6, 0, -6, 0] }}
           transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
         >
-          <Image src={patternBg} alt="" className="object-cover" />
+          <Image 
+            src={patternBg} 
+            alt={IMAGE_ALT} 
+            className="object-cover" 
+          />
         </motion.div>
       </div>
 
@@ -166,11 +172,11 @@ export default function OurClients() {
                 const logoImage = (
                   <Image
                     src={client.logo}
-                    alt={client.name}
+                    alt={IMAGE_ALT}
                     width={140}
                     height={60}
                     unoptimized
-                    className="max-h-[42px] w-auto object-contain opacity-90  transition duration-300 hover:opacity-100 hover:grayscale-0 xs:max-h-[50px] sm:max-h-[60px]"
+                    className="max-h-[42px] w-auto object-contain opacity-90 transition duration-300 hover:opacity-100 hover:grayscale-0 xs:max-h-[50px] sm:max-h-[60px]"
                   />
                 );
 
