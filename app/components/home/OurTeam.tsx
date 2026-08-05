@@ -28,6 +28,8 @@ interface OurTeamData {
 
 const IMAGE_BASE_URL = process.env.NEXT_PUBLIC_IMAGE_URL || "";
 
+const IMAGE_ALT = "Interior fit out company in Dubai";
+
 function resolveImage(path: string | undefined): string {
   if (!path) return fallbackTeamPhoto.src;
   if (path.startsWith("http")) return path;
@@ -47,9 +49,9 @@ function mapApiToOurTeam(data: OurTeamApiResponse): OurTeamData {
     heading: data.teamTitle,
     description: data.teamDescription,
     photos: [
-      { image: resolvedImages[0], alt: "Wood World Decor team at work" },
-      { image: resolvedImages[1], alt: "Wood World Decor team group photo" },
-      { image: resolvedImages[2], alt: "Wood World Decor craftsman detailing" },
+      { image: resolvedImages[0], alt: IMAGE_ALT },
+      { image: resolvedImages[1], alt: IMAGE_ALT },
+      { image: resolvedImages[2], alt: IMAGE_ALT },
     ],
   };
 }
@@ -59,9 +61,9 @@ const defaultData: OurTeamData = {
   description:
     "Behind every successful project is our dedicated team, known for their creativity, precision, and client-focused approach. With over 10 years of industry expertise, masterful detailing, and a commitment to on-time project delivery, Wood World Decor stands among the leading joinery fitout companies in Dubai. Our team of 100+ creative professionals collaborates closely with clients to transform spaces with style and innovation.",
   photos: [
-    { image: fallbackTeamPhoto.src, alt: "Craftsman finishing woodwork" },
-    { image: fallbackTeamPhoto.src, alt: "Wood World Decor team group photo" },
-    { image: fallbackTeamPhoto.src, alt: "Craftsman detailing furniture" },
+    { image: fallbackTeamPhoto.src, alt: IMAGE_ALT },
+    { image: fallbackTeamPhoto.src, alt: IMAGE_ALT },
+    { image: fallbackTeamPhoto.src, alt: IMAGE_ALT },
   ],
 };
 
