@@ -5,6 +5,7 @@ import TopHeader from "../components/layout/TopHeader";
 import Footer from "../components/layout/Footer";
 import FloatingButtons from "../components/layout/FloatingButtons";
 import GoogleAnalytics from "../components/GoogleAnalytics";
+import OrganizationJsonLd from "../components/OrganizationJsonLd";
 
 const poppins = Poppins({
   subsets: ["latin"],
@@ -84,6 +85,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${poppins.variable} bg-white`}>
+        <OrganizationJsonLd />
         <GoogleAnalytics />
         <TopHeader />
         {children}
