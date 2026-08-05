@@ -8,6 +8,7 @@ import api from "@/lib/axios";
 // Fallback images
 import work1 from "../../../public/images/slide1.webp";
 import bgTexture from "../../../public/images/services-one-bg.jpg"; // swap path if different
+import { useServiceAltText } from "@/app/(web)/services/useServiceAltText";
 
 interface TrustedImage {
   title: string;
@@ -77,6 +78,8 @@ function JoineryWorksSkeleton() {
 export default function JoineryWorks({ slug }: { slug?: string }) {
   const [data, setData] = useState<JoineryWorksData>(defaultData);
   const [isLoading, setIsLoading] = useState(true);
+  const altText = useServiceAltText(slug || 'joinery');
+
 
   useEffect(() => {
     const fetchServiceDetail = async () => {
@@ -121,7 +124,7 @@ export default function JoineryWorks({ slug }: { slug?: string }) {
     <section className="relative w-full overflow-hidden py-16 md:py-20">
       {/* Background pattern */}
       <div className="absolute inset-0 -z-10">
-        <Image src={bgTexture} alt="" fill priority={false} className="object-cover" />
+        <Image src={bgTexture} alt={altText} fill priority={false} className="object-cover" />
         <div className="absolute inset-0 bg-[#f7f1ee]/90" />
       </div>
 
@@ -148,7 +151,7 @@ export default function JoineryWorks({ slug }: { slug?: string }) {
               >
                 <Image
                   src={imgUrl || bgTexture.src}
-                  alt={img?.title || `Work ${index + 1}`}
+                  alt={altText}
                   fill
                   unoptimized={imgUrl.startsWith("http")}
                   sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
