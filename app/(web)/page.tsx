@@ -20,7 +20,7 @@ export const metadata: Metadata = {
   description:
     "Wood World Decor LLC is a leading interior fit out company in UAE since 2015, offering turnkey solutions for homes, offices & retail. Call +971 52 787 5262.",
   keywords:
-    "Interior fit out company in Dubai, joinery company Dubai, fit out contractors UAE, turnkey solutions Dubai, renovation services Dubai, metal works Dubai, upholstery Dubai, Wood World Decor, fitout company, joinery fitout",
+    "Interior fit out company in dubai",
   metadataBase: new URL("https://www.wwduae.com"),
   openGraph: {
     title: "Wood World Decor LLC | Leading Joinery & Fitout Company in Dubai",
