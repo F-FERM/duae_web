@@ -10,8 +10,7 @@ export const metadata: Metadata = {
   title: "Top Interior Fit Out Companies in UAE | Wood World Decor",
   description:
     "Discover one of the leading interior fit out companies in UAE. Wood World Decor provides quality residential, commercial, and turnkey fit-out solutions.",
-  keywords:
-    "interior fit out companies in uae, interior fit out company dubai, joinery company uae, fit out contractors uae, turnkey solutions dubai, residential fit out, commercial fit out, Wood World Decor",
+  keywords: "interior fit out companies in uae",
   openGraph: {
     title: "Top Interior Fit Out Companies in UAE | Wood World Decor",
     description:
