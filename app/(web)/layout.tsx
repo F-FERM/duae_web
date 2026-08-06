@@ -20,7 +20,7 @@ export const metadata: Metadata = {
     template: "%s | Wood World Decor LLC",
   },
   description:
-    "Wood World Decor LLC is a leading joinery and fitout company in Dubai, UAE. We specialize in high-quality joinery, fit-out solutions, turnkey projects, metal works, renovations, and bespoke upholstery.",
+    "Wood World Decor LLC is a leading joinery and fitout company in Dubai, UAE. We specialize in high-quality joinery, fit-out solutions.",
   keywords: [
     "joinery company Dubai",
     "fitout company Dubai",
