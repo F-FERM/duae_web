@@ -25,7 +25,7 @@ export async function generateMetadata({
     : "joinery";
   const metadata = getServiceMetadata(slugPath);
 
-  const pageUrl = `https://www.wwduae.com/services/${slugPath}`;
+  const pageUrl = `https://wwduae.com/services/${slugPath}`;
 
   return {
     title: metadata.title,

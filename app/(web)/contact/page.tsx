@@ -12,7 +12,7 @@ export const metadata: Metadata = {
   description:
     "Get in touch with Wood World Decor LLC for expert joinery, fit-out in Dubai. Call +971 52 787 5262 or fill out our contact form for a free consultation",
   keywords: "contact joinery Dubai",
-  metadataBase: new URL("https://www.wwduae.com"),
+  metadataBase: new URL("https://wwduae.com"),
   alternates: {
     canonical: "/contact",
   },
@@ -20,7 +20,7 @@ export const metadata: Metadata = {
     title: "Contact Us | Wood World Decor LLC | Joinery & Fitout Dubai",
     description:
       "Get in touch with Wood World Decor LLC for expert renovation services in Dubai.Call +971 52 787 5262 or fill out our contact form for a free consultation",
-    url: "https://www.wwduae.com/contact",
+    url: "https://wwduae.com/contact",
     siteName: "Wood World Decor LLC",
     locale: "en_US",
     type: "website",
