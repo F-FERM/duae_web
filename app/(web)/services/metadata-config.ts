@@ -14,7 +14,7 @@ export const serviceMetadataMap: Record<string, ServiceMetadata> = {
   joinery: {
     title: "Custom Joinery Company in Dubai | Bespoke Woodwork",
     description:
-      "Looking for a trusted joinery company in Dubai? We deliver bespoke joinery, custom furniture, cabinetry, woodwork, and interior solutions. Call +971 52 787 5262 today.",
+      "Trusted renovation company in Dubai offering home, villa, office and commercial renovation services with quality craftsmanship.Call +971 52 787 5262 today",
     keywords: "Joinery Company in dubai",
     altText:
       "Joinery Company in Dubai - Custom woodwork and bespoke furniture solutions",
@@ -44,7 +44,7 @@ export const serviceMetadataMap: Record<string, ServiceMetadata> = {
   "commercial-fit-out": {
     title: "Commercial Fit Out Dubai | Offices, Retail & Hospitality",
     description:
-      "Trusted commercial fit-out contractors in Dubai delivering turnkey interior solutions for offices, retail & hospitality spaces. Request your free quote now!",
+      "Trusted commercial fit-out contractors in Dubai delivering turnkey interior solutions for offices,retail & hospitality spaces.Request your free quote now!",
     keywords: "Commercial Fit Out",
     altText:
       "Commercial Fit Out Dubai - Office, retail and hospitality interior solutions",

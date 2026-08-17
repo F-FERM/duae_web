@@ -18,7 +18,7 @@ export const metadata: Metadata = {
     template: "%s | Wood World Decor LLC",
   },
   description:
-    "Wood World Decor LLC is a leading interior fit out company in UAE since 2015, offering turnkey solutions for homes, offices & retail. Call +971 52 787 5262.",
+    "Wood World Decor LLC is a leading interior fit out company in UAE since 2015, offering turnkey solutions for homes, offices & retail.Call +971 52 787 5262",
   keywords:
     "Interior fit out company in dubai",
   metadataBase: new URL("https://www.wwduae.com"),

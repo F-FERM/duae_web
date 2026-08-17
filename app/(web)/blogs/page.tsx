@@ -9,7 +9,7 @@ export const metadata: Metadata = {
     template: "%s | Wood World Decor LLC",
   },
   description:
-    "Read our latest blogs on joinery, fit-out solutions, and interior design trends in Dubai.Expert insights from Wood World Decor LLC for homes & retail spaces.",
+    "Read our latest blogs on joinery,fit-out solutions,and interior design trends in Dubai.Expert insights from Wood World Decor LLC for homes & retail spaces",
   keywords: "joinery blog Dubai",
   metadataBase: new URL("https://www.wwduae.com"),
   alternates: {
