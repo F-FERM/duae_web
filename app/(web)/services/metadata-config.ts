@@ -88,7 +88,7 @@ export const serviceMetadataMap: Record<string, ServiceMetadata> = {
   "renovation-services": {
     title: "Renovation Company in Dubai | Premium Fit-Out Experts",
     description:
-      "Trusted renovation company in Dubai offering home, villa, office, and commercial renovation services with quality craftsmanship. Call +971 52 787 5262 today.",
+      "Trusted renovation company in Dubai offering home, villa, office and commercial renovation services with quality craftsmanship.Call +971 52 787 5262 today",
     keywords: "Renovation Company in Dubai",
     altText:
       "Renovation Company in Dubai - Premium home, villa and commercial renovation services",
