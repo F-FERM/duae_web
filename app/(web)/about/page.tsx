@@ -15,7 +15,7 @@ export const metadata: Metadata = {
     title: "Top Interior Fit Out Companies in UAE | Wood World Decor",
     description:
       "Discover one of the leading interior fit out companies in UAE. Wood World Decor provides quality residential, commercial, and turnkey fit-out solutions.",
-    url: "https://www.wwduae.com/about",
+    url: "https://wwduae.com/about",
     siteName: "Wood World Decor LLC",
     locale: "en_US",
     type: "website",
@@ -35,7 +35,7 @@ export const metadata: Metadata = {
       "Discover one of the leading interior fit out companies in UAE. Wood World Decor provides quality residential, commercial, and turnkey fit-out solutions.",
   },
   alternates: {
-    canonical: "https://www.wwduae.com/about",
+    canonical: "https://wwduae.com/about",
   },
   robots: {
     index: true,
