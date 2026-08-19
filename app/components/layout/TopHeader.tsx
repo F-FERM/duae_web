@@ -113,17 +113,18 @@ export default function TopHeader() {
                 </p>
 
                 <a
+                  href="tel:+971565066845"
+                  className="block font-semibold text-[#202020] hover:text-[#db5e41]"
+                >
+                  
+                  +971 56 506 6845
+                </a>
+
+                <a
                   href="tel:+971527875262"
                   className="block font-semibold text-[#202020] hover:text-[#db5e41]"
                 >
                   +971 52 787 5262
-                </a>
-
-                <a
-                  href="tel:+971565066845"
-                  className="block font-semibold text-[#202020] hover:text-[#db5e41]"
-                >
-                  +971 56 506 6845
                 </a>
 
               </div>

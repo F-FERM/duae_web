@@ -312,10 +312,10 @@ export default function BlogDetailContent({ slug }: { slug: string }) {
                             </h4>
 
                             <a
-                                href={`tel:${contact?.phone1 ?? "+971527875262"}`}
+                                href={`tel:${contact?.phone1 ?? "+971565066845"}`}
                                 className="relative z-10 mb-2 block text-lg font-bold tracking-wider hover:underline"
                             >
-                                {contact?.phone1 ?? "+971 52 787 5262"}
+                                {contact?.phone1 ?? "+971 56 506 6845"}
                             </a>
 
                             <a

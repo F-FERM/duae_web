@@ -30,7 +30,7 @@ const defaultSlides: Slide[] = [
     description:
       "We specialize in high-quality joinery and fit-out solutions in Dubai, offering turnkey projects, metal works, renovations, and bespoke upholstery.",
     buttonText: "TALK TO US",
-    buttonLink: "tel:+971527875262",
+    buttonLink: "tel:+971565066845",
     wpButtonText: "WHATSAPP US",
     wpButtonLink: "971527875262",
   },
@@ -41,7 +41,7 @@ const defaultSlides: Slide[] = [
     description:
       "From structural steel to decorative metal finishes, we deliver precision-engineered solutions built to last.",
     buttonText: "TALK TO US",
-    buttonLink: "tel:+971527875262",
+    buttonLink: "tel:+971565066845",
     wpButtonText: "WHATSAPP US",
     wpButtonLink: "971527875262",
   },
@@ -52,7 +52,7 @@ const defaultSlides: Slide[] = [
     description:
       "Tailored upholstery solutions that combine comfort, durability, and design to elevate any interior.",
     buttonText: "TALK TO US",
-    buttonLink: "tel:+971527875262",
+    buttonLink: "tel:+971565066845",
     wpButtonText: "WHATSAPP US",
     wpButtonLink: "971527875262",
   },
@@ -230,7 +230,7 @@ export default function Hero() {
                       }}
                       whileHover={{ scale: 1.03 }}
                       whileTap={{ scale: 0.96 }}
-                      href={slides[current].buttonLink || "tel:+971527875262"}
+                      href={slides[current].buttonLink || "tel:+971 565066845"}
                       className="group relative flex h-12 w-full items-center justify-center overflow-hidden rounded-full bg-[#db5e41] px-6 text-sm font-semibold text-white shadow-lg shadow-[#db5e41]/20 transition-shadow duration-300 hover:shadow-xl hover:shadow-[#db5e41]/30 sm:h-14 sm:w-auto sm:px-8 sm:text-base"
                     >
                       <span className="absolute inset-0 -translate-x-full rounded-full bg-black transition-transform duration-500 ease-out group-hover:translate-x-0" />

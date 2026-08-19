@@ -120,7 +120,7 @@ export default function CallToAction({ slug }: { slug: string }) {
             transition={{ duration: 0.6, delay: 0.55 }}
             whileHover={{ scale: 1.03 }}
             whileTap={{ scale: 0.96 }}
-            href="tel:+971527875262"
+            href="tel:+971565066845"
             className="group relative flex h-14 w-full sm:w-auto items-center justify-center overflow-hidden rounded-full bg-[#db5e41] px-8 text-base font-semibold text-white shadow-lg shadow-[#db5e41]/20 transition-shadow duration-300 hover:shadow-xl hover:shadow-[#db5e41]/30"
           >
             <span className="absolute inset-0 -translate-x-full rounded-full bg-black transition-transform duration-500 ease-out group-hover:translate-x-0" />

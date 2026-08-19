@@ -3,8 +3,8 @@
 import { Phone } from "lucide-react";
 import { FaWhatsapp } from "react-icons/fa6";
 
-const PHONE_NUMBER = "+971527875262";
-const WHATSAPP_NUMBER = "https://api.whatsapp.com/send?phone=971527875262&text=Hi%20Wood%20World%20Decor%2C%20I%20would%20like%20to%20schedule%20a%20consultation."; // no leading +
+const PHONE_NUMBER = "+971565066845";
+const WHATSAPP_NUMBER = "https://api.whatsapp.com/send?phone=971565066845&text=Hi%20Wood%20World%20Decor%2C%20I%20would%20like%20to%20schedule%20a%20consultation."; // no leading +
 
 export default function FloatingButtons() {
     return (

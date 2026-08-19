@@ -32,7 +32,7 @@ const defaultData: CtaData = {
   description:
     "Get expert joinery, fit-out, and renovation solutions designed for homes, offices, and commercial projects. Premium quality, on-time delivery, and end-to-end project support.",
   talkToUsText: "TALK TO US",
-  talkToUsLink: "tel:+971527875262",
+  talkToUsLink: "tel:+971565066845",
   whatsappText: "WHATSAPP US",
   whatsappLink: "https://wa.me/971527875262",
 };

@@ -835,7 +835,7 @@ export default function ContactPage() {
                           <Input
                             value={form.phone1}
                             onChange={(e) => setForm({ ...form, phone1: e.target.value })}
-                            placeholder="+971527875262"
+                            placeholder="+971565066845"
                             className="h-[38px] rounded-[10px] border-[#E4E4E4] bg-white text-[13px] focus-visible:ring-[#EA580C]/30"
                           />
                         </div>
@@ -846,7 +846,7 @@ export default function ContactPage() {
                           <Input
                             value={form.phone2}
                             onChange={(e) => setForm({ ...form, phone2: e.target.value })}
-                            placeholder="+971565066845"
+                            placeholder="+971527875262"
                             className="h-[38px] rounded-[10px] border-[#E4E4E4] bg-white text-[13px] focus-visible:ring-[#EA580C]/30"
                           />
                         </div>
