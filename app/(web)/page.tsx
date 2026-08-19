@@ -13,17 +13,14 @@ import Navbar from "../components/layout/Navbar";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: {
-    default: "Wood World Decor LLC Leading Joinery & Fitout Company in Dubai",
-    template: "%s | Wood World Decor LLC",
-  },
+  title: "Wood World Decor – Top Interior Fit-Out Company Dubai",
   description:
-    "Wood World Decor LLC is a leading interior fit out company in UAE since 2015, offering turnkey solutions for homes, offices & retail.Call +971 52 787 5262",
+    "Wood World Decor is an interior fit out company in dubai, offering turnkey solutions for homes, offices and retail spaces. Call +971 52 787 5262.",
   keywords:
-    "Interior fit out company in dubai",
+    "Interior fit out company in dubai, fit out company Dubai, interior design Dubai, joinery Dubai, renovation Dubai",
   metadataBase: new URL("https://www.wwduae.com"),
   openGraph: {
-    title: "Wood World Decor LLC | Leading Joinery & Fitout Company in Dubai",
+    title: "Wood World Decor – Top Interior Fit-Out Company Dubai",
     description:
       "Wood World Decor LLC is a leading interior fit out company in UAE since 2015, offering turnkey solutions for homes, offices & retail. Call +971 52 787 5262.",
     url: "https://www.wwduae.com",
@@ -41,7 +38,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Wood World Decor LLC | Leading Joinery & Fitout Company in Dubai",
+    title: "Wood World Decor – Top Interior Fit-Out Company Dubai",
     description:
       "Wood World Decor LLC is a leading interior fit out company in UAE since 2015, offering turnkey solutions for homes, offices & retail. Call +971 52 787 5262.",
     images: ["/icon.jpg"],
