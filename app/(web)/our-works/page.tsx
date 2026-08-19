@@ -12,7 +12,7 @@ export const metadata: Metadata = {
     "Explore our portfolio of joinery, fit-out, and turnkey projects in Dubai.Wood World Decor LLC delivers quality craftsmanship for homes & retail spaces.",
   keywords:
     "joinery projects Dubai, fitout works, turnkey solutions, woodwork portfolio, interior fitout, renovation projects Dubai",
-  metadataBase: new URL("https://wwduae.com"),
+  metadataBase: new URL("https://www.wwduae.com"),
   alternates: {
     canonical: "/our-works",
   },
@@ -21,7 +21,7 @@ export const metadata: Metadata = {
       "Our Works | Wood World Decor LLC | Joinery & Fitout Projects in Dubai",
     description:
       "Explore our portfolio of joinery, fit-out, and turnkey projects in Dubai. Wood World Decor LLC delivers quality craftsmanship for homes, & retail spaces.",
-    url: "https://wwduae.com/our-works",
+    url: "https://www.wwduae.com/our-works",
     siteName: "Wood World Decor LLC",
     locale: "en_US",
     type: "website",

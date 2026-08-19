@@ -11,7 +11,7 @@ export const metadata: Metadata = {
   description:
     "Read our latest blogs on joinery,fit-out solutions,and interior design trends in Dubai.Expert insights from Wood World Decor LLC for homes & retail spaces",
   keywords: "joinery blog Dubai",
-  metadataBase: new URL("https://wwduae.com"),
+  metadataBase: new URL("https://www.wwduae.com"),
   alternates: {
     canonical: "/blogs",
   },
@@ -19,7 +19,7 @@ export const metadata: Metadata = {
     title: "Blogs | Wood World Decor LLC | Joinery & Fitout Insights Dubai",
     description:
       "Read our latest blogs on joinery, fit-out solutions, and interior design trends in Dubai.Expert insights from Wood World Decor LLC for homes, & retail spaces.",
-    url: "https://wwduae.com/blogs",
+    url: "https://www.wwduae.com/blogs",
     siteName: "Wood World Decor LLC",
     locale: "en_US",
     type: "website",

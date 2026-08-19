@@ -10,8 +10,8 @@ export default function OrganizationJsonLd() {
       "@context": "https://schema.org",
       "@type": "Organization",
       name: "Wood World Decor LLC",
-      url: "https://wwduae.com",
-      logo: "https://wwduae.com/images/logo.webp",
+      url: "https://www.wwduae.com",
+      logo: "https://www.wwduae.com/images/logo.webp",
       alternateName: "Wood World Decor",
       sameAs: [
         "https://www.instagram.com/wwduae.ae",
