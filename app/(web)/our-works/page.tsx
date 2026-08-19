@@ -4,10 +4,7 @@ import GalleryGrid from "../../components/our-works/StackedImages";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: {
-    default: "Our Works | Wood World Decor LLC",
-    template: "%s | Wood World Decor LLC",
-  },
+  title: "Our Works | Wood World Decor LLC",
   description:
     "Explore our portfolio of joinery, fit-out, and turnkey projects in Dubai.Wood World Decor LLC delivers quality craftsmanship for homes & retail spaces.",
   keywords:

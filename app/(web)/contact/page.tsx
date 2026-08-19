@@ -5,10 +5,7 @@ import Navbar from "../../components/layout/Navbar";
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: {
-    default: "Contact Us | Wood World Decor LLC",
-    template: "%s | Wood World Decor LLC",
-  },
+  title: "Contact Us | Wood World Decor LLC",
   description:
     "Get in touch with Wood World Decor LLC for expert joinery, fit-out in Dubai. Call +971 52 787 5262 or fill out our contact form for a free consultation",
   keywords: "contact joinery Dubai",

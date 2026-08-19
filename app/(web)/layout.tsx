@@ -15,10 +15,7 @@ const poppins = Poppins({
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://www.wwduae.com"),
-  title: {
-    default: "Wood World Decor LLC | Leading Joinery & Fitout Company in Dubai",
-    template: "%s | Wood World Decor LLC",
-  },
+  title: "Wood World Decor LLC | Leading Joinery & Fitout Company in Dubai",
   description:
     "Wood World Decor LLC is a leading joinery and fitout company in Dubai, UAE. We specialize in high-quality joinery, fit-out solutions.",
   keywords: [

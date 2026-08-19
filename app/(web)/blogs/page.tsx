@@ -4,10 +4,7 @@ import HeroOurblogs from "../../components/blog/OurBlogs";
 import Navbar from "../../components/layout/Navbar";
 
 export const metadata: Metadata = {
-  title: {
-    default: "Blogs | Wood World Decor LLC",
-    template: "%s | Wood World Decor LLC",
-  },
+  title: "Blogs | Wood World Decor LLC",
   description:
     "Read our latest blogs on joinery,fit-out solutions,and interior design trends in Dubai.Expert insights from Wood World Decor LLC for homes & retail spaces",
   keywords: "joinery blog Dubai",
