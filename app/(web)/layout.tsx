@@ -60,7 +60,7 @@ export const metadata: Metadata = {
     images: ["https://www.wwduae.com/icon.jpg"],
   },
   alternates: {
-    canonical: "https://www.wwduae.com/",
+    canonical: "/",
   },
   robots: {
     index: true,
@@ -75,6 +75,12 @@ export const metadata: Metadata = {
   },
   authors: [{ name: "Wood World Decor LLC" }],
   category: "Construction & Interior Design",
+
+  icons: {
+    icon: "/icon.jpg",
+    shortcut: "/icon.jpg",
+    apple: "/icon.jpg",
+  },
 };
 
 export default function RootLayout({
