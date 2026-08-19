@@ -858,7 +858,7 @@ export default function ContactPage() {
                         <Input
                           value={form.email}
                           onChange={(e) => setForm({ ...form, email: e.target.value })}
-                          placeholder="info@wwduae.ae"
+                          placeholder="marketing@wwduae.ae"
                           className="h-[42px] rounded-[10px] border-[#E4E4E4] bg-white text-[13px] focus-visible:ring-[#EA580C]/30"
                         />
                       </div>

@@ -22,7 +22,7 @@ export default function OrganizationJsonLd() {
           "@type": "ContactPoint",
           telephone: "+971565066845",
           contactType: "sales",
-          email: "info@wwduae.ae",
+          email: "marketing@wwduae.ae",
           areaServed: "AE",
           availableLanguage: "en",
         },

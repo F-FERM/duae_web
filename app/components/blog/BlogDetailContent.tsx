@@ -319,11 +319,11 @@ export default function BlogDetailContent({ slug }: { slug: string }) {
                             </a>
 
                             <a
-                                href={`mailto:${contact?.email ?? "info@wwduae.ae"}`}
+                                href={`mailto:${contact?.email ?? "marketing@wwduae.ae"}`}
                                 className="relative z-10 flex items-center justify-center gap-1.5 text-sm text-white/85 hover:text-white hover:underline"
                             >
                                 <Mail size={14} />
-                                {contact?.email ?? "info@wwduae.ae"}
+                                {contact?.email ?? "marketing@wwduae.ae"}
                             </a>
                         </div>
 

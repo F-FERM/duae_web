@@ -82,10 +82,10 @@ export default function TopHeader() {
                 </p>
 
                 <a
-                  href="mailto:info@wwduae.ae"
+                  href="mailto:marketing@wwduae.ae"
                   className="font-semibold text-[#202020] hover:text-[#db5e41]"
                 >
-                  info@wwduae.ae
+                  marketing@wwduae.ae
                 </a>
 
               </div>
