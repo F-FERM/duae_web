@@ -12,31 +12,31 @@ export interface ServiceMetadata {
 export const serviceMetadataMap: Record<string, ServiceMetadata> = {
   // Joinery
   joinery: {
-    title: "Custom Joinery Company in Dubai | Bespoke Woodwork",
+    title: "Joinery Company in Dubai | Bespoke Cabinetry & Woodwork",
     description:
-      "Trusted renovation company in Dubai offering home, villa, office and commercial renovation services with quality craftsmanship.Call +971 52 787 5262 today",
+      "Trusted joinery company in Dubai since 2015, delivering bespoke furniture, cabinetry and woodwork. Explore our joinery solutions or call +971 52 787 5262.",
     keywords: "Joinery Company in dubai",
     altText:
       "Joinery Company in Dubai - Custom woodwork and bespoke furniture solutions",
     openGraph: {
-      title: "Custom Joinery Company in Dubai | Bespoke Woodwork",
+      title: "Joinery Company in Dubai | Bespoke Cabinetry & Woodwork",
       description:
-        "Looking for a trusted joinery company in Dubai? We deliver bespoke joinery, custom furniture, cabinetry, woodwork, and interior solutions. Call +971 52 787 5262 today.",
+        "Trusted joinery company in Dubai since 2015, delivering bespoke furniture, cabinetry and woodwork. Explore our joinery solutions or call +971 52 787 5262.",
     },
   },
 
   // Fitout Solutions
   "fitout-solutions": {
-    title: "Fit Out Company in Dubai | In-House Workshop, since 2015",
+    title: "Fit Out Company in Dubai Since 2015 | Wood World Decor",
     description:
-      "Experienced fit out company in Dubai providing turnkey interior fit-out solutions for commercial, hospitality, retail, and residential spaces.",
+      "Get expert fit out solutions in Dubai from Wood World Decor. Quality interiors, custom joinery and professional execution backed by experience since 2015.",
     keywords: "fit out company in dubai",
     altText:
       "Fit Out Company in Dubai - Professional interior fit out services with in-house workshop",
     openGraph: {
-      title: "Fit Out Company in Dubai | In-House Workshop, since 2015",
+      title: "Fit Out Company in Dubai Since 2015 | Wood World Decor",
       description:
-        "Experienced fit out company in Dubai providing turnkey interior fit-out solutions for commercial, hospitality, retail, and residential spaces.",
+        "Get expert fit out solutions in Dubai from Wood World Decor. Quality interiors, custom joinery and professional execution backed by experience since 2015.",
     },
   },
 
@@ -44,41 +44,41 @@ export const serviceMetadataMap: Record<string, ServiceMetadata> = {
   "commercial-fit-out": {
     title: "Commercial Fit Out Dubai | Offices, Retail & Hospitality",
     description:
-      "Trusted commercial fit-out contractors in Dubai delivering turnkey interior solutions for offices,retail & hospitality spaces.Request your free quote now!",
+      "Trusted commercial fit-out contractors in Dubai delivering turnkey interior solutions for offices, retail & hospitality spaces. Request your free quote now!",
     keywords: "Commercial Fit Out",
     altText:
       "Commercial Fit Out Dubai - Office, retail and hospitality interior solutions",
     openGraph: {
       title: "Commercial Fit Out Dubai | Offices, Retail & Hospitality",
       description:
-        "Trusted commercial fit-out contractors in Dubai delivering turnkey interior solutions for offices, retail & hospitality spaces.",
+        "Trusted commercial fit-out contractors in Dubai delivering turnkey interior solutions for offices, retail & hospitality spaces. Request your free quote now!",
     },
   },
 
   // Residential Fit Out
   "residential-fit-out": {
-    title: "Residential Fit Out Dubai | Villa & Home Interiors",
+    title: "Residential Fit Out Dubai | Best Bespoke Villa & Home Interiors",
     description:
       "Residential fit out experts in Dubai creating functional, beautifully finished villa and home interiors tailored to your lifestyle. Book a consultation!",
     keywords: "Residential Fit Out Dubai",
     altText: "Residential Fit Out Dubai - Villa and home interior solutions",
     openGraph: {
-      title: "Residential Fit Out Dubai | Villa & Home Interiors",
+      title: "Residential Fit Out Dubai | Best Bespoke Villa & Home Interiors",
       description:
-        "Residential fit out experts in Dubai creating functional, beautifully finished villa and home interiors tailored to your lifestyle.",
+        "Residential fit out experts in Dubai creating functional, beautifully finished villa and home interiors tailored to your lifestyle. Book a consultation!",
     },
   },
 
   // Turnkey Solutions
   "turnkey-solutions": {
-    title: "Turnkey Fitout Dubai | Luxury Interior Execution Experts",
+    title: "Turnkey Fit Out Company in Dubai | Wood World Decor",
     description:
       "Looking for turnkey fitout Dubai solutions? We deliver end-to-end interior design and execution for commercial and residential projects across Dubai.",
     keywords: "Turnkey Fitout Dubai",
     altText:
       "Turnkey Fitout Dubai - End-to-end interior design and execution solutions",
     openGraph: {
-      title: "Turnkey Fitout Dubai | Luxury Interior Execution Experts",
+      title: "Turnkey Fit Out Company in Dubai | Wood World Decor",
       description:
         "Looking for turnkey fitout Dubai solutions? We deliver end-to-end interior design and execution for commercial and residential projects across Dubai.",
     },
@@ -88,29 +88,29 @@ export const serviceMetadataMap: Record<string, ServiceMetadata> = {
   "renovation-services": {
     title: "Renovation Company in Dubai | Premium Fit-Out Experts",
     description:
-      "Trusted renovation company in Dubai offering home, villa, office and commercial renovation services with quality craftsmanship.Call +971 52 787 5262 today",
+      "Transform homes, villas and commercial spaces with bespoke renovation in Dubai. Get tailored solutions from planning to finishing. Call +971 52 787 5262.",
     keywords: "Renovation Company in Dubai",
     altText:
       "Renovation Company in Dubai - Premium home, villa and commercial renovation services",
     openGraph: {
       title: "Renovation Company in Dubai | Premium Fit-Out Experts",
       description:
-        "Trusted renovation company in Dubai offering home, villa, office, and commercial renovation services with quality craftsmanship.",
+        "Transform homes, villas and commercial spaces with bespoke renovation in Dubai. Get tailored solutions from planning to finishing. Call +971 52 787 5262.",
     },
   },
 
   // Villa Renovations
   "villa-renovations": {
-    title: "Villa Renovation Dubai | Luxury Home Upgrade Experts",
+    title: "Villa Renovation Dubai | Give Your Villa a New Look",
     description:
       "Expert villa renovation Dubai services for luxury home upgrades. Trusted specialists deliver premium finishes & quality craftsmanship. Book a consultation!",
     keywords: "villa renovation Dubai",
     altText:
       "Villa Renovation Dubai - Luxury home upgrades and premium finishes",
     openGraph: {
-      title: "Villa Renovation Dubai | Luxury Home Upgrade Experts",
+      title: "Villa Renovation Dubai | Give Your Villa a New Look",
       description:
-        "Expert villa renovation Dubai services for luxury home upgrades. Trusted specialists deliver premium finishes & quality craftsmanship.",
+        "Expert villa renovation Dubai services for luxury home upgrades. Trusted specialists deliver premium finishes & quality craftsmanship. Book a consultation!",
     },
   },
 
@@ -125,35 +125,35 @@ export const serviceMetadataMap: Record<string, ServiceMetadata> = {
     openGraph: {
       title: "Apartment Renovation Dubai | Premium Remodeling Experts",
       description:
-        "Looking for apartment renovation Dubai services? Transform your space with trusted renovation experts, quality finishes & custom designs.",
+        "Looking for apartment renovation Dubai services? Transform your space with trusted renovation experts, quality finishes & custom designs. Call us today!",
     },
   },
 
   // Home Renovation
   "home-renovation": {
-    title: "Home Renovation Company in Dubai | Expert Home Upgrades",
+    title: "Bespoke Home Renovation Services in Dubai Since 2015",
     description:
-      "Planning a home renovation in Dubai? Our experts provide complete remodeling and modern interior upgrades to refresh your space quickly and efficiently.",
+      "Refresh your space with home renovation in Dubai, from modern upgrades to complete makeovers. Explore your renovation options with Wood World Decor.",
     keywords: "Home Renovation Company in Dubai",
     altText:
       "Home Renovation Company in Dubai - Complete home remodeling and upgrades",
     openGraph: {
-      title: "Home Renovation Company in Dubai | Expert Home Upgrades",
+      title: "Bespoke Home Renovation Services in Dubai Since 2015",
       description:
-        "Planning a home renovation in Dubai? Our experts provide complete remodeling and modern interior upgrades to refresh your space quickly and efficiently.",
+        "Refresh your space with home renovation in Dubai, from modern upgrades to complete makeovers. Explore your renovation options with Wood World Decor.",
     },
   },
 
   // Kitchen Renovation
   "kitchen-renovation": {
-    title: "Kitchen Renovation Dubai | Custom Kitchen Design Experts",
+    title: "Best Kitchen Renovation Company for Modern Dubai Homes",
     description:
       "Transform your kitchen with our expert renovation services in Dubai. Discover innovative designs and quality craftsmanship tailored to your needs.",
     keywords: "Kitchen Renovation Dubai",
     altText:
       "Kitchen Renovation Dubai - Custom kitchen design and remodeling solutions",
     openGraph: {
-      title: "Kitchen Renovation Dubai | Custom Kitchen Design Experts",
+      title: "Best Kitchen Renovation Company for Modern Dubai Homes",
       description:
         "Transform your kitchen with our expert renovation services in Dubai. Discover innovative designs and quality craftsmanship tailored to your needs.",
     },
@@ -161,60 +161,60 @@ export const serviceMetadataMap: Record<string, ServiceMetadata> = {
 
   // Bathroom Renovation
   "bathroom-renovation": {
-    title: "Bathroom Renovation Dubai | Transform Your Bathroom Space",
+    title: "Modern Bathroom Renovation Dubai | Wood World Decor",
     description:
       "Bathroom renovation Dubai specialists delivering modern designs, quality fittings and skilled craftsmanship to transform your space. Book a consultation!",
     keywords: "Bathroom Renovation Dubai",
     altText: "Bathroom Renovation Dubai - Modern bathroom designs and fittings",
     openGraph: {
-      title: "Bathroom Renovation Dubai | Transform Your Bathroom Space",
+      title: "Modern Bathroom Renovation Dubai | Wood World Decor",
       description:
-        "Bathroom renovation Dubai specialists delivering modern designs, quality fittings and skilled craftsmanship to transform your space.",
+        "Bathroom renovation Dubai specialists delivering modern designs, quality fittings and skilled craftsmanship to transform your space. Book a consultation!",
     },
   },
 
   // Metal Works
   "metal-works": {
-    title: "Metal Fabrication in Dubai|Custom Metal Works UAE Experts",
+    title: "Metal Fabrication in Dubai for Custom Structures & Works",
     description:
-      "Discover top-notch metal fabrication services in Dubai. Our expert team delivers precision and quality for all your custom metal needs. Get a quote today!",
+      "Metal fabrication in Dubai for custom structures and architectural metalwork. Get quality fabrication tailored to your project. Call +971 52 787 5262.",
     keywords: "Metal Fabrication in Dubai",
     altText:
       "Metal Fabrication in Dubai - Custom metal works and precision fabrication",
     openGraph: {
-      title: "Metal Fabrication in Dubai | Custom Metal Works UAE Experts",
+      title: "Metal Fabrication in Dubai for Custom Structures & Works",
       description:
-        "Discover top-notch metal fabrication services in Dubai. Our expert team delivers precision and quality for all your custom metal needs.",
+        "Metal fabrication in Dubai for custom structures and architectural metalwork. Get quality fabrication tailored to your project. Call +971 52 787 5262.",
     },
   },
 
   // Upholstery
   upholstery: {
-    title: "Upholstery in Dubai | Sofa Repair & Fabric Restoration",
+    title: "Upholstery in Dubai for Sofa Repair & Fabric Restoration",
     description:
       "Looking for upholstery in Dubai? We offer custom sofa repair, fabric replacement & furniture restoration with premium craftsmanship. Enquire now!",
     keywords: "Upholstery in Dubai",
     altText:
       "Upholstery in Dubai - Sofa repair, fabric replacement and furniture restoration",
     openGraph: {
-      title: "Upholstery in Dubai | Sofa Repair & Fabric Restoration",
+      title: "Upholstery in Dubai for Sofa Repair & Fabric Restoration",
       description:
-        "Looking for upholstery in Dubai? We offer custom sofa repair, fabric replacement & furniture restoration with premium craftsmanship.",
+        "Looking for upholstery in Dubai? We offer custom sofa repair, fabric replacement & furniture restoration with premium craftsmanship. Enquire now!",
     },
   },
 };
 
 // Fallback metadata for unknown slugs
 export const fallbackMetadata: ServiceMetadata = {
-  title: "Interior Fit Out Services in Dubai | Wood World Decor",
+  title: "Interior Fit Out Company in Dubai | Wood World Decor",
   description:
-    "Wood World Decor provides premium interior fit-out, joinery, and renovation services in Dubai. Expert craftsmanship for residential, commercial, and hospitality projects. Call +971 52 787 5262.",
+    "Wood World Decor is a leading interior fit out company in UAE since 2015, offering turnkey solutions for homes, offices & retail. Call +971 52 787 5262.",
   keywords: "Interior fit out company in Dubai",
   altText: "Wood World Decor - Interior fit out company in Dubai",
   openGraph: {
-    title: "Interior Fit Out Services in Dubai | Wood World Decor",
+    title: "Interior Fit Out Company in Dubai | Wood World Decor",
     description:
-      "Wood World Decor provides premium interior fit-out, joinery, and renovation services in Dubai. Expert craftsmanship for residential, commercial, and hospitality projects.",
+      "Wood World Decor is a leading interior fit out company in UAE since 2015, offering turnkey solutions for homes, offices & retail. Call +971 52 787 5262.",
   },
 };
 
