@@ -43,7 +43,7 @@ export const metadata: Metadata = {
     siteName: "Wood World Decor LLC",
     images: [
       {
-        url: "https://www.wwduae.com/icon.jpg",
+        url: "/icon.jpg",
         width: 1200,
         height: 630,
         alt: "Wood World Decor LLC",
@@ -57,7 +57,7 @@ export const metadata: Metadata = {
     title: "Wood World Decor LLC | Leading Joinery & Fitout Company in Dubai",
     description:
       "Expert joinery, fit-out, and renovation solutions in Dubai. Transforming spaces with quality and style.",
-    images: ["https://www.wwduae.com/icon.jpg"],
+    images: ["/icon.jpg"],
   },
   alternates: {
     canonical: "/",

@@ -26,6 +26,10 @@ export const metadata: Metadata = {
     "renovation Dubai",
   ],
 
+  alternates: {
+    canonical: "/",
+  },
+
   openGraph: {
     title: "Wood World Decor – Top Interior Fit-Out Company Dubai",
     description:
@@ -41,7 +45,7 @@ export const metadata: Metadata = {
 
     images: [
       {
-        url: "https://www.wwduae.com/icon.jpg",
+        url: "/icon.jpg",
         width: 1200,
         height: 630,
         alt: "Wood World Decor - Top Interior Fit Out Company in Dubai",
@@ -57,7 +61,20 @@ export const metadata: Metadata = {
     description:
       "Wood World Decor LLC is a leading interior fit out company in UAE since 2015, offering turnkey solutions for homes, offices & retail. Call +971 52 787 5262.",
 
-    images: ["https://www.wwduae.com/icon.jpg"],
+    images: ["/icon.jpg"],
+  },
+
+  robots: {
+    index: true,
+    follow: true,
+
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
   },
 
   icons: {
