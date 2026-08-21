@@ -5,12 +5,17 @@ import Image from "next/image";
 import api from "@/lib/axios";
 import fallbackTeamPhoto from "../../../public/images/service1.webp";
 
+interface TeamImage {
+  url: string;
+  alt: string;
+}
+
 interface OurTeamApiResponse {
-  teamTitle: string;
-  teamDescription: string;
-  teamImage: string | string[];
-  teamButtonText: string;
-  teamButtonLink: string;
+  title: string;
+  description: string;
+  teamImages: TeamImage[];
+  buttonText: string;
+  buttonLink: string;
   teamSize: number;
   yearsExperience: number;
 }
@@ -27,8 +32,7 @@ interface OurTeamData {
 }
 
 const IMAGE_BASE_URL = process.env.NEXT_PUBLIC_IMAGE_URL || "";
-
-const IMAGE_ALT = "Interior fit out company in Dubai";
+const FALLBACK_ALT = "Wood World Decor team - professional craftsmen and interior fitout experts in Dubai";
 
 function resolveImage(path: string | undefined): string {
   if (!path) return fallbackTeamPhoto.src;
@@ -37,22 +41,28 @@ function resolveImage(path: string | undefined): string {
 }
 
 function mapApiToOurTeam(data: OurTeamApiResponse): OurTeamData {
-  const images = Array.isArray(data.teamImage) ? data.teamImage : [data.teamImage];
-  const resolvedImages = images.map((img) => resolveImage(img));
-
+  let photos: TeamPhoto[] = [];
+  
+  if (data.teamImages && Array.isArray(data.teamImages)) {
+    photos = data.teamImages.map((img) => ({
+      image: resolveImage(img.url),
+      alt: img.alt || FALLBACK_ALT,
+    }));
+  }
+  
   // Pad to at least 3 images if we don't have enough
-  while (resolvedImages.length < 3) {
-    resolvedImages.push(resolvedImages[0] || fallbackTeamPhoto.src);
+  while (photos.length < 3) {
+    const fallbackPhoto = photos.length > 0 ? photos[0] : { 
+      image: fallbackTeamPhoto.src, 
+      alt: FALLBACK_ALT 
+    };
+    photos.push({ ...fallbackPhoto });
   }
 
   return {
-    heading: data.teamTitle,
-    description: data.teamDescription,
-    photos: [
-      { image: resolvedImages[0], alt: IMAGE_ALT },
-      { image: resolvedImages[1], alt: IMAGE_ALT },
-      { image: resolvedImages[2], alt: IMAGE_ALT },
-    ],
+    heading: data.title,
+    description: data.description,
+    photos: photos.slice(0, 3),
   };
 }
 
@@ -61,9 +71,9 @@ const defaultData: OurTeamData = {
   description:
     "Behind every successful project is our dedicated team, known for their creativity, precision, and client-focused approach. With over 10 years of industry expertise, masterful detailing, and a commitment to on-time project delivery, Wood World Decor stands among the leading joinery fitout companies in Dubai. Our team of 100+ creative professionals collaborates closely with clients to transform spaces with style and innovation.",
   photos: [
-    { image: fallbackTeamPhoto.src, alt: IMAGE_ALT },
-    { image: fallbackTeamPhoto.src, alt: IMAGE_ALT },
-    { image: fallbackTeamPhoto.src, alt: IMAGE_ALT },
+    { image: fallbackTeamPhoto.src, alt: "Wood World Decor team member at work" },
+    { image: fallbackTeamPhoto.src, alt: "Wood World Decor team group photo" },
+    { image: fallbackTeamPhoto.src, alt: "Wood World Decor craftsman in workshop" },
   ],
 };
 
@@ -100,7 +110,7 @@ export default function OurTeam() {
   useEffect(() => {
     const fetchOurTeam = async () => {
       try {
-        const res = await api.get<OurTeamApiResponse>("/home-why-choose");
+        const res = await api.get<OurTeamApiResponse>("/home-why-choose/team");
         setData(mapApiToOurTeam(res.data));
       } catch (err) {
         console.error("Failed to fetch our team section:", err);
