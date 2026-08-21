@@ -32,6 +32,9 @@ export const metadata: Metadata = {
     "residential fit out Dubai",
     "Wood World Decor",
   ],
+  verification: {
+    google: "4Z5KYEL6lRjxu39tA3EqUKsE6WdQRfHkQipVwO49c0g",
+  },
   openGraph: {
     title: "Wood World Decor LLC | Leading Joinery & Fitout Company in Dubai",
     description:
