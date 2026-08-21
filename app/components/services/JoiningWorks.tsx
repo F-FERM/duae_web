@@ -14,6 +14,7 @@ interface TrustedImage {
   title: string;
   description: string;
   url: string;
+  alt?: string;
 }
 
 interface TrustedJoineryWorks {
@@ -50,6 +51,7 @@ const defaultData: JoineryWorksData = {
     title: `Project ${i + 1}`,
     description: "Quality joinery works tailored to your needs.",
     url: work1.src,
+    alt: `Joinery project ${i + 1} by Wood World Decor`,
   })),
 };
 
@@ -80,7 +82,6 @@ export default function JoineryWorks({ slug }: { slug?: string }) {
   const [isLoading, setIsLoading] = useState(true);
   const altText = useServiceAltText(slug || 'joinery');
 
-
   useEffect(() => {
     const fetchServiceDetail = async () => {
       try {
@@ -103,6 +104,7 @@ export default function JoineryWorks({ slug }: { slug?: string }) {
                     title: isString ? "" : img.title,
                     description: isString ? "" : img.description,
                     url: resolveImage(isString ? img : img?.url, work1.src),
+                    alt: isString ? altText : (img.alt || `${img.title} - Wood World Decor`),
                   };
                 })
               : defaultData.images,
@@ -116,15 +118,26 @@ export default function JoineryWorks({ slug }: { slug?: string }) {
     };
 
     if (slug) fetchServiceDetail();
-  }, [slug]);
+  }, [slug, altText]);
 
   if (isLoading) return <JoineryWorksSkeleton />;
+
+  // Fallback alt text if image doesn't have one
+  const getImageAlt = (img: TrustedImage, index: number) => {
+    return img.alt || `${img.title || `Image ${index + 1}`} - Wood World Decor`;
+  };
 
   return (
     <section className="relative w-full overflow-hidden py-16 md:py-20">
       {/* Background pattern */}
       <div className="absolute inset-0 -z-10">
-        <Image src={bgTexture} alt={altText} fill priority={false} className="object-cover" />
+        <Image 
+          src={bgTexture} 
+          alt="Wood World Decor - joinery works background texture" 
+          fill 
+          priority={false} 
+          className="object-cover" 
+        />
         <div className="absolute inset-0 bg-[#f7f1ee]/90" />
       </div>
 
@@ -151,17 +164,21 @@ export default function JoineryWorks({ slug }: { slug?: string }) {
               >
                 <Image
                   src={imgUrl || bgTexture.src}
-                  alt={altText}
+                  alt={getImageAlt(img, index)}
                   fill
                   unoptimized={imgUrl.startsWith("http")}
                   sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
                   className="object-cover transition-transform duration-700 ease-out group-hover:scale-110"
                 />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent transition-opacity duration-300 opacity-0 group-hover:opacity-100 flex flex-col justify-end p-6">
-                <h3 className="text-xl font-bold text-white translate-y-4 group-hover:translate-y-0 transition-transform duration-300 ease-out">{img.title}</h3>
-                <p className="text-sm text-gray-300 mt-2 translate-y-4 group-hover:translate-y-0 transition-transform duration-300 delay-75 ease-out">{img.description}</p>
-              </div>
-            </motion.div>
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent transition-opacity duration-300 opacity-0 group-hover:opacity-100 flex flex-col justify-end p-6">
+                  <h3 className="text-xl font-bold text-white translate-y-4 group-hover:translate-y-0 transition-transform duration-300 ease-out">
+                    {img.title}
+                  </h3>
+                  <p className="text-sm text-gray-300 mt-2 translate-y-4 group-hover:translate-y-0 transition-transform duration-300 delay-75 ease-out">
+                    {img.description}
+                  </p>
+                </div>
+              </motion.div>
             );
           })}
         </div>

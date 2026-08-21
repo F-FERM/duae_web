@@ -12,6 +12,7 @@ interface ServiceDetailApiResponse {
   heroTitle: string;
   heroSubtitle: string;
   heroImage: string;
+  heroImageAlt?: string; 
   cta?: {
     whatsappText?: string;
   };
@@ -21,6 +22,7 @@ interface HeroServiceData {
   title: string;
   subtitle: string;
   image: string;
+  imageAlt: string; 
   whatsappText: string;
 }
 
@@ -37,6 +39,7 @@ const defaultData: HeroServiceData = {
   subtitle:
     "As a leading joinery company in Dubai, we deliver bespoke joinery solutions that blend durability, elegance, and functionality. Our team of skilled craftsmen specializes in custom furniture, wardrobes, decorative wood paneling, and office fit-outs - designed to elevate both residential and commercial spaces. With a commitment to quality and attention to detail, we ensure every project reflects innovation, style, and lasting value.",
   image: hero1.src,
+  imageAlt: "Wood World Decor - leading joinery company in Dubai",
   whatsappText: "WHATSAPP US",
 };
 
@@ -73,6 +76,7 @@ export default function HeroService({ slug }: { slug: string }) {
           title: res.data.heroTitle,
           subtitle: res.data.heroSubtitle,
           image: resolveImage(res.data.heroImage, hero1.src),
+          imageAlt: res.data.heroImageAlt || "Wood World Decor - leading joinery company in Dubai",
           whatsappText: res.data.cta?.whatsappText || "WHATSAPP US",
         });
       } catch (err) {
@@ -93,7 +97,7 @@ export default function HeroService({ slug }: { slug: string }) {
       <div className="absolute inset-0">
         <Image
           src={data.image}
-          alt={altText}
+          alt={data.imageAlt}
           fill
           priority
           unoptimized={data.image.startsWith("http")}

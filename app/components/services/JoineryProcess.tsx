@@ -20,8 +20,8 @@ interface ProcessStepApi {
 interface ProcessApi {
   title: string;
   description: string;
-  image?: string;  // Added image field
-  alt?: string;    // Added alt field
+  image?: string;
+  alt?: string;
   steps: ProcessStepApi[];
 }
 
@@ -32,8 +32,8 @@ interface ServiceDetailApiResponse {
 interface OurProcessData {
   title: string;
   description: string;
-  image?: string;  // Added image field
-  alt?: string;    // Added alt field
+  image?: string;
+  alt?: string;
   steps: ProcessStepApi[];
 }
 
@@ -138,6 +138,7 @@ export default function OurProcess({ slug }: { slug: string }) {
         const res = await api.get<ServiceDetailApiResponse>(
           `/services/detail/${slug}`
         );
+        // Use the image and alt from the API response
         setData({
           title: res.data.process.title,
           description: res.data.process.description,
@@ -158,7 +159,10 @@ export default function OurProcess({ slug }: { slug: string }) {
 
   if (isLoading) return <OurProcessSkeleton />;
 
+  // Determine which image to use (API image or fallback)
   const imageToUse = data.image || processImage;
+  // Use API alt text or fallback
+  const imageAlt = data.alt || "Our process - Wood World Decor";
 
   return (
     <section className="relative overflow-hidden bg-[#f6edea] py-20 md:py-28">
@@ -202,7 +206,7 @@ export default function OurProcess({ slug }: { slug: string }) {
             <div className="relative aspect-[4/3] w-full overflow-hidden sm:aspect-[16/11] lg:aspect-auto lg:h-full lg:w-full">
               <Image
                 src={typeof imageToUse === 'string' ? imageToUse : imageToUse.src}
-                alt={data.alt || "Our process - Wood World Decor"}
+                alt={imageAlt}
                 fill
                 priority
                 className="object-cover"

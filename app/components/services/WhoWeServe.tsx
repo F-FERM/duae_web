@@ -12,6 +12,7 @@ interface WhoWeServeItemApi {
   title: string;
   description: string;
   image?: string;
+  alt?: string; // Added alt field
   icon?: string;
   link?: string;
 }
@@ -48,6 +49,7 @@ const defaultData: WhoWeServeData = {
       description:
         "Our commercial fit-out services include space planning, design, and execution, ensuring that your workspace enhances productivity and reflects your brand identity.",
       image: "",
+      alt: "Commercial fit-out services by Wood World Decor",
       icon: "",
       link: "",
     },
@@ -56,6 +58,7 @@ const defaultData: WhoWeServeData = {
       description:
         "As experienced fit out contractors Dubai, we specialize in designing and executing interiors that blend aesthetics with functionality.",
       image: "",
+      alt: "Residential fit-out services by Wood World Decor",
       icon: "",
       link: "",
     },
@@ -64,6 +67,7 @@ const defaultData: WhoWeServeData = {
       description:
         "Our hospitality fit-out services focus on delivering interiors that are both inviting and functional.",
       image: "",
+      alt: "Hospitality fit-out services by Wood World Decor",
       icon: "",
       link: "",
     },
@@ -99,7 +103,6 @@ export default function WhoWeServe({ slug }: { slug: string }) {
   const [isLoading, setIsLoading] = useState(true);
   const altText = useServiceAltText(slug);
 
-
   useEffect(() => {
     const fetchServiceDetail = async () => {
       try {
@@ -109,7 +112,10 @@ export default function WhoWeServe({ slug }: { slug: string }) {
         setData({
           title: res.data.whoWeServe.title,
           description: res.data.whoWeServe.description,
-          items: res.data.whoWeServe.items,
+          items: res.data.whoWeServe.items.map((item) => ({
+            ...item,
+            alt: item.alt || `${item.title} - Wood World Decor`,
+          })),
         });
       } catch (err) {
         console.error("Failed to fetch who-we-serve section:", err);
@@ -123,6 +129,11 @@ export default function WhoWeServe({ slug }: { slug: string }) {
   }, [slug]);
 
   if (isLoading) return <WhoWeServeSkeleton />;
+
+  // Helper function to get alt text for an item
+  const getItemAlt = (item: WhoWeServeItemApi) => {
+    return item.alt || `${item.title} - Wood World Decor`;
+  };
 
   return (
     <section className="w-full bg-white py-16 md:py-20">
@@ -138,13 +149,15 @@ export default function WhoWeServe({ slug }: { slug: string }) {
         <div className="mt-10 grid grid-cols-1 gap-6 sm:grid-cols-2 md:mt-14 lg:grid-cols-3">
           {data.items.map((item, index) => {
             const imgSrc = resolveImage(item?.image);
+            const itemAlt = getItemAlt(item);
+            
             const content = (
               <>
                 {imgSrc && (
                   <div className="relative h-[280px] w-full overflow-hidden md:h-[340px]">
                     <Image
                       src={imgSrc}
-                      alt={altText}
+                      alt={itemAlt}
                       fill
                       unoptimized={imgSrc.startsWith("http")}
                       sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"

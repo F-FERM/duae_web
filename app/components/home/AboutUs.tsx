@@ -31,7 +31,9 @@ interface AboutApiResponse {
   title: string;
   description: string;
   image: string;
+  alt?: string;
   imageTwo: string;
+  imageTwoAlt?: string;
   buttonText: string;
   buttonLink: string;
   foundedYear: string;
@@ -41,7 +43,9 @@ interface AboutApiResponse {
   milestonesTitle: string;
   milestonesSubtitle: string;
   milestonesImageOne: string;
+  milestonesImageOneAlt?: string;
   milestonesImageTwo: string;
+  milestonesImageTwoAlt?: string;
   milestones: Milestone[];
   isActive: boolean;
 }
@@ -63,7 +67,8 @@ export default function AboutUs() {
   const [data, setData] = useState<AboutApiResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  const IMAGE_ALT = "Craftsman's hands shaping wood with a hand tool in the workshop";
+  // Fallback alt text
+  const FALLBACK_ALT = "Wood World Decor - leading joinery and fitout company in Dubai";
 
   useEffect(() => {
     let isMounted = true;
@@ -101,7 +106,7 @@ export default function AboutUs() {
 
     observer.observe(node);
     return () => observer.disconnect();
-  }, [isLoading, data]); // re-run once loading finishes and data mounts
+  }, [isLoading, data]);
 
   if (isLoading) return <div className="py-28 text-center">Loading...</div>;
   if (!data) return null;
@@ -109,6 +114,9 @@ export default function AboutUs() {
   const milestones = (data.milestones ?? [])
     .slice()
     .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+
+  // Use alt from about section or fallback
+  const aboutAlt = data.alt || FALLBACK_ALT;
 
   return (
     <section className="relative overflow-hidden bg-[#faf7f6] py-20 md:py-28">
@@ -120,7 +128,7 @@ export default function AboutUs() {
         >
           <Image 
             src={imagepattern1} 
-            alt={IMAGE_ALT} 
+            alt={aboutAlt} 
             priority 
             className="object-cover" 
           />
@@ -135,7 +143,7 @@ export default function AboutUs() {
         >
           <Image 
             src={pattern2} 
-            alt={IMAGE_ALT} 
+            alt={aboutAlt} 
             priority 
             className="object-cover" 
           />
@@ -181,7 +189,7 @@ export default function AboutUs() {
             <div className="relative h-[340px] w-[92%] overflow-hidden sm:h-[400px] lg:h-[440px]">
               <Image
                 src={data.image}
-                alt={IMAGE_ALT}
+                alt={aboutAlt}
                 fill
                 priority
                 sizes="(max-width: 1024px) 92vw, 46vw"
@@ -192,7 +200,7 @@ export default function AboutUs() {
             <div className="absolute -bottom-14 right-0 h-[260px] w-[190px] overflow-hidden rounded-t-[110px] shadow-xl sm:h-[300px] sm:w-[220px] lg:right-[-8px]">
               <Image
                 src={data.imageTwo || data.image}
-                alt={IMAGE_ALT}
+                alt={aboutAlt}
                 fill
                 priority
                 sizes="190px"
