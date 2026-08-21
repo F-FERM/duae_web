@@ -19,6 +19,7 @@ interface Slide {
   wpButtonLink?: string;
   isActive?: boolean;
   order?: number;
+  alt?: string;
 }
 
 // Fallback slides, only used if the API call fails or returns nothing
@@ -98,7 +99,8 @@ export default function Hero() {
   const [slides, setSlides] = useState<Slide[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  const IMAGE_ALT = "Interior fit out company in Dubai";
+  const IMAGE_ALT =
+    "Interior fit out company in Dubai – craftsman sanding custom-made furniture";
 
   useEffect(() => {
     const fetchSlides = async () => {
@@ -124,7 +126,7 @@ export default function Hero() {
     (index: number) => {
       setCurrent((index + slides.length) % slides.length);
     },
-    [slides.length]
+    [slides.length],
   );
 
   const nextSlide = useCallback(() => {
@@ -259,8 +261,8 @@ export default function Hero() {
                           ? slides[current].wpButtonLink.startsWith("+")
                             ? `https://wa.me/${slides[current].wpButtonLink.replace("+", "")}`
                             : slides[current].wpButtonLink.startsWith("http")
-                            ? slides[current].wpButtonLink
-                            : `https://wa.me/${slides[current].wpButtonLink}`
+                              ? slides[current].wpButtonLink
+                              : `https://wa.me/${slides[current].wpButtonLink}`
                           : "https://wa.me/971527875262"
                       }
                       target="_blank"
@@ -312,7 +314,9 @@ export default function Hero() {
             onClick={() => goToSlide(index)}
             aria-label={`Go to slide ${index + 1}`}
             className={`h-2 rounded-full transition-all sm:h-2.5 ${
-              index === current ? "w-5 bg-white sm:w-6" : "w-2 bg-white/50 sm:w-2.5"
+              index === current
+                ? "w-5 bg-white sm:w-6"
+                : "w-2 bg-white/50 sm:w-2.5"
             }`}
           />
         ))}
