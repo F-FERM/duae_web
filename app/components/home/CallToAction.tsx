@@ -37,7 +37,7 @@ const defaultData: CtaData = {
   whatsappLink: "https://wa.me/971527875262",
 };
 
-const IMAGE_ALT = "Interior fit out company in Dubai";
+const IMAGE_ALT = "Wood World Decor workshop interior with tools and timber";
 
 // Normalizes talkToUsLink to a tel: link, a relative route, or passes through
 function resolveTalkLink(link: string): string {
