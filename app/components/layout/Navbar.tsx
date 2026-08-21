@@ -47,7 +47,7 @@ const staticLinks: Omit<MenuItem, "subItems">[] = [
 // so calling it directly with fetch rather than going through `api.get`.
 // If `api`'s baseURL already points at duae-api-production, swap this back to
 // `api.get<ServiceTreeNode[]>("/services/tree")`.
-const SERVICES_TREE_URL = "https://duae-api-production.up.railway.app/api/services/tree";
+const SERVICES_TREE_URL = "https://api.wwduae.com/api/services/tree";
 
 // ─── Build the Services menu entry from the tree API data ────────────────────
 
