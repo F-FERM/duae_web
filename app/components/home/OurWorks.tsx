@@ -12,6 +12,7 @@ interface WorkImageApiItem {
   description: string;
   category: string;
   order: number;
+  alt: string; 
 }
 
 interface OurWorksApiResponse {
@@ -23,6 +24,7 @@ interface OurWorksApiResponse {
   featuredDescription: string;
   featuredImage: string;
   featuredCategory: string;
+  featuredImageAlt: string;
   images: WorkImageApiItem[];
 }
 
@@ -33,6 +35,7 @@ interface WorkItem {
   description: string;
   buttonText: string;
   buttonLink: string;
+  alt: string;
 }
 
 interface OurWorksData {
@@ -43,13 +46,14 @@ interface OurWorksData {
 
 const IMAGE_BASE_URL = process.env.NEXT_PUBLIC_IMAGE_URL || "";
 
-const IMAGE_ALT = "Interior fit out company in Dubai";
-
 function resolveImage(path: string): string {
   if (!path) return "/images/service1.webp";
   if (path.startsWith("http")) return path;
   return `${IMAGE_BASE_URL}${path.startsWith("/") ? path : `/${path}`}`;
 }
+
+// Fallback alt text for images without alt
+const FALLBACK_ALT = "Wood World Decor - interior fit out and joinery projects in Dubai";
 
 function mapApiToOurWorks(data: OurWorksApiResponse): OurWorksData {
   return {
@@ -57,6 +61,7 @@ function mapApiToOurWorks(data: OurWorksApiResponse): OurWorksData {
     introText: data.introText,
     items: [...(data.images || [])]
       .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
+      .slice(0, 4) // Only take first 4 for display
       .map((img) => ({
         id: img._id,
         image: resolveImage(img.url),
@@ -64,6 +69,7 @@ function mapApiToOurWorks(data: OurWorksApiResponse): OurWorksData {
         description: img.description,
         buttonText: data.buttonText,
         buttonLink: data.buttonLink,
+        alt: img.alt || FALLBACK_ALT,
       })),
   };
 }
@@ -76,38 +82,38 @@ const defaultData: OurWorksData = {
     {
       id: "1",
       image: "/images/slide1.webp",
-      title: "Hoof Cafe",
-      description:
-        "At Hoof Cafe, we provided customized metal works that blended functionality with modern design. From structural elements to decorative finishes, our craftsmanship added durability and a sleek industrial touch.",
+      title: "Apartments in Burj Khalifa",
+      description: "Luxury apartment interiors with premium joinery and fit-out solutions.",
       buttonText: "View Our Works",
-      buttonLink: "/works",
+      buttonLink: "/our-works",
+      alt: "Luxury apartment interiors at Burj Khalifa by Wood World Decor",
     },
     {
       id: "2",
       image: "/images/service1.webp",
       title: "Hoof Cafe",
-      description:
-        "At Hoof Cafe, we provided customized metal works that blended functionality with modern design. From structural elements to decorative finishes, our craftsmanship added durability and a sleek industrial touch.",
+      description: "Custom metal works and industrial design for Hoof Cafe.",
       buttonText: "View Our Works",
-      buttonLink: "/works",
+      buttonLink: "/our-works",
+      alt: "Custom metal works at Hoof Cafe by Wood World Decor",
     },
     {
       id: "3",
       image: "/images/slide1.webp",
-      title: "Hoof Cafe",
-      description:
-        "At Hoof Cafe, we provided customized metal works that blended functionality with modern design. From structural elements to decorative finishes, our craftsmanship added durability and a sleek industrial touch.",
+      title: "Abu Dhabi VIP Airport",
+      description: "Premium joinery and fit-out solutions for VIP airport terminal.",
       buttonText: "View Our Works",
-      buttonLink: "/works",
+      buttonLink: "/our-works",
+      alt: "Premium joinery at Abu Dhabi VIP Airport by Wood World Decor",
     },
     {
       id: "4",
       image: "/images/service1.webp",
-      title: "Hoof Cafe",
-      description:
-        "At Hoof Cafe, we provided customized metal works that blended functionality with modern design. From structural elements to decorative finishes, our craftsmanship added durability and a sleek industrial touch.",
+      title: "Residential Villa",
+      description: "Complete renovation and fit-out for luxury residential villa.",
       buttonText: "View Our Works",
-      buttonLink: "/works",
+      buttonLink: "/our-works",
+      alt: "Luxury residential villa renovation by Wood World Decor",
     },
   ],
 };
@@ -150,7 +156,6 @@ export default function OurWorks() {
   useEffect(() => {
     const fetchOurWorks = async () => {
       try {
-        // NOTE: assumed endpoint — confirm the real path/param names against your API before shipping.
         const res = await api.get<OurWorksApiResponse>("/home-works");
         const mapped = mapApiToOurWorks(res.data);
         setData(mapped.items.length > 0 ? mapped : defaultData);
@@ -192,13 +197,13 @@ export default function OurWorks() {
 
       {/* Full-bleed image grid, edge-to-edge with zero gap between columns */}
       <div className="mt-10 grid grid-cols-2 gap-0 sm:grid-cols-3 lg:grid-cols-4">
-        {data.items.slice(0, 4).map((item, index) => (
+        {data.items.map((item, index) => (
           <div key={`${item.id}-${index}`} className="group relative block">
-            {/* Image (clipped on its own so the hover card below can overflow it) */}
+            {/* Image */}
             <div className="relative h-[260px] w-full overflow-hidden bg-slate-100 sm:h-[420px] md:h-[520px] lg:h-[600px] xl:h-[680px]">
               <Image
                 src={item.image}
-                alt={IMAGE_ALT}
+                alt={item.alt || FALLBACK_ALT} 
                 fill
                 sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
                 className="object-cover transition duration-500 ease-out group-hover:scale-105"
