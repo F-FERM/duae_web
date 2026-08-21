@@ -8,7 +8,7 @@ export default function GoogleAnalytics() {
       {/* Google Analytics Script */}
       <Script
         strategy="afterInteractive"
-        src={`https://www.googletagmanager.com/gtag/js?id=G-SHHC62XZX5`}
+        src="https://www.googletagmanager.com/gtag/js?id=G-4ED4DELC39"
       />
 
       {/* Google Analytics Initialization */}
@@ -20,7 +20,7 @@ export default function GoogleAnalytics() {
             window.dataLayer = window.dataLayer || [];
             function gtag(){dataLayer.push(arguments);}
             gtag('js', new Date());
-            gtag('config', 'G-SHHC62XZX5');
+            gtag('config', 'G-4ED4DELC39');
           `,
         }}
       />
