@@ -39,9 +39,20 @@ interface ServiceItem {
   title: string;
   description: string;
   href: string;
+  alt: string; 
 }
 
-const IMAGE_ALT = "Interior fit out company in Dubai";
+const serviceAltMap: Record<string, string> = {
+  "Joinery": "Custom-made furniture Dubai – carpenters assembling bespoke wood furniture at Wood World Decor LLC",
+  "Renovation Services": "Interior space mid-renovation with tools and building materials at Wood World Decor LLC",
+  "Fit-out Solutions": "Workers installing wood paneling during a fit-out project at Wood World Decor LLC",
+  "Metal Works": "Metal fabrication work in progress at the workshop of Wood World Decor LLC",
+  "Kitchen Renovation": "Modern renovated kitchen with island and wood cabinetry by Wood World Decor LLC",
+  "Commercial Fit Out": "Completed commercial interior fit-out space by Wood World Decor LLC",
+  "Residential Fit Out": "Luxury residential interior fit-out with premium finishes by Wood World Decor LLC",
+};
+
+const FALLBACK_ALT = "Interior fit out company in Dubai - Wood World Decor LLC";
 
 // Maps the FontAwesome class strings coming from the API to Lucide icons
 const iconMap: Record<string, LucideIcon> = {
@@ -60,13 +71,16 @@ function resolveIcon(icon: string): LucideIcon {
 }
 
 // Prefix relative image paths coming from the API with your backend/CDN base URL.
-// Your current API already returns full Cloudinary URLs, so this just passes them through.
 const IMAGE_BASE_URL = process.env.NEXT_PUBLIC_IMAGE_URL || "";
 
 function resolveImage(path: string): string {
   if (!path) return "/images/service1.webp";
   if (path.startsWith("http")) return path;
   return `${IMAGE_BASE_URL}${path}`;
+}
+
+function getServiceAlt(title: string): string {
+  return serviceAltMap[title] || FALLBACK_ALT;
 }
 
 function mapApiToServices(data: ServiceApiItem[]): ServiceItem[] {
@@ -80,6 +94,7 @@ function mapApiToServices(data: ServiceApiItem[]): ServiceItem[] {
       title: s.title,
       description: s.shortDescription,
       href: `/services/${s.slug}`,
+      alt: getServiceAlt(s.title),
     }));
 }
 
@@ -90,54 +105,54 @@ const defaultServices: ServiceItem[] = [
     image: "/images/service1.webp",
     icon: Landmark,
     title: "Joinery",
-    description:
-      "From custom furniture to intricate wood detailing, our joinery solutions are designed to add character, durability, and style.",
+    description: "From custom furniture to intricate wood detailing, our joinery solutions are designed to add character, durability, and style.",
     href: "/services/joinery",
+    alt: "Custom-made furniture Dubai – carpenters assembling bespoke wood furniture at Wood World Decor LLC",
   },
   {
     id: "renovation-services",
     image: "/images/service1.webp",
     icon: Wrench,
     title: "Renovation Services",
-    description:
-      "We offer complete renovation services including MEP, painting, gypsum works, and wall fixing, specializing in transforming villas, apartments, kitchens, and bathrooms into modern, functional, and stylish spaces.",
+    description: "We offer complete renovation services including MEP, painting, gypsum works, and wall fixing, specializing in transforming villas, apartments, kitchens, and bathrooms into modern, functional, and stylish spaces.",
     href: "/services/renovation-services",
+    alt: "Interior space mid-renovation with tools and building materials at Wood World Decor LLC",
   },
   {
     id: "turnkey-solutions",
     image: "/images/service1.webp",
     icon: Package,
     title: "Turnkey Solutions",
-    description:
-      "Our turnkey solutions cover every stage of your project, from design and planning to execution and finishing, ensuring a hassle-free experience and a fully completed space ready for use.",
+    description: "Our turnkey solutions cover every stage of your project, from design and planning to execution and finishing, ensuring a hassle-free experience and a fully completed space ready for use.",
     href: "/services/turnkey-solutions",
+    alt: "Complete turnkey interior project execution by Wood World Decor LLC",
   },
   {
     id: "fitout-solutions",
     image: "/images/service1.webp",
     icon: Hammer,
     title: "Fit-out Solutions",
-    description:
-      "Our fit-out solutions cover everything from MEP, painting, gypsum works, and wall fixing to complete finishing touches, tailored for both residential and commercial spaces.",
+    description: "Our fit-out solutions cover everything from MEP, painting, gypsum works, and wall fixing to complete finishing touches, tailored for both residential and commercial spaces.",
     href: "/services/fitout-solutions",
+    alt: "Workers installing wood paneling during a fit-out project at Wood World Decor LLC",
   },
   {
     id: "metal-works",
     image: "/images/service1.webp",
     icon: PaintBucket,
     title: "Metal Works",
-    description:
-      "Our metal works services deliver custom-designed solutions with strength, precision, and durability, including fabrications, structural works, and decorative finishes to enhance both residential and commercial projects.",
+    description: "Our metal works services deliver custom-designed solutions with strength, precision, and durability, including fabrications, structural works, and decorative finishes to enhance both residential and commercial projects.",
     href: "/services/metal-works",
+    alt: "Metal fabrication work in progress at the workshop of Wood World Decor LLC",
   },
   {
     id: "upholstery",
     image: "/images/service1.webp",
     icon: Sofa,
     title: "Upholstery",
-    description:
-      "Our upholstery services breathe new life into your furniture with premium fabrics, expert craftsmanship, and customized designs, ensuring comfort, durability, and a perfect match to your interior style.",
+    description: "Our upholstery services breathe new life into your furniture with premium fabrics, expert craftsmanship, and customized designs, ensuring comfort, durability, and a perfect match to your interior style.",
     href: "/services/upholstery",
+    alt: "Premium upholstery services with expert craftsmanship by Wood World Decor LLC",
   },
 ];
 
@@ -205,7 +220,7 @@ export default function Services() {
       <div className="absolute inset-0 -z-10">
         <Image 
           src={bgTexture} 
-          alt={IMAGE_ALT} 
+          alt="Wood World Decor - interior fit out company background texture" 
           fill 
           priority={false} 
           className="object-cover" 
@@ -254,7 +269,7 @@ export default function Services() {
                   <div className="relative h-[200px] w-full overflow-hidden xs:h-[220px] sm:h-[260px] md:h-[280px] lg:h-[300px]">
                     <Image
                       src={service.image}
-                      alt={IMAGE_ALT}
+                      alt={service.alt}
                       fill
                       sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
                       className="object-cover transition-transform duration-700 group-hover:scale-110"
