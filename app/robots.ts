@@ -12,6 +12,6 @@ export default function robots(): MetadataRoute.Robots {
         "/*?*", // Dynamic parameters
       ],
     },
-    sitemap: "https://www.wwduae.com/sitemap.xml",
+    sitemap: "https://wwduae.com/sitemap.xml",
   };
 }

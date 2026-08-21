@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
 export async function GET() {
-  const baseUrl = "https://www.wwduae.com";
+  const baseUrl = "https://wwduae.com";
 
   const pages = [
     {

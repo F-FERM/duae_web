@@ -68,7 +68,7 @@ export async function GET() {
     }));
   }
 
-  const baseUrl = "https://www.wwduae.com";
+  const baseUrl = "https://wwduae.com";
 
   const urls = services
     .map(

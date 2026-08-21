@@ -35,7 +35,7 @@ export const metadata: Metadata = {
     description:
       "Wood World Decor LLC is a leading interior fit out company in UAE since 2015, offering turnkey solutions for homes, offices & retail. Call +971 52 787 5262.",
 
-    url: "https://www.wwduae.com/",
+    url: "https://wwduae.com/",
 
     siteName: "Wood World Decor LLC",
 

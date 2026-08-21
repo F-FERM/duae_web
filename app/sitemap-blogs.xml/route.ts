@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 export const revalidate = 3600;
 
 const API_URL = process.env.NEXT_PUBLIC_BASE_URL;
-const BASE_URL = "https://www.wwduae.com";
+const BASE_URL = "https://wwduae.com";
 
 interface Blog {
   slug: string;
