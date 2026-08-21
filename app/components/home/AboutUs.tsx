@@ -63,7 +63,7 @@ export default function AboutUs() {
   const [data, setData] = useState<AboutApiResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  const IMAGE_ALT = "Interior fit out company in Dubai";
+  const IMAGE_ALT = "Craftsman's hands shaping wood with a hand tool in the workshop";
 
   useEffect(() => {
     let isMounted = true;
