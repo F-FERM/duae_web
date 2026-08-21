@@ -121,7 +121,7 @@ export default async function Footer() {
               <div className="inline-block bg-white p-3 shadow-xl sm:p-4">
                 <Image
                   src={data.logo}
-                  alt={data.logoAlt || data.companyName}
+                  alt="Wood World Decor LLC logo"
                   width={280}
                   height={150}
                   className="h-auto w-[160px] object-contain sm:w-[200px] lg:w-[280px]"
