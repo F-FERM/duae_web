@@ -17,17 +17,23 @@ interface ProcessStepApi {
   icon: string;
 }
 
+interface ProcessApi {
+  title: string;
+  description: string;
+  image?: string;  // Added image field
+  alt?: string;    // Added alt field
+  steps: ProcessStepApi[];
+}
+
 interface ServiceDetailApiResponse {
-  process: {
-    title: string;
-    description: string;
-    steps: ProcessStepApi[];
-  };
+  process: ProcessApi;
 }
 
 interface OurProcessData {
   title: string;
   description: string;
+  image?: string;  // Added image field
+  alt?: string;    // Added alt field
   steps: ProcessStepApi[];
 }
 
@@ -35,6 +41,8 @@ const defaultData: OurProcessData = {
   title: "Our Fit-Out Process",
   description:
     "Our streamlined process ensures exceptional results in every project. From consultation to handover, we deliver outstanding solutions with precision and dedication.",
+  image: "",
+  alt: "",
   steps: [
     { step: "01", title: "Project Consultation & Briefing", description: "You share your goals and ideas, and our team listens - defining your requirements and vision.", icon: "" },
     { step: "02", title: "Design & Material Planning", description: "Our designers sketch layouts and shortlist materials suited to your space and budget.", icon: "" },
@@ -124,7 +132,6 @@ export default function OurProcess({ slug }: { slug: string }) {
   const [openIndex, setOpenIndex] = useState(0);
   const altText = useServiceAltText(slug);
 
-
   useEffect(() => {
     const fetchServiceDetail = async () => {
       try {
@@ -134,6 +141,8 @@ export default function OurProcess({ slug }: { slug: string }) {
         setData({
           title: res.data.process.title,
           description: res.data.process.description,
+          image: res.data.process.image || "",
+          alt: res.data.process.alt || "",
           steps: res.data.process.steps,
         });
       } catch (err) {
@@ -148,6 +157,8 @@ export default function OurProcess({ slug }: { slug: string }) {
   }, [slug]);
 
   if (isLoading) return <OurProcessSkeleton />;
+
+  const imageToUse = data.image || processImage;
 
   return (
     <section className="relative overflow-hidden bg-[#f6edea] py-20 md:py-28">
@@ -176,7 +187,7 @@ export default function OurProcess({ slug }: { slug: string }) {
           {data.title}
         </h2>
 
-        <p className="mx-auto mt-3 text-sm leading-7 text-gray-600 sm:text-base sm:leading-8 md:text-lg">
+        <p className="mx-auto mt-3 text-sm leading-7 text-gray-600 sm:text-base sm:leading-8 md:text-lg text-center max-w-3xl">
           {data.description}
         </p>
 
@@ -190,8 +201,8 @@ export default function OurProcess({ slug }: { slug: string }) {
           >
             <div className="relative aspect-[4/3] w-full overflow-hidden sm:aspect-[16/11] lg:aspect-auto lg:h-full lg:w-full">
               <Image
-                src={processImage}
-                alt="Craftsman measuring wood in our Dubai workshop"
+                src={typeof imageToUse === 'string' ? imageToUse : imageToUse.src}
+                alt={data.alt || "Our process - Wood World Decor"}
                 fill
                 priority
                 className="object-cover"

@@ -26,7 +26,7 @@ export default function LoginPage() {
     const token = localStorage.getItem("token");
 
     if (token) {
-      router.replace("/admin/dashboard");
+      router.replace("/admin/dashboard/");
     }
   }, [router]);
 
@@ -38,7 +38,7 @@ export default function LoginPage() {
     try {
       setLoading(true);
 
-      const res = await api.post("/auth/login", {
+      const res = await api.post("/auth/login/", {
         username,
         password,
       });
@@ -47,7 +47,7 @@ export default function LoginPage() {
 
       toast.success("Login successful");
 
-      router.replace("/admin/dashboard");
+      router.replace("/admin/dashboard/");
     } catch (err: any) {
       toast.error(
         err?.response?.data?.message || "Invalid username or password"

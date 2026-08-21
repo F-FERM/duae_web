@@ -155,6 +155,8 @@ interface Service {
   process: {
     title: string;
     description: string;
+    image?: string;  // Added for process banner
+    alt?: string;    // Added for process image alt text
     steps: ProcessStep[];
   };
   materials: {
@@ -179,7 +181,6 @@ interface Service {
   };
   trustedJoineryWorks: TrustedJoineryWorks;
 }
-
 // ===================== HELPERS =====================
 
 function deepClone<T>(obj: T): T {
@@ -1277,19 +1278,20 @@ function ProcessTab({
   setField: (path: string, value: unknown) => void;
   hasChanged: (path: string) => boolean;
 }) {
-  const section = form.process ?? { title: "", description: "", steps: [] };
+  const section = form.process ?? { title: "", description: "", image: "", alt: "", steps: [] };
+  const [uploadingProcessImage, setUploadingProcessImage] = useState(false);
   const getInputClass = (path: string) => hasChanged(path) ? inputChangedCls : inputCls;
   const getTextareaClass = (path: string) => hasChanged(path) ? textareaChangedCls : textareaCls;
 
   const updateStep = (idx: number, key: keyof ProcessStep, val: string) => {
     setForm((prev) => {
       const clone = deepClone(prev);
-      if (!clone.process) clone.process = { title: "", description: "", steps: [] };
+      if (!clone.process) clone.process = { title: "", description: "", image: "", alt: "", steps: [] };
       if (!clone.process.steps) clone.process.steps = [];
       if (!clone.process.steps[idx]) {
         clone.process.steps[idx] = { step: "", title: "", description: "", icon: "" };
       }
-      clone.process.steps[idx][key] = val;
+      (clone.process.steps[idx] as any)[key] = val;
       return clone;
     });
   };
@@ -1297,7 +1299,7 @@ function ProcessTab({
   const addStep = () => {
     setForm((prev) => {
       const clone = deepClone(prev);
-      if (!clone.process) clone.process = { title: "", description: "", steps: [] };
+      if (!clone.process) clone.process = { title: "", description: "", image: "", alt: "", steps: [] };
       if (!clone.process.steps) clone.process.steps = [];
       const n = clone.process.steps.length + 1;
       clone.process.steps.push({ step: String(n).padStart(2, "0"), title: "", description: "", icon: "" });
@@ -1318,34 +1320,103 @@ function ProcessTab({
   return (
     <div className="flex flex-col gap-[16px]">
       <Field label="Section Title" hasChanged={hasChanged("process.title")}>
-        <input className={getInputClass("process.title")} value={section.title} onChange={(e) => setField("process.title", e.target.value)} />
+        <input 
+          className={getInputClass("process.title")} 
+          value={section.title || ''} 
+          onChange={(e) => setField("process.title", e.target.value)} 
+          placeholder="e.g., Our Joinery Process"
+        />
       </Field>
+      
       <Field label="Section Description" hasChanged={hasChanged("process.description")}>
-        <textarea className={getTextareaClass("process.description")} value={section.description} onChange={(e) => setField("process.description", e.target.value)} />
+        <textarea 
+          className={getTextareaClass("process.description")} 
+          value={section.description || ''} 
+          onChange={(e) => setField("process.description", e.target.value)} 
+          placeholder="Describe the overall process..."
+          rows={3}
+        />
       </Field>
-      <p className="text-[11px] font-semibold uppercase tracking-widest text-[#888888]">Steps</p>
+      
+      {/* Process Banner Image Upload */}
+      <div className="sm:col-span-2">
+        <ImageUpload
+          value={section.image || ''}
+          onChange={(url) => setField("process.image", url)}
+          label="Process Banner Image"
+          uploading={uploadingProcessImage}
+          setUploading={setUploadingProcessImage}
+          hasChanged={hasChanged("process.image")}
+        />
+        <p className="mt-1 text-[11px] text-[#888888]">
+          Upload a banner image for the process section (recommended size: 1200x600px)
+        </p>
+      </div>
+      
+      <Field label="Image Alt Text" hasChanged={hasChanged("process.alt")}>
+        <input 
+          className={getInputClass("process.alt")} 
+          value={section.alt || ''} 
+          onChange={(e) => setField("process.alt", e.target.value)} 
+          placeholder="e.g., Renovation process steps banner showing the workflow from consultation to handover"
+        />
+      </Field>
+      
+      <hr className="border-[#E4C9B4]" />
+      
+      <div className="flex items-center justify-between">
+        <p className="text-[11px] font-semibold uppercase tracking-widest text-[#888888]">
+          Steps ({section.steps?.length || 0})
+        </p>
+        <span className="text-[10px] text-[#888888]">
+          Drag to reorder (coming soon)
+        </span>
+      </div>
+      
       {(section.steps ?? []).map((step, idx) => (
         <ItemCard key={idx} title={step.title || `Step ${step.step}`} onRemove={() => removeStep(idx)}>
           <div className="grid gap-[12px] sm:grid-cols-2">
-            <Field label="Step No." hasChanged={hasChanged(`process.steps.${idx}.step`)}>
-              <input className={getInputClass(`process.steps.${idx}.step`)} value={step.step} onChange={(e) => updateStep(idx, "step", e.target.value)} />
+            <Field label="Step Number" hasChanged={hasChanged(`process.steps.${idx}.step`)}>
+              <input 
+                className={getInputClass(`process.steps.${idx}.step`)} 
+                value={step.step || ''} 
+                onChange={(e) => updateStep(idx, "step", e.target.value)} 
+                placeholder="01"
+              />
             </Field>
-            <Field label="Icon" hasChanged={hasChanged(`process.steps.${idx}.icon`)}>
-              <input className={getInputClass(`process.steps.${idx}.icon`)} value={step.icon} onChange={(e) => updateStep(idx, "icon", e.target.value)} />
+            <Field label="Icon Class" hasChanged={hasChanged(`process.steps.${idx}.icon`)}>
+              <input 
+                className={getInputClass(`process.steps.${idx}.icon`)} 
+                value={step.icon || ''} 
+                onChange={(e) => updateStep(idx, "icon", e.target.value)} 
+                placeholder="fa-solid fa-users"
+              />
             </Field>
             <div className="sm:col-span-2">
-              <Field label="Title" hasChanged={hasChanged(`process.steps.${idx}.title`)}>
-                <input className={getInputClass(`process.steps.${idx}.title`)} value={step.title} onChange={(e) => updateStep(idx, "title", e.target.value)} />
+              <Field label="Step Title" hasChanged={hasChanged(`process.steps.${idx}.title`)}>
+                <input 
+                  className={getInputClass(`process.steps.${idx}.title`)} 
+                  value={step.title || ''} 
+                  onChange={(e) => updateStep(idx, "title", e.target.value)} 
+                  placeholder="e.g., Project Consultation & Briefing"
+                />
               </Field>
             </div>
             <div className="sm:col-span-2">
-              <Field label="Description" hasChanged={hasChanged(`process.steps.${idx}.description`)}>
-                <textarea className={getTextareaClass(`process.steps.${idx}.description`)} value={step.description} onChange={(e) => updateStep(idx, "description", e.target.value)} />
+              <Field label="Step Description" hasChanged={hasChanged(`process.steps.${idx}.description`)}>
+                <textarea 
+                  className={getTextareaClass(`process.steps.${idx}.description`)} 
+                  value={step.description || ''} 
+                  onChange={(e) => updateStep(idx, "description", e.target.value)} 
+                  placeholder="Describe what happens in this step..."
+                  rows={2}
+                />
               </Field>
             </div>
           </div>
         </ItemCard>
       ))}
+      
       <AddButton onClick={addStep} label="Add Step" />
     </div>
   );

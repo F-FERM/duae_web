@@ -49,13 +49,13 @@ const data = {
       title: "Home",
       icon: Home,
       items: [
-        { title: "Hero Slides", url: "/admin/dashboard/home/hero-slides" },
-        { title: "Stats", url: "/admin/dashboard/home/stats" },
-        { title: "Home services", url: "/admin/dashboard/home/home-services" },
-        { title: "Home About-Milestones", url: "/admin/dashboard/home/about-us-milestone" },
-        { title: "Home Contact Client", url: "/admin/dashboard/home/contact-clients" },
-        { title: "Home Works", url: "/admin/dashboard/home/home-works" },
-        { title: "Why choose us -Team", url: "/admin/dashboard/home/why-choose-us" },
+        { title: "Hero Slides", url: "/admin/dashboard/home/hero-slides/" },
+        { title: "Stats", url: "/admin/dashboard/home/stats/" },
+        { title: "Home services", url: "/admin/dashboard/home/home-services/" },
+        { title: "Home About-Milestones", url: "/admin/dashboard/home/about-us-milestone/" },
+        { title: "Home Contact Client", url: "/admin/dashboard/home/contact-clients/" },
+        { title: "Home Works", url: "/admin/dashboard/home/home-works/" },
+        { title: "Why choose us -Team", url: "/admin/dashboard/home/why-choose-us/" },
 
       ],
     },
@@ -63,8 +63,8 @@ const data = {
       title: "About",
       icon: Info,
       items: [
-        { title: "About Section", url: "/admin/dashboard/about/about-hero-section" },
-        { title: "Full Section", url: "/admin/dashboard/about/about-full-section" },
+        { title: "About Section", url: "/admin/dashboard/about/about-hero-section/" },
+        { title: "Full Section", url: "/admin/dashboard/about/about-full-section/" },
       ],
     },
     {
@@ -72,26 +72,26 @@ const data = {
       icon: BriefcaseBusiness,
       items: [
 
-        { title: "Services", url: "/admin/dashboard/services" },
+        { title: "Services", url: "/admin/dashboard/services/" },
       ],
     },
     {
       title: "Blog",
       icon: Rss,
-      items: [{ title: "Blog", url: "/admin/dashboard/blog-section" }],
+      items: [{ title: "Blog", url: "/admin/dashboard/blog-section/" }],
     },
     {
       title: "Contact Page",
       icon: Contact,
       items: [
-        { title: "Contact section", url: "/admin/dashboard/contact" },
-        { title: "Contact Submission", url: "/admin/dashboard/contact-submission" },
+        { title: "Contact section", url: "/admin/dashboard/contact/" },
+        { title: "Contact Submission", url: "/admin/dashboard/contact-submission/" },
       ],
     },
     {
       title: "Footer",
       icon: Settings2,
-      items: [{ title: "Footer", url: "/admin/dashboard/footer" }],
+      items: [{ title: "Footer", url: "/admin/dashboard/footer/" }],
     },
   ],
 };
@@ -106,7 +106,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton size="lg" render={<Link href="/admin/dashboard" />}>
+            <SidebarMenuButton size="lg" render={<Link href="/admin/dashboard/" />}>
               <div
                 className="
                   flex

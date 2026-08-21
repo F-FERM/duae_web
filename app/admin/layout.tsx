@@ -21,7 +21,7 @@ export default function AdminLayout({ children }: any) {
 
   useEffect(() => {
     // Skip authorization check for the login page
-    if (pathname === "/admin/login") {
+    if (pathname === "/admin/login/") {
       setAuthorized(true);
       return;
     }
@@ -29,7 +29,7 @@ export default function AdminLayout({ children }: any) {
     const token = localStorage.getItem("token");
 
     if (!token) {
-      router.replace("/admin/login");
+      router.replace("/admin/login/");
     } else {
       setAuthorized(true);
     }
@@ -46,7 +46,7 @@ export default function AdminLayout({ children }: any) {
   }
 
   // If we are on the login page, don't show the sidebar or header
-  if (pathname === "/admin/login") {
+  if (pathname === "/admin/login/") {
     return (
       <html lang="en">
         <body>{children}</body>

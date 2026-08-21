@@ -4,9 +4,9 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 const navItems = [
-  { href: "/admin", label: "Dashboard" },
-  { href: "/admin/cred", label: "Home Hero Slides" },
-  { href: "/admin/services", label: "Services" },
+  { href: "/admin/", label: "Dashboard" },
+  { href: "/admin/cred/", label: "Home Hero Slides" },
+  { href: "/admin/services/", label: "Services" },
 ];
 
 export default function AdminShell({
@@ -15,7 +15,7 @@ export default function AdminShell({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
-  const isLoginPage = pathname === "/admin/login";
+  const isLoginPage = pathname === "/admin/login/";
 
   if (isLoginPage) {
     return <>{children}</>;
@@ -27,7 +27,7 @@ export default function AdminShell({
         <aside className="hidden shrink-0 border-slate-200 bg-white px-6 py-8 lg:block lg:w-80 lg:border-r">
           <div className="mb-10">
             <Link
-              href="/admin"
+              href="/admin/"
               className="text-2xl font-semibold tracking-tight text-slate-950"
             >
               WWD Admin
@@ -74,11 +74,11 @@ export default function AdminShell({
                   Admin panel
                 </p>
                 <h1 className="mt-2 text-2xl font-semibold text-slate-950">
-                  {pathname === "/admin"
+                  {pathname === "/admin/"
                     ? "Dashboard"
-                    : pathname === "/admin/cred"
+                    : pathname === "/admin/cred/"
                       ? "Home Hero Slides"
-                      : pathname === "/admin/services"
+                      : pathname === "/admin/services/"
                         ? "Services"
                         : "Administration"}
                 </h1>

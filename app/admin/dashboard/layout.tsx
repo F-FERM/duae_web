@@ -23,7 +23,7 @@ export default function AdminLayout({ children }: any) {
     const token = localStorage.getItem("token");
 
     if (!token) {
-      router.replace("/admin/login");
+      router.replace("/admin/login/");
     } else {
       setAuthorized(true);
     }
