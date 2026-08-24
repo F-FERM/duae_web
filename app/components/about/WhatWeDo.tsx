@@ -16,6 +16,7 @@ import {
 import api from "@/lib/axios";
 import imagepattern1 from "../../../public/images/pattern1.png";
 import pattern2 from "../../../public/images/pattern2.png";
+import { InlineLinkedText } from "../InlineLinkedText";
 
 interface ServiceApi {
   _id: string;
@@ -26,11 +27,20 @@ interface ServiceApi {
   order: number;
 }
 
+interface InlineLinkApi {
+  text: string;
+  url: string;
+  type: string;
+  openInNewTab: boolean;
+  position: number;
+}
+
 interface AboutContentApiResponse {
   servicesBadge: string;
   servicesTitle: string;
   servicesDescription: string;
   services: ServiceApi[];
+  inlineLinks?: InlineLinkApi[];
 }
 
 interface WhatWeDoData {
@@ -38,6 +48,7 @@ interface WhatWeDoData {
   title: string;
   description: string;
   services: ServiceApi[];
+  inlineLinks: InlineLinkApi[];
 }
 
 const IMAGE_ALT = "Interior fit out company in uae";
@@ -60,15 +71,58 @@ const defaultData: WhatWeDoData = {
   badge: "Our Core Services",
   title: "What we do",
   description:
-    "At Wood World Decor, we offer a comprehensive range of services, specialized in custom joinery, interior fit-out, turnkey fit-out, and renovation solutions across the UAE. Guided by years of hands-on experience, we focus on delivering results that reflect both excellence and efficiency. Right from concept to execution and completion, we aim to provide services that embody timeless design, superior workmanship, and long-lasting value.",
+    "At Wood World Decor, we offer a comprehensive range of services, specialized in custom joinery, interior fit-out, turnkey fit-out, and renovation solutions across the UAE.",
   services: [
-    { _id: "1", title: "Joinery", description: "", icon: "fa-solid fa-hammer", link: "", order: 0 },
-    { _id: "2", title: "Fit-out Solutions", description: "", icon: "fa-solid fa-building", link: "", order: 1 },
-    { _id: "3", title: "Turnkey Solutions", description: "", icon: "fa-solid fa-key", link: "", order: 2 },
-    { _id: "4", title: "Renovation Services", description: "", icon: "fa-solid fa-wrench", link: "", order: 3 },
-    { _id: "5", title: "Metal Works", description: "", icon: "fa-solid fa-gear", link: "", order: 4 },
-    { _id: "6", title: "Upholstery", description: "", icon: "fa-solid fa-couch", link: "", order: 5 },
+    {
+      _id: "1",
+      title: "Joinery",
+      description: "",
+      icon: "fa-solid fa-hammer",
+      link: "",
+      order: 0,
+    },
+    {
+      _id: "2",
+      title: "Fit-out Solutions",
+      description: "",
+      icon: "fa-solid fa-building",
+      link: "",
+      order: 1,
+    },
+    {
+      _id: "3",
+      title: "Turnkey Solutions",
+      description: "",
+      icon: "fa-solid fa-key",
+      link: "",
+      order: 2,
+    },
+    {
+      _id: "4",
+      title: "Renovation Services",
+      description: "",
+      icon: "fa-solid fa-wrench",
+      link: "",
+      order: 3,
+    },
+    {
+      _id: "5",
+      title: "Metal Works",
+      description: "",
+      icon: "fa-solid fa-gear",
+      link: "",
+      order: 4,
+    },
+    {
+      _id: "6",
+      title: "Upholstery",
+      description: "",
+      icon: "fa-solid fa-couch",
+      link: "",
+      order: 5,
+    },
   ],
+  inlineLinks: [],
 };
 
 function WhatWeDoSkeleton() {
@@ -111,6 +165,7 @@ export default function WhatWeDo() {
           title: res.data.servicesTitle,
           description: res.data.servicesDescription,
           services: [...res.data.services].sort((a, b) => a.order - b.order),
+          inlineLinks: res.data.inlineLinks || [],
         });
       } catch (err) {
         console.error("Failed to fetch about content (services):", err);
@@ -125,6 +180,8 @@ export default function WhatWeDo() {
 
   if (isLoading) return <WhatWeDoSkeleton />;
 
+  const inlineLinks = data.inlineLinks || [];
+
   return (
     <section className="relative overflow-hidden bg-[#f6edea] py-16 sm:py-20 md:py-28">
       <div className="pointer-events-none absolute inset-0 opacity-80">
@@ -133,11 +190,11 @@ export default function WhatWeDo() {
           animate={{ y: [0, -8, 0, 8, 0] }}
           transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
         >
-          <Image 
-            src={imagepattern1} 
-            alt={IMAGE_ALT} 
-            priority 
-            className="object-cover" 
+          <Image
+            src={imagepattern1}
+            alt={IMAGE_ALT}
+            priority
+            className="object-cover"
           />
         </motion.div>
       </div>
@@ -148,11 +205,11 @@ export default function WhatWeDo() {
           animate={{ y: [0, -12, 0, 12, 0], rotate: [0, 2, 0, -2, 0] }}
           transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
         >
-          <Image 
-            src={pattern2} 
-            alt={IMAGE_ALT} 
-            priority 
-            className="object-cover" 
+          <Image
+            src={pattern2}
+            alt={IMAGE_ALT}
+            priority
+            className="object-cover"
           />
         </motion.div>
       </div>
@@ -162,12 +219,20 @@ export default function WhatWeDo() {
           <p className="text-sm font-semibold uppercase tracking-[3px] text-[#db5e41] sm:text-base">
             {data.badge}
           </p>
-          <h2 className="mt-3 text-3xl font-extrabold text-[#0c1526] sm:text-4xl md:text-6xl">
-            {data.title}
-          </h2>
-          <p className="mt-8 text-[15px] leading-8 text-[#232323] md:text-[18px]">
-            {data.description}
-          </p>
+
+          {/* Title with inline links support */}
+          <div className="mt-3 text-3xl font-extrabold text-[#0c1526] sm:text-4xl md:text-6xl">
+            <InlineLinkedText 
+              text={data.title} 
+              links={inlineLinks}
+              linkClassName="inline-block cursor-pointer font-extrabold text-[#0c1526] underline decoration-[#db5e41]/30 underline-offset-4 transition-all duration-200 hover:text-[#db5e41] hover:decoration-[#db5e41] focus:outline-none focus:ring-2 focus:ring-[#db5e41] focus:ring-offset-2 rounded"
+            />
+          </div>
+
+          {/* Description with inline links support */}
+          <div className="mt-8 text-[15px] leading-8 text-[#232323] md:text-[18px]">
+            <InlineLinkedText text={data.description} links={inlineLinks} />
+          </div>
         </div>
 
         <div className="relative z-10 grid grid-cols-2 gap-x-6 gap-y-10 sm:gap-x-10 sm:gap-y-12">
@@ -177,6 +242,11 @@ export default function WhatWeDo() {
               <div
                 key={service._id}
                 className="group flex items-center gap-4 sm:gap-5 cursor-pointer"
+                onClick={() => {
+                  if (service.link) {
+                    window.location.href = service.link;
+                  }
+                }}
               >
                 <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-white shadow-sm transition-colors duration-300 group-hover:bg-[#db5e41] sm:h-20 sm:w-20">
                   <Icon
