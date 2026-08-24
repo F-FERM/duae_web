@@ -14,6 +14,7 @@ import {
 import api from "@/lib/axios";
 import milestoneTop from "../../../public/images/slide1.webp";
 import milestoneBottom from "../../../public/images/service1.webp";
+import { InlineLinkedText } from "../InlineLinkedText";
 
 const IMAGE_BASE_URL = process.env.NEXT_PUBLIC_IMAGE_URL || "";
 
@@ -33,11 +34,20 @@ interface ValueApi {
   order: number;
 }
 
+interface InlineLinkApi {
+  text: string;
+  url: string;
+  type: string;
+  openInNewTab: boolean;
+  position: number;
+}
+
 interface AboutContentApiResponse {
   valuesTitle: string;
   valuesImageOne: string;
   valuesImageTwo: string;
   values: ValueApi[];
+  inlineLinks?: InlineLinkApi[];
 }
 
 interface CoreValuesData {
@@ -45,6 +55,7 @@ interface CoreValuesData {
   imageOne: string;
   imageTwo: string;
   values: ValueApi[];
+  inlineLinks: InlineLinkApi[];
 }
 
 const iconMap: Record<string, LucideIcon> = {
@@ -64,12 +75,48 @@ const defaultData: CoreValuesData = {
   imageOne: milestoneTop.src,
   imageTwo: milestoneBottom.src,
   values: [
-    { _id: "1", order: 0, icon: "fa-solid fa-hammer", title: "Quality Craftsmanship", description: "Delivering superior solutions with precision and durability." },
-    { _id: "2", order: 1, icon: "fa-solid fa-lightbulb", title: "Innovation", description: "Embracing modern designs to create stylish and functional spaces." },
-    { _id: "3", order: 2, icon: "fa-solid fa-handshake", title: "Integrity", description: "Offering transparency and morality in every project undertaken." },
-    { _id: "4", order: 3, icon: "fa-solid fa-users", title: "Customer-Centric Approach", description: "Offering personalized solutions that reflect each client's unique needs." },
-    { _id: "5", order: 4, icon: "fa-solid fa-people-arrows", title: "Teamwork", description: "Collaboration among designers and craftsmen ensures easy execution of projects." },
+    {
+      _id: "1",
+      order: 0,
+      icon: "fa-solid fa-hammer",
+      title: "Quality Craftsmanship",
+      description:
+        "Delivering superior solutions with precision and durability.",
+    },
+    {
+      _id: "2",
+      order: 1,
+      icon: "fa-solid fa-lightbulb",
+      title: "Innovation",
+      description:
+        "Embracing modern designs to create stylish and functional spaces.",
+    },
+    {
+      _id: "3",
+      order: 2,
+      icon: "fa-solid fa-handshake",
+      title: "Integrity",
+      description:
+        "Offering transparency and morality in every project undertaken.",
+    },
+    {
+      _id: "4",
+      order: 3,
+      icon: "fa-solid fa-users",
+      title: "Customer-Centric Approach",
+      description:
+        "Offering personalized solutions that reflect each client's unique needs.",
+    },
+    {
+      _id: "5",
+      order: 4,
+      icon: "fa-solid fa-people-arrows",
+      title: "Teamwork",
+      description:
+        "Collaboration among designers and craftsmen ensures easy execution of projects.",
+    },
   ],
+  inlineLinks: [],
 };
 
 function CoreValuesSkeleton() {
@@ -109,6 +156,7 @@ export default function CoreValues() {
           imageOne: resolveImage(res.data.valuesImageOne, milestoneTop.src),
           imageTwo: resolveImage(res.data.valuesImageTwo, milestoneBottom.src),
           values: [...res.data.values].sort((a, b) => a.order - b.order),
+          inlineLinks: res.data.inlineLinks || [],
         });
       } catch (err) {
         console.error("Failed to fetch about content (core values):", err);
@@ -132,7 +180,7 @@ export default function CoreValues() {
           observer.disconnect();
         }
       },
-      { threshold: 0.1, rootMargin: "0px 0px -80px 0px" }
+      { threshold: 0.1, rootMargin: "0px 0px -80px 0px" },
     );
 
     observer.observe(node);
@@ -140,6 +188,8 @@ export default function CoreValues() {
   }, [isLoading]);
 
   if (isLoading) return <CoreValuesSkeleton />;
+
+  const inlineLinks = data.inlineLinks || [];
 
   return (
     <section className="relative overflow-hidden bg-[#e9e7e7] py-16 sm:py-20 md:py-28">
@@ -194,9 +244,14 @@ export default function CoreValues() {
 
         {/* Right: Text Content */}
         <div className="relative z-10">
-          <h2 className="text-3xl font-bold text-[#0c1526] sm:text-4xl md:text-5xl">
-            {data.title}
-          </h2>
+          {/* Main Title with inline links support */}
+          <div className="text-3xl font-bold text-[#0c1526] sm:text-4xl md:text-5xl">
+            <InlineLinkedText 
+              text={data.title} 
+              links={inlineLinks}
+              linkClassName="inline-block cursor-pointer font-bold text-[#0c1526] underline decoration-[#db5e41]/30 underline-offset-4 transition-all duration-200 hover:text-[#db5e41] hover:decoration-[#db5e41] focus:outline-none focus:ring-2 focus:ring-[#db5e41] focus:ring-offset-2 rounded"
+            />
+          </div>
 
           <ul className="mt-8 space-y-6">
             {data.values.map((value) => {
@@ -204,15 +259,29 @@ export default function CoreValues() {
               return (
                 <li key={value._id} className="flex items-start gap-4">
                   <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center cursor-pointer hover:bg-[#db5e41] rounded-full border border-[#db5e41]/40 bg-[#db5e41]/10">
-                    <Check className="text-[#db5e41] hover:text-white" size={16} strokeWidth={2} />
+                    <Check
+                      className="text-[#db5e41] hover:text-white"
+                      size={16}
+                      strokeWidth={2}
+                    />
                   </span>
                   <div>
-                    <p className="text-[15px] font-semibold leading-6 text-[#0c1526] md:text-[18px]">
-                      {value.title}
-                    </p>
-                    <p className="mt-1 text-[13px] leading-6 text-gray-600 md:text-[16px]">
-                      {value.description}
-                    </p>
+                    {/* Value Title with inline links support */}
+                    <div className="text-[15px] font-semibold leading-6 text-[#0c1526] md:text-[18px]">
+                      <InlineLinkedText 
+                        text={value.title} 
+                        links={inlineLinks}
+                        linkClassName="inline-block cursor-pointer font-semibold text-[#0c1526] underline decoration-[#db5e41]/30 underline-offset-4 transition-all duration-200 hover:text-[#db5e41] hover:decoration-[#db5e41] focus:outline-none focus:ring-2 focus:ring-[#db5e41] focus:ring-offset-2 rounded"
+                      />
+                    </div>
+                    
+                    {/* Value Description with inline links support */}
+                    <div className="mt-1 text-[13px] leading-6 text-gray-600 md:text-[16px]">
+                      <InlineLinkedText
+                        text={value.description}
+                        links={inlineLinks}
+                      />
+                    </div>
                   </div>
                 </li>
               );
