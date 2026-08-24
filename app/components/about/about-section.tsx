@@ -5,6 +5,15 @@ import Image from "next/image";
 import { MessageSquareMore } from "lucide-react";
 import api from "@/lib/axios";
 import fallbackMain from "../../../public/images/service1.webp";
+import { InlineLinkedText } from "../InlineLinkedText";
+
+interface InlineLinkApi {
+  text: string;
+  url: string;
+  type: string;
+  openInNewTab: boolean;
+  position: number;
+}
 
 interface AboutDetailApiResponse {
   badge: string;
@@ -14,6 +23,7 @@ interface AboutDetailApiResponse {
   foundedYear: string;
   teamSize: number;
   experienceYears: number;
+  inlineLinks?: InlineLinkApi[];
 }
 
 interface AboutDetailData {
@@ -22,6 +32,7 @@ interface AboutDetailData {
   paragraphs: string[];
   image: string;
   experienceYears: number;
+  inlineLinks: InlineLinkApi[];
 }
 
 const IMAGE_BASE_URL = process.env.NEXT_PUBLIC_IMAGE_URL || "";
@@ -44,6 +55,7 @@ function mapApiToAboutDetail(data: AboutDetailApiResponse): AboutDetailData {
       .filter(Boolean),
     image: resolveImage(data.image),
     experienceYears: data.experienceYears,
+    inlineLinks: data.inlineLinks || [],
   };
 }
 
@@ -57,14 +69,24 @@ const defaultData: AboutDetailData = {
   ],
   image: fallbackMain.src,
   experienceYears: 10,
+  inlineLinks: [],
 };
 
 // Small reusable dot-grid decoration
-function DotGrid({ className, dotClassName }: { className?: string; dotClassName?: string }) {
+function DotGrid({
+  className,
+  dotClassName,
+}: {
+  className?: string;
+  dotClassName?: string;
+}) {
   return (
     <div className={`grid grid-cols-5 gap-2 ${className}`}>
       {Array.from({ length: 20 }).map((_, i) => (
-        <span key={i} className={`h-1 w-1 rounded-full ${dotClassName ?? "bg-gray-300"}`} />
+        <span
+          key={i}
+          className={`h-1 w-1 rounded-full ${dotClassName ?? "bg-gray-300"}`}
+        />
       ))}
     </div>
   );
@@ -100,8 +122,6 @@ export default function AboutDetailSection() {
   useEffect(() => {
     const fetchAboutDetail = async () => {
       try {
-        // Same /about-hero endpoint as the hero banner — it also returns bgImage,
-        // which belongs to that component, not this one.
         const res = await api.get<AboutDetailApiResponse>("/about-hero");
         setData(mapApiToAboutDetail(res.data));
       } catch (err) {
@@ -126,7 +146,7 @@ export default function AboutDetailSection() {
           observer.disconnect();
         }
       },
-      { threshold: 0.1, rootMargin: "0px 0px -80px 0px" }
+      { threshold: 0.1, rootMargin: "0px 0px -80px 0px" },
     );
 
     observer.observe(node);
@@ -135,6 +155,8 @@ export default function AboutDetailSection() {
 
   if (isLoading) return <AboutDetailSkeleton />;
   if (!data) return null;
+
+  const inlineLinks = data.inlineLinks || [];
 
   return (
     <section className="relative overflow-hidden bg-[#faf7f6] py-12 xs:py-14 sm:py-20 md:py-28">
@@ -225,17 +247,30 @@ export default function AboutDetailSection() {
 
         {/* Right: Text Content */}
         <div className="relative z-10">
-          <p className="text-xs font-semibold uppercase tracking-[2px] text-[#db5e41] xs:text-sm xs:tracking-[3px] sm:text-base">
-            {data.badge}
-          </p>
+          {/* Badge with inline links support */}
+          <div className="text-xs font-semibold uppercase tracking-[2px] text-[#db5e41] xs:text-sm xs:tracking-[3px] sm:text-base">
+            <InlineLinkedText
+              text={data.badge}
+              links={inlineLinks}
+              linkClassName="inline-block cursor-pointer font-semibold text-[#db5e41] underline decoration-[#db5e41]/30 underline-offset-4 transition-all duration-200 hover:text-[#c94f35] hover:decoration-[#db5e41] focus:outline-none focus:ring-2 focus:ring-[#db5e41] focus:ring-offset-2 rounded"
+            />
+          </div>
 
-          <h2 className="mt-3 text-2xl font-extrabold leading-tight text-[#0c1526] xs:text-3xl sm:text-4xl md:text-5xl">
-            {data.title}
-          </h2>
+          {/* Title with inline links support */}
+          <div className="mt-3 text-2xl font-extrabold leading-tight text-[#0c1526] xs:text-3xl sm:text-4xl md:text-5xl">
+            <InlineLinkedText
+              text={data.title}
+              links={inlineLinks}
+              linkClassName="inline-block cursor-pointer font-extrabold text-[#0c1526] underline decoration-[#db5e41]/30 underline-offset-4 transition-all duration-200 hover:text-[#db5e41] hover:decoration-[#db5e41] focus:outline-none focus:ring-2 focus:ring-[#db5e41] focus:ring-offset-2 rounded"
+            />
+          </div>
 
+          {/* Paragraphs with inline links support */}
           <div className="mt-6 space-y-4 text-sm leading-7 text-[#232323] xs:text-[15px] xs:leading-8 md:text-[18px]">
             {data.paragraphs.map((paragraph, index) => (
-              <p key={index}>{paragraph}</p>
+              <p key={index}>
+                <InlineLinkedText text={paragraph} links={inlineLinks} />
+              </p>
             ))}
           </div>
         </div>
