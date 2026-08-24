@@ -10,24 +10,25 @@ import {
   Pencil,
   Trash2,
   X,
-  GripVertical,
   Type,
   AlignLeft,
   ImageIcon,
   ImagePlus,
   Loader2,
   UploadCloud,
-  Calendar,
-  Users,
-  Award,
   Settings,
   Eye,
-  EyeOff,
   ChevronDown,
   ChevronUp,
-  FolderOpen,
-  Heart,
   ThumbsUp,
+  Link as LinkIcon,
+  ExternalLink,
+  Globe,
+  FileText,
+  Layers,
+  Hash,
+  Search,
+  Sparkles,
 } from "lucide-react";
 
 import api from "@/lib/axios";
@@ -73,6 +74,15 @@ interface WhyChooseUsItem {
   updatedAt?: string;
 }
 
+interface InlineLinkItem {
+  _id?: string;
+  text: string;
+  url: string;
+  type: string;
+  openInNewTab: boolean;
+  position: number;
+}
+
 export interface AboutServicesResponse {
   servicesBadge: string;
   servicesTitle: string;
@@ -90,6 +100,7 @@ export interface AboutServicesResponse {
   values: ValueItem[];
   whyChooseUsTitle: string;
   whyChooseUs: WhyChooseUsItem[];
+  inlineLinks: InlineLinkItem[];
   isActive: boolean;
 }
 
@@ -121,6 +132,14 @@ const EMPTY_WHY_CHOOSE: WhyChooseUsItem = {
   order: 0,
 };
 
+const EMPTY_INLINE_LINK: InlineLinkItem = {
+  text: "",
+  url: "/",
+  type: "page",
+  openInNewTab: false,
+  position: 0,
+};
+
 const EMPTY_FORM: AboutServicesResponse = {
   servicesBadge: "",
   servicesTitle: "",
@@ -138,8 +157,35 @@ const EMPTY_FORM: AboutServicesResponse = {
   values: [],
   whyChooseUsTitle: "",
   whyChooseUs: [],
+  inlineLinks: [],
   isActive: true,
 };
+
+// Link type options
+const LINK_TYPES = [
+  { value: "page", label: "Page", icon: FileText },
+  { value: "section", label: "Section", icon: Layers },
+  { value: "external", label: "External", icon: Globe },
+];
+
+// Common text suggestions for inline links
+const COMMON_TEXT_SUGGESTIONS = [
+  { label: "Our Vision", url: "/about#vision" },
+  { label: "Our Mission", url: "/about#mission" },
+  { label: "UAE", url: "/locations/uae" },
+  { label: "custom joinery", url: "/services/joinery" },
+  { label: "interior fit-out", url: "/services/fitout-solutions" },
+  { label: "turnkey fit-out", url: "/services/turnkey-solutions" },
+  { label: "renovation services", url: "/services/renovation-services" },
+  { label: "metal works", url: "/services/metal-works" },
+  { label: "upholstery", url: "/services/upholstery" },
+  { label: "bespoke joinery", url: "/services/joinery" },
+  { label: "quality craftsmanship", url: "/about#quality" },
+  { label: "innovation", url: "/about#innovation" },
+  { label: "integrity", url: "/about#integrity" },
+  { label: "teamwork", url: "/about#teamwork" },
+  { label: "customer-centric", url: "/about#customer-centric" },
+];
 
 export default function AboutServicesPage() {
   const [aboutData, setAboutData] = useState<AboutServices | null>(null);
@@ -159,20 +205,39 @@ export default function AboutServicesPage() {
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
   // Nested array management
-  const [editingServiceIndex, setEditingServiceIndex] = useState<number | null>(null);
-  const [editingValueIndex, setEditingValueIndex] = useState<number | null>(null);
-  const [editingWhyChooseIndex, setEditingWhyChooseIndex] = useState<number | null>(null);
+  const [editingServiceIndex, setEditingServiceIndex] = useState<number | null>(
+    null,
+  );
+  const [editingValueIndex, setEditingValueIndex] = useState<number | null>(
+    null,
+  );
+  const [editingWhyChooseIndex, setEditingWhyChooseIndex] = useState<
+    number | null
+  >(null);
+  const [editingInlineLinkIndex, setEditingInlineLinkIndex] = useState<
+    number | null
+  >(null);
+
   const [serviceModalOpen, setServiceModalOpen] = useState(false);
   const [valueModalOpen, setValueModalOpen] = useState(false);
   const [whyChooseModalOpen, setWhyChooseModalOpen] = useState(false);
+  const [inlineLinkModalOpen, setInlineLinkModalOpen] = useState(false);
+
   const [tempService, setTempService] = useState<ServiceItem>(EMPTY_SERVICE);
   const [tempValue, setTempValue] = useState<ValueItem>(EMPTY_VALUE);
-  const [tempWhyChoose, setTempWhyChoose] = useState<WhyChooseUsItem>(EMPTY_WHY_CHOOSE);
+  const [tempWhyChoose, setTempWhyChoose] =
+    useState<WhyChooseUsItem>(EMPTY_WHY_CHOOSE);
+  const [tempInlineLink, setTempInlineLink] =
+    useState<InlineLinkItem>(EMPTY_INLINE_LINK);
 
   // Collapse states
   const [servicesExpanded, setServicesExpanded] = useState(true);
   const [valuesExpanded, setValuesExpanded] = useState(true);
   const [whyChooseExpanded, setWhyChooseExpanded] = useState(true);
+  const [inlineLinksExpanded, setInlineLinksExpanded] = useState(true);
+
+  // Search/filter for inline links
+  const [linkSearchTerm, setLinkSearchTerm] = useState("");
 
   // ================= FETCH DATA =================
 
@@ -180,16 +245,16 @@ export default function AboutServicesPage() {
     try {
       setLoading(true);
       const res = await api.get("/about-content");
-      
+
       let data = null;
       if (Array.isArray(res.data)) {
         data = res.data.length > 0 ? res.data[0] : null;
-      } else if (res.data && typeof res.data === 'object') {
+      } else if (res.data && typeof res.data === "object") {
         data = res.data;
       }
-      
+
       setAboutData(data);
-      
+
       if (data) {
         setForm({
           servicesBadge: data.servicesBadge || "",
@@ -208,12 +273,13 @@ export default function AboutServicesPage() {
           values: data.values || [],
           whyChooseUsTitle: data.whyChooseUsTitle || "",
           whyChooseUs: data.whyChooseUs || [],
+          inlineLinks: data.inlineLinks || [],
           isActive: data.isActive ?? true,
         });
       }
     } catch (err: any) {
       toast.error(
-        err?.response?.data?.message || "Failed to load about services data"
+        err?.response?.data?.message || "Failed to load about services data",
       );
     } finally {
       setLoading(false);
@@ -245,6 +311,7 @@ export default function AboutServicesPage() {
         values: aboutData.values || [],
         whyChooseUsTitle: aboutData.whyChooseUsTitle || "",
         whyChooseUs: aboutData.whyChooseUs || [],
+        inlineLinks: aboutData.inlineLinks || [],
         isActive: aboutData.isActive ?? true,
       });
     } else {
@@ -274,6 +341,7 @@ export default function AboutServicesPage() {
         values: aboutData.values || [],
         whyChooseUsTitle: aboutData.whyChooseUsTitle || "",
         whyChooseUs: aboutData.whyChooseUs || [],
+        inlineLinks: aboutData.inlineLinks || [],
         isActive: aboutData.isActive ?? true,
       });
     } else {
@@ -294,10 +362,16 @@ export default function AboutServicesPage() {
       // Sort arrays by order before submitting
       const payload = {
         ...form,
-
-        services: form.services.map(({ _id, createdAt, updatedAt, ...rest }) => rest),
-        values: form.values.map(({ _id, createdAt, updatedAt, ...rest }) => rest),
-        whyChooseUs: form.whyChooseUs.map(({ _id, createdAt, updatedAt, ...rest }) => rest),
+        services: form.services.map(
+          ({ _id, createdAt, updatedAt, ...rest }) => rest,
+        ),
+        values: form.values.map(
+          ({ _id, createdAt, updatedAt, ...rest }) => rest,
+        ),
+        whyChooseUs: form.whyChooseUs.map(
+          ({ _id, createdAt, updatedAt, ...rest }) => rest,
+        ),
+        inlineLinks: form.inlineLinks.map(({ _id, ...rest }) => rest),
       };
 
       if (aboutData && aboutData._id) {
@@ -313,7 +387,9 @@ export default function AboutServicesPage() {
     } catch (err: any) {
       toast.error(
         err?.response?.data?.message ||
-          (aboutData ? "Failed to update about services" : "Failed to create about services")
+          (aboutData
+            ? "Failed to update about services"
+            : "Failed to create about services"),
       );
     } finally {
       setSubmitting(false);
@@ -329,9 +405,13 @@ export default function AboutServicesPage() {
         isActive: !data.isActive,
       });
       setAboutData((prev) =>
-        prev ? { ...prev, isActive: !prev.isActive } : null
+        prev ? { ...prev, isActive: !prev.isActive } : null,
       );
-      toast.success(!data.isActive ? "About services activated" : "About services deactivated");
+      toast.success(
+        !data.isActive
+          ? "About services activated"
+          : "About services deactivated",
+      );
     } catch (err: any) {
       toast.error(err?.response?.data?.message || "Failed to update status");
     } finally {
@@ -341,7 +421,9 @@ export default function AboutServicesPage() {
 
   // ================= IMAGE UPLOAD =================
 
-  const handleImageOneUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageOneUpload = async (
+    e: React.ChangeEvent<HTMLInputElement>,
+  ) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -358,7 +440,9 @@ export default function AboutServicesPage() {
     }
   };
 
-  const handleImageTwoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageTwoUpload = async (
+    e: React.ChangeEvent<HTMLInputElement>,
+  ) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -388,13 +472,15 @@ export default function AboutServicesPage() {
 
     try {
       setDeletingId(deleteTarget._id);
-      await api.delete(`/about-services/${deleteTarget._id}`);
+      await api.delete(`/about-content`);
       setAboutData(null);
       setForm(EMPTY_FORM);
       toast.success("About services deleted");
       setDeleteTarget(null);
     } catch (err: any) {
-      toast.error(err?.response?.data?.message || "Failed to delete about services");
+      toast.error(
+        err?.response?.data?.message || "Failed to delete about services",
+      );
     } finally {
       setDeletingId(null);
     }
@@ -516,6 +602,119 @@ export default function AboutServicesPage() {
     setForm({ ...form, whyChooseUs });
   };
 
+  // ================= INLINE LINKS CRUD =================
+
+  const openInlineLinkModal = (index?: number, suggestedText?: string, suggestedUrl?: string) => {
+    if (index !== undefined) {
+      setEditingInlineLinkIndex(index);
+      setTempInlineLink({ ...form.inlineLinks[index] });
+    } else {
+      setEditingInlineLinkIndex(null);
+      setTempInlineLink({
+        ...EMPTY_INLINE_LINK,
+        text: suggestedText || "",
+        url: suggestedUrl || "/",
+        position: form.inlineLinks.length,
+      });
+    }
+    setInlineLinkModalOpen(true);
+  };
+
+  const closeInlineLinkModal = () => {
+    setInlineLinkModalOpen(false);
+    setEditingInlineLinkIndex(null);
+    setTempInlineLink(EMPTY_INLINE_LINK);
+  };
+
+  const saveInlineLink = () => {
+    if (!tempInlineLink.text || !tempInlineLink.url) {
+      return toast.error("Text and URL are required");
+    }
+
+    // Check for duplicate text
+    const duplicate = form.inlineLinks.some(
+      (link, index) => 
+        link.text.toLowerCase() === tempInlineLink.text.toLowerCase() &&
+        index !== editingInlineLinkIndex
+    );
+
+    if (duplicate) {
+      return toast.error(`"${tempInlineLink.text}" already has an inline link. Please edit the existing one.`);
+    }
+
+    const inlineLinks = [...form.inlineLinks];
+    if (editingInlineLinkIndex !== null) {
+      inlineLinks[editingInlineLinkIndex] = tempInlineLink;
+    } else {
+      inlineLinks.push(tempInlineLink);
+    }
+    setForm({ ...form, inlineLinks });
+    closeInlineLinkModal();
+    toast.success(
+      editingInlineLinkIndex !== null
+        ? "Inline link updated"
+        : "Inline link added",
+    );
+  };
+
+  const deleteInlineLink = (index: number) => {
+    const inlineLinks = form.inlineLinks.filter((_, i) => i !== index);
+    setForm({ ...form, inlineLinks });
+    toast.success("Inline link removed");
+  };
+
+  // Get link type icon
+  const getLinkTypeIcon = (type: string) => {
+    const found = LINK_TYPES.find((t) => t.value === type);
+    if (found) {
+      const IconComponent = found.icon;
+      return <IconComponent className="h-[12px] w-[12px]" />;
+    }
+    return <LinkIcon className="h-[12px] w-[12px]" />;
+  };
+
+  // Filter inline links based on search
+  const filteredInlineLinks = form.inlineLinks.filter((link) =>
+    link.text.toLowerCase().includes(linkSearchTerm.toLowerCase()) ||
+    link.url.toLowerCase().includes(linkSearchTerm.toLowerCase())
+  );
+
+  // Get all text content for suggestions
+  const getAllContentText = () => {
+    const texts = [
+      form.servicesTitle,
+      form.servicesDescription,
+      form.visionTitle,
+      form.visionDescription,
+      form.missionTitle,
+      form.missionDescription,
+      form.valuesTitle,
+      ...form.values.map(v => v.title),
+      ...form.values.map(v => v.description),
+      form.whyChooseUsTitle,
+      ...form.whyChooseUs.map(w => w.title),
+      ...form.whyChooseUs.map(w => w.description),
+    ];
+    return texts.join(" ");
+  };
+
+  // Find suggested texts from content that might need links
+  const getSuggestedTexts = () => {
+    const content = getAllContentText();
+    const suggestions = [];
+    const existingTexts = new Set(form.inlineLinks.map(l => l.text.toLowerCase()));
+    
+    for (const suggestion of COMMON_TEXT_SUGGESTIONS) {
+      if (!existingTexts.has(suggestion.label.toLowerCase()) && 
+          content.toLowerCase().includes(suggestion.label.toLowerCase())) {
+        suggestions.push(suggestion);
+      }
+    }
+    return suggestions;
+  };
+
+  const suggestedTexts = getSuggestedTexts();
+
   return (
     <section className="min-h-screen bg-[#FFF4EC] px-[16px] py-[24px] xs:px-[20px] sm:px-[28px] sm:py-[36px] md:px-[36px] lg:px-[48px] lg:py-[48px] 2xl:px-[64px]">
       <Toaster
@@ -544,7 +743,8 @@ export default function AboutServicesPage() {
             About Services Section
           </h1>
           <p className="mt-[6px] text-[13px] leading-[1.6] text-[#666666] sm:text-[14px] lg:text-[15px]">
-            Manage services, vision, mission, values, and why choose us content.
+            Manage services, vision, mission, values, why choose us, and inline
+            links.
           </p>
         </div>
 
@@ -572,9 +772,13 @@ export default function AboutServicesPage() {
             "
           >
             {aboutData ? (
-              <><Pencil className="h-[16px] w-[16px]" /> Edit Content Text</>
+              <>
+                <Pencil className="h-[16px] w-[16px]" /> Edit Content Text
+              </>
             ) : (
-              <><Plus className="h-[18px] w-[18px]" /> Create About Services</>
+              <>
+                <Plus className="h-[18px] w-[18px]" /> Create About Services
+              </>
             )}
           </Button>
 
@@ -605,7 +809,9 @@ export default function AboutServicesPage() {
               {submitting ? (
                 <Loader2 className="h-[18px] w-[18px] animate-spin" />
               ) : (
-                <><Settings className="h-[16px] w-[16px]" /> Save All Changes</>
+                <>
+                  <Settings className="h-[16px] w-[16px]" /> Save All Changes
+                </>
               )}
             </Button>
           )}
@@ -657,8 +863,8 @@ export default function AboutServicesPage() {
                       {togglingId === aboutData._id
                         ? "..."
                         : aboutData.isActive
-                        ? "Active"
-                        : "Inactive"}
+                          ? "Active"
+                          : "Inactive"}
                     </button>
                   </div>
                   <h3 className="mt-[4px] text-[18px] font-semibold text-[#111111] sm:text-[20px] lg:text-[22px]">
@@ -692,7 +898,9 @@ export default function AboutServicesPage() {
               <div className="mt-[16px] grid grid-cols-1 gap-[16px] sm:grid-cols-2">
                 <div className="rounded-[12px] bg-[#FFF9F4] p-[14px]">
                   <div className="flex items-center gap-[6px]">
-                    <span className="text-[24px] font-bold text-[#EA580C]">{aboutData.visionNumber}</span>
+                    <span className="text-[24px] font-bold text-[#EA580C]">
+                      {aboutData.visionNumber}
+                    </span>
                     <h4 className="text-[14px] font-semibold text-[#111111] sm:text-[15px]">
                       {aboutData.visionTitle}
                     </h4>
@@ -703,7 +911,9 @@ export default function AboutServicesPage() {
                 </div>
                 <div className="rounded-[12px] bg-[#FFF9F4] p-[14px]">
                   <div className="flex items-center gap-[6px]">
-                    <span className="text-[24px] font-bold text-[#EA580C]">{aboutData.missionNumber}</span>
+                    <span className="text-[24px] font-bold text-[#EA580C]">
+                      {aboutData.missionNumber}
+                    </span>
                     <h4 className="text-[14px] font-semibold text-[#111111] sm:text-[15px]">
                       {aboutData.missionTitle}
                     </h4>
@@ -925,6 +1135,141 @@ export default function AboutServicesPage() {
                   </div>
                 )}
               </div>
+
+              {/* ================= INLINE LINKS SECTION ================= */}
+              <div className="mt-[20px]">
+                <button
+                  onClick={() => setInlineLinksExpanded(!inlineLinksExpanded)}
+                  className="flex w-full items-center justify-between py-[8px]"
+                >
+                  <h4 className="text-[15px] font-semibold text-[#111111] sm:text-[16px]">
+                    Inline Links ({form.inlineLinks.length})
+                    <span className="ml-2 text-[11px] font-normal text-[#888888]">
+                      (text-based links within content)
+                    </span>
+                  </h4>
+                  {inlineLinksExpanded ? (
+                    <ChevronUp className="h-[18px] w-[18px] text-[#666]" />
+                  ) : (
+                    <ChevronDown className="h-[18px] w-[18px] text-[#666]" />
+                  )}
+                </button>
+                {inlineLinksExpanded && (
+                  <div className="mt-[8px]">
+                    {/* Suggestions Section */}
+                    {suggestedTexts.length > 0 && (
+                      <div className="mb-4 rounded-[10px] border border-[#E4C9B4] bg-[#FFF9F4] p-[12px]">
+                        <div className="flex items-center gap-[6px] text-[12px] font-medium text-[#666666]">
+                          <Sparkles className="h-[14px] w-[14px] text-[#EA580C]" />
+                          <span>Suggested texts that might need links:</span>
+                        </div>
+                        <div className="mt-2 flex flex-wrap gap-2">
+                          {suggestedTexts.map((suggestion, idx) => (
+                            <Button
+                              key={idx}
+                              onClick={() => openInlineLinkModal(undefined, suggestion.label, suggestion.url)}
+                              variant="outline"
+                              className="h-[28px] gap-[4px] rounded-full border-[#E4C9B4] px-3 text-[11px] text-[#C2410C] hover:bg-[#FFF4EC] hover:text-[#C2410C]"
+                            >
+                              <Plus className="h-[10px] w-[10px]" />
+                              "{suggestion.label}"
+                            </Button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Search Bar */}
+                    <div className="relative mb-3">
+                      <Search className="absolute left-3 top-1/2 h-[14px] w-[14px] -translate-y-1/2 text-[#999]" />
+                      <Input
+                        placeholder="Search inline links..."
+                        value={linkSearchTerm}
+                        onChange={(e) => setLinkSearchTerm(e.target.value)}
+                        className="h-[36px] pl-[34px] rounded-[10px] border-[#E4E4E4] bg-white text-[13px] focus-visible:ring-[#EA580C]/30"
+                      />
+                    </div>
+
+                    <div className="space-y-[8px]">
+                      {filteredInlineLinks.length === 0 ? (
+                        <div className="rounded-[10px] border border-dashed border-[#E4E4E4] p-[20px] text-center">
+                          <p className="text-[12px] text-[#888888]">
+                            {linkSearchTerm ? "No matching inline links found" : "No inline links configured yet"}
+                          </p>
+                        </div>
+                      ) : (
+                        filteredInlineLinks.map((link, index) => (
+                          <div
+                            key={index}
+                            className="flex items-start justify-between rounded-[10px] border border-[#E4E4E4] bg-white p-[12px]"
+                          >
+                            <div className="flex-1">
+                              <div className="flex items-center gap-[8px]">
+                                <span className="text-[10px] font-medium text-[#999]">
+                                  #{link.position}
+                                </span>
+                                <div className="flex items-center gap-[4px] text-[10px] text-[#999] sm:text-[11px]">
+                                  {getLinkTypeIcon(link.type)}
+                                  <span className="text-[8px] uppercase tracking-wider text-[#999]">
+                                    {link.type}
+                                  </span>
+                                </div>
+                                <span className="rounded bg-[#FFF4EC] px-2 py-0.5 text-[12px] font-medium text-[#EA580C]">
+                                  "{link.text}"
+                                </span>
+                              </div>
+                              <div className="mt-[2px] flex items-center gap-[8px] text-[11px] text-[#666666] sm:text-[12px]">
+                                <span>→ {link.url}</span>
+                                {link.openInNewTab && (
+                                  <span className="flex items-center gap-[4px] text-[9px] text-[#999] sm:text-[10px]">
+                                    <ExternalLink className="h-[10px] w-[10px]" />
+                                    New tab
+                                  </span>
+                                )}
+                              </div>
+                              <div className="mt-[4px] text-[10px] text-[#999]">
+                                Preview:{" "}
+                                <span className="text-[#EA580C] underline decoration-[#EA580C]/30 underline-offset-2">
+                                  {link.text}
+                                </span>
+                                <span className="mx-1 text-[#999]">→</span>
+                                <span className="text-[#666]">{link.url}</span>
+                              </div>
+                            </div>
+                            <div className="flex shrink-0 gap-[4px]">
+                              <Button
+                                onClick={() => openInlineLinkModal(index)}
+                                variant="ghost"
+                                size="sm"
+                                className="h-[28px] w-[28px] p-0 text-[#666] hover:text-[#EA580C]"
+                              >
+                                <Pencil className="h-[13px] w-[13px]" />
+                              </Button>
+                              <Button
+                                onClick={() => deleteInlineLink(index)}
+                                variant="ghost"
+                                size="sm"
+                                className="h-[28px] w-[28px] p-0 text-[#666] hover:text-[#DC2626]"
+                              >
+                                <Trash2 className="h-[13px] w-[13px]" />
+                              </Button>
+                            </div>
+                          </div>
+                        ))
+                      )}
+                    </div>
+
+                    <Button
+                      onClick={() => openInlineLinkModal()}
+                      variant="outline"
+                      className="mt-3 h-[36px] w-full gap-[6px] rounded-[10px] border-dashed border-[#E4C9B4] text-[12px] text-[#C2410C] hover:bg-[#FFF4EC] sm:h-[38px]"
+                    >
+                      <Plus className="h-[14px] w-[14px]" />
+                      Add Inline Link
+                    </Button>
+                  </div>
+                )}
+              </div>
             </CardContent>
           </Card>
         )}
@@ -994,7 +1339,8 @@ export default function AboutServicesPage() {
                 {/* Services Description */}
                 <div>
                   <Label className="mb-[8px] flex items-center gap-[6px] text-[13px] font-medium text-[#2A2A2A]">
-                    <AlignLeft className="h-[13px] w-[13px]" /> Services Description
+                    <AlignLeft className="h-[13px] w-[13px]" /> Services
+                    Description
                   </Label>
                   <Textarea
                     value={form.servicesDescription}
@@ -1110,7 +1456,10 @@ export default function AboutServicesPage() {
                     onChange={handleImageOneUpload}
                   />
                   <div
-                    onClick={() => !uploading && document.getElementById('valuesImageOne')?.click()}
+                    onClick={() =>
+                      !uploading &&
+                      document.getElementById("valuesImageOne")?.click()
+                    }
                     className={`
                       relative flex h-[100px] w-full cursor-pointer items-center justify-center overflow-hidden rounded-[12px] border border-dashed border-[#E4C9B4] bg-[#FFF9F4] transition-colors hover:bg-[#FFF4EC]
                       ${uploading ? "pointer-events-none opacity-70" : ""}
@@ -1135,7 +1484,9 @@ export default function AboutServicesPage() {
                     ) : (
                       <div className="flex flex-col items-center gap-[4px] text-[#C2410C]">
                         <UploadCloud className="h-[20px] w-[20px]" />
-                        <span className="text-[11px] font-medium">Upload image</span>
+                        <span className="text-[11px] font-medium">
+                          Upload image
+                        </span>
                       </div>
                     )}
                     {uploading && (
@@ -1166,7 +1517,10 @@ export default function AboutServicesPage() {
                     onChange={handleImageTwoUpload}
                   />
                   <div
-                    onClick={() => !uploadingImageTwo && document.getElementById('valuesImageTwo')?.click()}
+                    onClick={() =>
+                      !uploadingImageTwo &&
+                      document.getElementById("valuesImageTwo")?.click()
+                    }
                     className={`
                       relative flex h-[100px] w-full cursor-pointer items-center justify-center overflow-hidden rounded-[12px] border border-dashed border-[#E4C9B4] bg-[#FFF9F4] transition-colors hover:bg-[#FFF4EC]
                       ${uploadingImageTwo ? "pointer-events-none opacity-70" : ""}
@@ -1191,7 +1545,9 @@ export default function AboutServicesPage() {
                     ) : (
                       <div className="flex flex-col items-center gap-[4px] text-[#C2410C]">
                         <UploadCloud className="h-[20px] w-[20px]" />
-                        <span className="text-[11px] font-medium">Upload image</span>
+                        <span className="text-[11px] font-medium">
+                          Upload image
+                        </span>
                       </div>
                     )}
                     {uploadingImageTwo && (
@@ -1229,7 +1585,8 @@ export default function AboutServicesPage() {
                 {/* Why Choose Us Title */}
                 <div>
                   <Label className="mb-[8px] flex items-center gap-[6px] text-[13px] font-medium text-[#2A2A2A]">
-                    <ThumbsUp className="h-[13px] w-[13px]" /> Why Choose Us Title
+                    <ThumbsUp className="h-[13px] w-[13px]" /> Why Choose Us
+                    Title
                   </Label>
                   <Input
                     value={form.whyChooseUsTitle}
@@ -1239,6 +1596,24 @@ export default function AboutServicesPage() {
                     placeholder="Why Choose Us"
                     className="h-[46px] rounded-[12px] border-[#E4E4E4] bg-white text-[14px] focus-visible:ring-[#EA580C]/30 sm:h-[48px]"
                   />
+                </div>
+
+                <hr className="border-[#E4E4E4]" />
+
+                {/* Inline Links Section in Main Modal */}
+                <div>
+                  <Label className="mb-[8px] flex items-center gap-[6px] text-[13px] font-medium text-[#2A2A2A]">
+                    <Hash className="h-[13px] w-[13px]" /> Inline Links
+                  </Label>
+                  <p className="mb-[8px] text-[11px] text-[#888888]">
+                    Manage inline links (text-based links within content) in the
+                    main content view below.
+                  </p>
+                  <div className="rounded-[12px] border border-[#E4E4E4] bg-[#FAFAFA] p-[12px]">
+                    <p className="text-[12px] text-[#666666]">
+                      {form.inlineLinks.length} link(s) configured
+                    </p>
+                  </div>
                 </div>
 
                 {/* Active */}
@@ -1301,7 +1676,9 @@ export default function AboutServicesPage() {
             >
               <div className="flex items-center justify-between">
                 <h3 className="text-[16px] font-semibold text-[#111111] sm:text-[17px]">
-                  {editingServiceIndex !== null ? "Edit Service" : "Add Service"}
+                  {editingServiceIndex !== null
+                    ? "Edit Service"
+                    : "Add Service"}
                 </h3>
                 <button
                   onClick={closeServiceModal}
@@ -1332,7 +1709,10 @@ export default function AboutServicesPage() {
                   <Textarea
                     value={tempService.description}
                     onChange={(e) =>
-                      setTempService({ ...tempService, description: e.target.value })
+                      setTempService({
+                        ...tempService,
+                        description: e.target.value,
+                      })
                     }
                     placeholder="Complete interior fit-out solutions..."
                     rows={2}
@@ -1373,7 +1753,10 @@ export default function AboutServicesPage() {
                     type="number"
                     value={tempService.order}
                     onChange={(e) =>
-                      setTempService({ ...tempService, order: Number(e.target.value) })
+                      setTempService({
+                        ...tempService,
+                        order: Number(e.target.value),
+                      })
                     }
                     className="h-[42px] rounded-[10px] border-[#E4E4E4] bg-white text-[13px] focus-visible:ring-[#EA580C]/30"
                   />
@@ -1450,7 +1833,10 @@ export default function AboutServicesPage() {
                   <Textarea
                     value={tempValue.description}
                     onChange={(e) =>
-                      setTempValue({ ...tempValue, description: e.target.value })
+                      setTempValue({
+                        ...tempValue,
+                        description: e.target.value,
+                      })
                     }
                     placeholder="Delivering superior solutions..."
                     rows={2}
@@ -1478,7 +1864,10 @@ export default function AboutServicesPage() {
                     type="number"
                     value={tempValue.order}
                     onChange={(e) =>
-                      setTempValue({ ...tempValue, order: Number(e.target.value) })
+                      setTempValue({
+                        ...tempValue,
+                        order: Number(e.target.value),
+                      })
                     }
                     className="h-[42px] rounded-[10px] border-[#E4E4E4] bg-white text-[13px] focus-visible:ring-[#EA580C]/30"
                   />
@@ -1524,7 +1913,9 @@ export default function AboutServicesPage() {
             >
               <div className="flex items-center justify-between">
                 <h3 className="text-[16px] font-semibold text-[#111111] sm:text-[17px]">
-                  {editingWhyChooseIndex !== null ? "Edit Why Choose Us" : "Add Why Choose Us"}
+                  {editingWhyChooseIndex !== null
+                    ? "Edit Why Choose Us"
+                    : "Add Why Choose Us"}
                 </h3>
                 <button
                   onClick={closeWhyChooseModal}
@@ -1542,7 +1933,10 @@ export default function AboutServicesPage() {
                   <Input
                     value={tempWhyChoose.title}
                     onChange={(e) =>
-                      setTempWhyChoose({ ...tempWhyChoose, title: e.target.value })
+                      setTempWhyChoose({
+                        ...tempWhyChoose,
+                        title: e.target.value,
+                      })
                     }
                     placeholder="Comprehensive In-House Expertise"
                     className="h-[42px] rounded-[10px] border-[#E4E4E4] bg-white text-[13px] focus-visible:ring-[#EA580C]/30"
@@ -1555,7 +1949,10 @@ export default function AboutServicesPage() {
                   <Textarea
                     value={tempWhyChoose.description}
                     onChange={(e) =>
-                      setTempWhyChoose({ ...tempWhyChoose, description: e.target.value })
+                      setTempWhyChoose({
+                        ...tempWhyChoose,
+                        description: e.target.value,
+                      })
                     }
                     placeholder="With a dedicated team of designers..."
                     rows={2}
@@ -1569,7 +1966,10 @@ export default function AboutServicesPage() {
                   <Input
                     value={tempWhyChoose.icon}
                     onChange={(e) =>
-                      setTempWhyChoose({ ...tempWhyChoose, icon: e.target.value })
+                      setTempWhyChoose({
+                        ...tempWhyChoose,
+                        icon: e.target.value,
+                      })
                     }
                     placeholder="fa-solid fa-users"
                     className="h-[42px] rounded-[10px] border-[#E4E4E4] bg-white text-[13px] font-mono focus-visible:ring-[#EA580C]/30"
@@ -1583,7 +1983,10 @@ export default function AboutServicesPage() {
                     type="number"
                     value={tempWhyChoose.order}
                     onChange={(e) =>
-                      setTempWhyChoose({ ...tempWhyChoose, order: Number(e.target.value) })
+                      setTempWhyChoose({
+                        ...tempWhyChoose,
+                        order: Number(e.target.value),
+                      })
                     }
                     className="h-[42px] rounded-[10px] border-[#E4E4E4] bg-white text-[13px] focus-visible:ring-[#EA580C]/30"
                   />
@@ -1601,6 +2004,188 @@ export default function AboutServicesPage() {
                     className="h-[40px] flex-1 rounded-[10px] bg-[#EA580C] text-[13px] font-medium text-white hover:bg-[#EA580C]"
                   >
                     {editingWhyChooseIndex !== null ? "Update" : "Add"}
+                  </Button>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ================= INLINE LINK MODAL ================= */}
+      <AnimatePresence>
+        {inlineLinkModalOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[55] flex items-center justify-center bg-black/40 backdrop-blur-[4px] p-[16px]"
+            onClick={closeInlineLinkModal}
+          >
+            <motion.div
+              initial={{ y: 20, opacity: 0, scale: 0.97 }}
+              animate={{ y: 0, opacity: 1, scale: 1 }}
+              exit={{ y: 10, opacity: 0, scale: 0.97 }}
+              transition={{ duration: 0.2, ease: "easeOut" }}
+              onClick={(e) => e.stopPropagation()}
+              className="w-full max-w-[480px] rounded-[20px] bg-white p-[22px] shadow-[0_30px_80px_rgba(0,0,0,0.25)] sm:rounded-[22px] sm:p-[26px]"
+            >
+              <div className="flex items-center justify-between">
+                <h3 className="text-[16px] font-semibold text-[#111111] sm:text-[17px]">
+                  {editingInlineLinkIndex !== null
+                    ? "Edit Inline Link"
+                    : "Add Inline Link"}
+                </h3>
+                <button
+                  onClick={closeInlineLinkModal}
+                  className="flex h-[30px] w-[30px] items-center justify-center rounded-full bg-[#F4F1EA] text-[#666] transition-colors hover:bg-[#EDE3D6]"
+                >
+                  <X className="h-[15px] w-[15px]" />
+                </button>
+              </div>
+
+              <div className="mt-[16px] space-y-[12px]">
+                <div>
+                  <Label className="mb-[6px] block text-[12px] font-medium text-[#2A2A2A]">
+                    Text to Link *
+                  </Label>
+                  <Input
+                    value={tempInlineLink.text}
+                    onChange={(e) =>
+                      setTempInlineLink({
+                        ...tempInlineLink,
+                        text: e.target.value,
+                      })
+                    }
+                    placeholder="custom joinery"
+                    className="h-[42px] rounded-[10px] border-[#E4E4E4] bg-white text-[13px] focus-visible:ring-[#EA580C]/30"
+                  />
+                  <p className="mt-[4px] text-[10px] text-[#888888]">
+                    This text will become clickable in your content. Must match exactly.
+                  </p>
+                </div>
+                <div>
+                  <Label className="mb-[6px] block text-[12px] font-medium text-[#2A2A2A]">
+                    URL *
+                  </Label>
+                  <Input
+                    value={tempInlineLink.url}
+                    onChange={(e) =>
+                      setTempInlineLink({
+                        ...tempInlineLink,
+                        url: e.target.value,
+                      })
+                    }
+                    placeholder="/services/joinery"
+                    className="h-[42px] rounded-[10px] border-[#E4E4E4] bg-white text-[13px] focus-visible:ring-[#EA580C]/30"
+                  />
+                </div>
+                <div>
+                  <Label className="mb-[6px] block text-[12px] font-medium text-[#2A2A2A]">
+                    Link Type
+                  </Label>
+                  <div className="grid grid-cols-3 gap-[8px]">
+                    {LINK_TYPES.map((type) => {
+                      const IconComponent = type.icon;
+                      const isSelected = tempInlineLink.type === type.value;
+                      return (
+                        <Button
+                          key={type.value}
+                          type="button"
+                          onClick={() =>
+                            setTempInlineLink({
+                              ...tempInlineLink,
+                              type: type.value,
+                            })
+                          }
+                          variant={isSelected ? "default" : "outline"}
+                          className={`
+                            h-[36px] gap-[6px] rounded-[10px] text-[11px] font-medium
+                            ${
+                              isSelected
+                                ? "bg-[#EA580C] text-white hover:bg-[#EA580C]"
+                                : "border-[#E4E4E4] text-[#666] hover:bg-[#FFF4EC]"
+                            }
+                          `}
+                        >
+                          <IconComponent className="h-[13px] w-[13px]" />
+                          {type.label}
+                        </Button>
+                      );
+                    })}
+                  </div>
+                </div>
+                <div className="flex items-center gap-[12px] pt-[4px]">
+                  <Switch
+                    id="inlineOpenInNewTab"
+                    checked={tempInlineLink.openInNewTab}
+                    onCheckedChange={(checked) =>
+                      setTempInlineLink({
+                        ...tempInlineLink,
+                        openInNewTab: checked,
+                      })
+                    }
+                  />
+                  <Label
+                    htmlFor="inlineOpenInNewTab"
+                    className="text-[12px] font-medium text-[#2A2A2A]"
+                  >
+                    Open in new tab
+                  </Label>
+                </div>
+                <div>
+                  <Label className="mb-[6px] block text-[12px] font-medium text-[#2A2A2A]">
+                    Position
+                  </Label>
+                  <Input
+                    type="number"
+                    value={tempInlineLink.position}
+                    onChange={(e) =>
+                      setTempInlineLink({
+                        ...tempInlineLink,
+                        position: Number(e.target.value),
+                      })
+                    }
+                    className="h-[42px] rounded-[10px] border-[#E4E4E4] bg-white text-[13px] focus-visible:ring-[#EA580C]/30"
+                  />
+                  <p className="mt-[4px] text-[10px] text-[#888888]">
+                    Order of this link in the content (lower numbers appear first)
+                  </p>
+                </div>
+
+                {/* Preview Section */}
+                {tempInlineLink.text && tempInlineLink.url && (
+                  <div className="rounded-[10px] border border-[#E4C9B4] bg-[#FFF9F4] p-[12px]">
+                    <p className="text-[11px] font-medium text-[#666666]">
+                      Preview:
+                    </p>
+                    <p className="mt-[4px] text-[13px] text-[#111111]">
+                      ...{" "}
+                      <span className="cursor-pointer font-semibold text-[#db5e41] underline decoration-[#db5e41]/30 underline-offset-2 transition-all duration-200 hover:text-[#c94f35] hover:decoration-[#db5e41]">
+                        {tempInlineLink.text}
+                      </span>{" "}
+                      ...
+                    </p>
+                    <p className="mt-[4px] text-[10px] text-[#888888]">
+                      → {tempInlineLink.url}
+                      {tempInlineLink.openInNewTab && " (opens in new tab)"}
+                    </p>
+                  </div>
+                )}
+
+                <div className="flex gap-[10px] pt-[8px]">
+                  <Button
+                    variant="outline"
+                    onClick={closeInlineLinkModal}
+                    className="h-[40px] flex-1 rounded-[10px] border-[#E4E4E4] text-[13px] font-medium text-[#666]"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    onClick={saveInlineLink}
+                    className="h-[40px] flex-1 rounded-[10px] bg-[#EA580C] text-[13px] font-medium text-white hover:bg-[#EA580C]"
+                  >
+                    {editingInlineLinkIndex !== null ? "Update" : "Add"}
                   </Button>
                 </div>
               </div>
@@ -1635,7 +2220,8 @@ export default function AboutServicesPage() {
                 Delete about services content?
               </h3>
               <p className="mt-[6px] text-[12px] leading-[1.6] text-[#666666] sm:text-[13px]">
-                All services, values, and why choose us data will be permanently removed. This can't be undone.
+                All services, values, why choose us data, and inline links will
+                be permanently removed. This can't be undone.
               </p>
 
               <div className="mt-[18px] flex gap-[10px] sm:mt-[20px]">
@@ -1666,7 +2252,7 @@ export default function AboutServicesPage() {
   );
 }
 
-// Missing Target icon - add this near the imports
+// Target Icon component
 const Target = ({ className }: { className?: string }) => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
