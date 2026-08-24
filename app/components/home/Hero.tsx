@@ -7,6 +7,15 @@ import hero1 from "../../../public/images/slide1.webp";
 import { AnimatePresence, motion } from "framer-motion";
 
 import api from "@/lib/axios";
+import { InlineLinkedText } from "../InlineLinkedText";
+
+interface InlineLink {
+  text: string;
+  url: string;
+  type: string;
+  openInNewTab: boolean;
+  position: number;
+}
 
 interface Slide {
   image: string | StaticImageData;
@@ -20,6 +29,7 @@ interface Slide {
   isActive?: boolean;
   order?: number;
   alt?: string;
+  inlineLinks?: InlineLink[];
 }
 
 // Fallback slides, only used if the API call fails or returns nothing
@@ -184,38 +194,50 @@ export default function Hero() {
               exit={{ opacity: 0 }}
               transition={{ duration: 0.3 }}
             >
-              {/* Subtitle */}
-              <motion.p
+              {/* Subtitle - now with inline links support */}
+              <motion.div
                 initial={{ y: -40, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
                 exit={{ y: 40, opacity: 0 }}
                 transition={{ duration: 0.6 }}
                 className="mb-3 text-[11px] uppercase tracking-[3px] text-white/90 sm:mb-4 sm:text-sm sm:tracking-[4px] md:mb-6 md:text-base lg:text-lg lg:tracking-[5px]"
               >
-                {slides[current].title}
-              </motion.p>
+                <InlineLinkedText
+                  text={slides[current].title}
+                  links={slides[current].inlineLinks || []}
+                  linkClassName="inline-block cursor-pointer font-semibold text-white/90 underline decoration-white/30 underline-offset-4 transition-all duration-200 hover:text-[#db5e41] hover:decoration-[#db5e41] focus:outline-none focus:ring-2 focus:ring-[#db5e41] focus:ring-offset-2 focus:ring-offset-[#071423] rounded"
+                />
+              </motion.div>
 
-              {/* Title */}
-              <motion.h1
+              {/* Title - with inline links support */}
+              <motion.div
                 initial={{ y: -60, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
                 exit={{ y: 60, opacity: 0 }}
                 transition={{ duration: 0.7, delay: 0.15 }}
                 className="text-2xl font-bold leading-tight sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl"
               >
-                {slides[current].subtitle}
-              </motion.h1>
+                <InlineLinkedText
+                  text={slides[current].subtitle}
+                  links={slides[current].inlineLinks || []}
+                  linkClassName="inline-block cursor-pointer font-bold text-white underline decoration-white/30 underline-offset-8 transition-all duration-200 hover:text-[#db5e41] hover:decoration-[#db5e41] focus:outline-none focus:ring-2 focus:ring-[#db5e41] focus:ring-offset-2 focus:ring-offset-[#071423] rounded"
+                />
+              </motion.div>
 
-              {/* Description */}
-              <motion.p
+              {/* Description - with inline links support */}
+              <motion.div
                 initial={{ y: -80, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
                 exit={{ y: 80, opacity: 0 }}
                 transition={{ duration: 0.8, delay: 0.3 }}
                 className="mx-auto mt-4 max-w-[900px] text-sm leading-6 text-white/90 sm:mt-6 sm:text-base sm:leading-7 md:mt-8 md:text-lg md:leading-8 lg:text-xl xl:text-2xl"
               >
-                {slides[current].description}
-              </motion.p>
+                <InlineLinkedText
+                  text={slides[current].description}
+                  links={slides[current].inlineLinks || []}
+                  linkClassName="inline-block cursor-pointer font-medium text-white/90 underline decoration-white/30 underline-offset-4 transition-all duration-200 hover:text-[#db5e41] hover:decoration-[#db5e41] focus:outline-none focus:ring-2 focus:ring-[#db5e41] focus:ring-offset-2 focus:ring-offset-[#071423] rounded"
+                />
+              </motion.div>
 
               {/* Buttons */}
               <div className="mt-6 flex flex-col items-center justify-center gap-4 sm:mt-8 sm:gap-5 md:mt-12">
@@ -232,7 +254,7 @@ export default function Hero() {
                       }}
                       whileHover={{ scale: 1.03 }}
                       whileTap={{ scale: 0.96 }}
-                      href={slides[current].buttonLink || "tel:+971 565066845"}
+                      href={slides[current].buttonLink || "tel:+971565066845"}
                       className="group relative flex h-12 w-full items-center justify-center overflow-hidden rounded-full bg-[#db5e41] px-6 text-sm font-semibold text-white shadow-lg shadow-[#db5e41]/20 transition-shadow duration-300 hover:shadow-xl hover:shadow-[#db5e41]/30 sm:h-14 sm:w-auto sm:px-8 sm:text-base"
                     >
                       <span className="absolute inset-0 -translate-x-full rounded-full bg-black transition-transform duration-500 ease-out group-hover:translate-x-0" />
