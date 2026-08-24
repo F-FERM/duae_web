@@ -11,6 +11,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import api from "@/lib/axios";
+import { InlineLinkedText } from "../InlineLinkedText";
 
 interface WhyChooseUsApi {
   _id: string;
@@ -20,14 +21,24 @@ interface WhyChooseUsApi {
   order: number;
 }
 
+interface InlineLinkApi {
+  text: string;
+  url: string;
+  type: string;
+  openInNewTab: boolean;
+  position: number;
+}
+
 interface AboutContentApiResponse {
   whyChooseUsTitle: string;
   whyChooseUs: WhyChooseUsApi[];
+  inlineLinks?: InlineLinkApi[];
 }
 
 interface WhyChooseUsData {
   title: string;
   reasons: WhyChooseUsApi[];
+  inlineLinks: InlineLinkApi[];
 }
 
 const iconMap: Record<string, LucideIcon> = {
@@ -95,6 +106,7 @@ const defaultData: WhyChooseUsData = {
         "Our structured workflow and experienced project managers ensure timely completion without compromising quality.",
     },
   ],
+  inlineLinks: [],
 };
 
 function WhyChooseUsSkeleton() {
@@ -132,6 +144,7 @@ export default function WhyChooseUsLight() {
         setData({
           title: res.data.whyChooseUsTitle,
           reasons: [...res.data.whyChooseUs].sort((a, b) => a.order - b.order),
+          inlineLinks: res.data.inlineLinks || [],
         });
       } catch (err) {
         console.error("Failed to fetch about content (why choose us):", err);
@@ -146,12 +159,19 @@ export default function WhyChooseUsLight() {
 
   if (isLoading) return <WhyChooseUsSkeleton />;
 
+  const inlineLinks = data.inlineLinks || [];
+
   return (
     <section className="relative bg-white py-16 sm:py-20 md:py-28">
       <div className="mx-auto max-w-[1220px] px-4">
-        <h2 className="text-3xl font-bold text-[#0c1526] sm:text-4xl md:text-5xl text-center">
-          {data.title}
-        </h2>
+        {/* Main Title with inline links support */}
+        <div className="text-3xl font-bold text-[#0c1526] sm:text-4xl md:text-5xl text-center">
+          <InlineLinkedText 
+            text={data.title} 
+            links={inlineLinks}
+            linkClassName="inline-block cursor-pointer font-bold text-[#0c1526] underline decoration-[#db5e41]/30 underline-offset-4 transition-all duration-200 hover:text-[#db5e41] hover:decoration-[#db5e41] focus:outline-none focus:ring-2 focus:ring-[#db5e41] focus:ring-offset-2 rounded"
+          />
+        </div>
 
         <div className="mt-10 grid grid-cols-1 gap-5 sm:mt-14 sm:grid-cols-2 sm:gap-6 lg:grid-cols-3">
           {data.reasons.map((reason) => {
@@ -169,13 +189,22 @@ export default function WhyChooseUsLight() {
                   />
                 </div>
 
-                <h3 className="mt-6 text-[22px] font-bold leading-7 text-[#0c1526] sm:text-xl">
-                  {reason.title}
-                </h3>
+                {/* Reason Title with inline links support */}
+                <div className="mt-6 text-[22px] font-bold leading-7 text-[#0c1526] sm:text-xl">
+                  <InlineLinkedText 
+                    text={reason.title} 
+                    links={inlineLinks}
+                    linkClassName="inline-block cursor-pointer font-bold text-[#0c1526] underline decoration-[#db5e41]/30 underline-offset-4 transition-all duration-200 hover:text-[#db5e41] hover:decoration-[#db5e41] focus:outline-none focus:ring-2 focus:ring-[#db5e41] focus:ring-offset-2 rounded"
+                  />
+                </div>
 
-                <p className="mt-4 text-[12px] leading-7 text-gray-600 sm:text-[16px]">
-                  {reason.description}
-                </p>
+                {/* Description with inline links support */}
+                <div className="mt-4 text-[12px] leading-7 text-gray-600 sm:text-[16px]">
+                  <InlineLinkedText 
+                    text={reason.description} 
+                    links={inlineLinks}
+                  />
+                </div>
               </div>
             );
           })}
