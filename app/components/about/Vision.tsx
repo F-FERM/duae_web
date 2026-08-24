@@ -5,6 +5,15 @@ import { motion } from "framer-motion";
 import { Settings, CheckCircle2 } from "lucide-react";
 import api from "@/lib/axios";
 import whyBg from "../../../public/images/pattern3.png";
+import { InlineLinkedText } from "../InlineLinkedText";
+
+interface InlineLinkApi {
+  text: string;
+  url: string;
+  type: string;
+  openInNewTab: boolean;
+  position: number;
+}
 
 interface AboutContentApiResponse {
   visionTitle: string;
@@ -13,6 +22,7 @@ interface AboutContentApiResponse {
   missionTitle: string;
   missionDescription: string;
   missionNumber: string;
+  inlineLinks?: InlineLinkApi[];
 }
 
 interface VisionFeature {
@@ -23,6 +33,7 @@ interface VisionFeature {
 
 interface VisionData {
   features: VisionFeature[];
+  inlineLinks: InlineLinkApi[];
 }
 
 // Fixed icons per card position — API doesn't send icons for these two
@@ -43,6 +54,7 @@ const defaultData: VisionData = {
         "To deliver exceptional interior fit-out, joinery, and renovation services by combining creativity with precision, ensuring every project meets the highest standards of quality and durability.",
     },
   ],
+  inlineLinks: [],
 };
 
 // Reusable floating dot-grid pattern
@@ -100,6 +112,7 @@ export default function Vision() {
               description: res.data.missionDescription,
             },
           ],
+          inlineLinks: res.data.inlineLinks || [],
         });
       } catch (err) {
         console.error("Failed to fetch about content (vision/mission):", err);
@@ -113,6 +126,8 @@ export default function Vision() {
   }, []);
 
   if (isLoading) return <VisionSkeleton />;
+
+  const inlineLinks = data.inlineLinks || [];
 
   return (
     <section
@@ -167,13 +182,22 @@ export default function Vision() {
                   <Icon className="text-white" size={30} strokeWidth={1.8} />
                 </div>
 
-                <h3 className="text-[22px] font-bold text-white transition-colors duration-500 group-hover:text-[#db5e41] sm:text-3xl">
-                  {feature.title}
-                </h3>
+                {/* Title with inline links support */}
+                <div className="text-[22px] font-bold text-white transition-colors duration-500 group-hover:text-[#db5e41] sm:text-3xl">
+                  <InlineLinkedText 
+                    text={feature.title} 
+                    links={inlineLinks}
+                    linkClassName="inline-block cursor-pointer font-bold text-white transition-colors duration-500 group-hover:text-[#db5e41] hover:text-[#db5e41] underline decoration-[#db5e41]/50 underline-offset-4 focus:outline-none focus:ring-2 focus:ring-[#db5e41] focus:ring-offset-2 focus:ring-offset-black rounded"
+                  />
+                </div>
 
-                <p className="mx-auto mt-4 max-w-[320px] text-sm leading-7 text-white/60 sm:text-[18px]">
-                  {feature.description}
-                </p>
+                {/* Description with inline links support */}
+                <div className="mx-auto mt-4 max-w-[320px] text-sm leading-7 text-white/60 sm:text-[18px]">
+                  <InlineLinkedText 
+                    text={feature.description} 
+                    links={inlineLinks}
+                  />
+                </div>
               </motion.div>
             );
           })}
