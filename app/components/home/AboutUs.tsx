@@ -17,6 +17,15 @@ import {
 import imagepattern1 from "../../../public/images/pattern1.png";
 import pattern2 from "../../../public/images/pattern2.png";
 import api from "@/lib/axios";
+import { InlineLinkedText } from "../InlineLinkedText";
+
+interface InlineLink {
+  text: string;
+  url: string;
+  type: string;
+  openInNewTab: boolean;
+  position: number;
+}
 
 interface Milestone {
   _id: string;
@@ -24,6 +33,7 @@ interface Milestone {
   description: string;
   icon: string;
   order: number;
+  inlineLinks?: InlineLink[];
 }
 
 interface AboutApiResponse {
@@ -48,6 +58,7 @@ interface AboutApiResponse {
   milestonesImageTwoAlt?: string;
   milestones: Milestone[];
   isActive: boolean;
+  inlineLinks?: InlineLink[];
 }
 
 const milestoneIconMap: Record<string, LucideIcon> = {
@@ -68,7 +79,8 @@ export default function AboutUs() {
   const [isLoading, setIsLoading] = useState(true);
 
   // Fallback alt text
-  const FALLBACK_ALT = "Wood World Decor - leading joinery and fitout company in Dubai";
+  const FALLBACK_ALT =
+    "Wood World Decor - leading joinery and fitout company in Dubai";
 
   useEffect(() => {
     let isMounted = true;
@@ -101,7 +113,7 @@ export default function AboutUs() {
           observer.disconnect();
         }
       },
-      { threshold: 0.1, rootMargin: "0px 0px -80px 0px" }
+      { threshold: 0.1, rootMargin: "0px 0px -80px 0px" },
     );
 
     observer.observe(node);
@@ -117,6 +129,7 @@ export default function AboutUs() {
 
   // Use alt from about section or fallback
   const aboutAlt = data.alt || FALLBACK_ALT;
+  const inlineLinks = data.inlineLinks || [];
 
   return (
     <section className="relative overflow-hidden bg-[#faf7f6] py-20 md:py-28">
@@ -126,11 +139,11 @@ export default function AboutUs() {
           animate={{ y: [0, -8, 0, 8, 0] }}
           transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
         >
-          <Image 
-            src={imagepattern1} 
-            alt={aboutAlt} 
-            priority 
-            className="object-cover" 
+          <Image
+            src={imagepattern1}
+            alt={aboutAlt}
+            priority
+            className="object-cover"
           />
         </motion.div>
       </div>
@@ -141,11 +154,11 @@ export default function AboutUs() {
           animate={{ y: [0, -12, 0, 12, 0], rotate: [0, 2, 0, -2, 0] }}
           transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
         >
-          <Image 
-            src={pattern2} 
-            alt={aboutAlt} 
-            priority 
-            className="object-cover" 
+          <Image
+            src={pattern2}
+            alt={aboutAlt}
+            priority
+            className="object-cover"
           />
         </motion.div>
       </div>
@@ -156,12 +169,20 @@ export default function AboutUs() {
           <h2 className="text-3xl font-bold text-[#0c1526] sm:text-4xl md:text-5xl">
             About Us
           </h2>
-          <p className="mt-2 text-lg font-semibold leading-8 text-gray-600 md:text-xl">
-            {data.title}
-          </p>
-          <p className="mt-4 text-[15px] leading-8 text-gray-500 font-medium md:text-[18px]">
-            {data.description}
-          </p>
+          <div className="mt-2 text-lg font-semibold leading-8 text-gray-600 md:text-xl">
+            <InlineLinkedText
+              text={data.title}
+              links={inlineLinks}
+              linkClassName="inline-block cursor-pointer font-semibold text-[#db5e41] underline decoration-[#db5e41]/30 underline-offset-4 transition-all duration-200 hover:text-[#c94f35] hover:decoration-[#db5e41] focus:outline-none focus:ring-2 focus:ring-[#db5e41] focus:ring-offset-2 rounded"
+            />
+          </div>
+          <div className="mt-4 text-[15px] leading-8 text-gray-500 font-medium md:text-[18px]">
+            <InlineLinkedText
+              text={data.description}
+              links={inlineLinks}
+              linkClassName="inline-block cursor-pointer font-medium text-[#db5e41] underline decoration-[#db5e41]/30 underline-offset-4 transition-all duration-200 hover:text-[#c94f35] hover:decoration-[#db5e41] focus:outline-none focus:ring-2 focus:ring-[#db5e41] focus:ring-offset-2 rounded"
+            />
+          </div>
           <Link
             href={data.buttonLink}
             className="mt-8 inline-flex items-center gap-2 bg-[#db5e41] px-10 py-4 text-[15px] font-semibold tracking-wide text-white transition hover:bg-[#c74f34]"
@@ -214,7 +235,11 @@ export default function AboutUs() {
                   <span className="h-7 w-[3px] rounded-full bg-white/70" />
                   <span className="h-7 w-[3px] rounded-full bg-white/70" />
                 </span>
-                <MessageSquareMore className="shrink-0 text-white" size={28} strokeWidth={1.5} />
+                <MessageSquareMore
+                  className="shrink-0 text-white"
+                  size={28}
+                  strokeWidth={1.5}
+                />
                 <p className="text-lg font-bold leading-6 text-white">
                   {data.yearsOfExcellence}+ Years
                   <br />
@@ -225,8 +250,6 @@ export default function AboutUs() {
           </motion.div>
         </div>
       </div>
-
-
     </section>
   );
 }
