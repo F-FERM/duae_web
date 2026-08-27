@@ -8,11 +8,21 @@ import api from "@/lib/axios";
 import imagepattern1 from "../../../public/images/patter3.png";
 import pattern2 from "../../../public/images/pattern4.png";
 import { useServiceAltText } from "@/app/(web)/services/useServiceAltText";
+import { InlineLinkedText } from "../InlineLinkedText";
+
+interface InlineLink {
+  text: string;
+  url: string;
+  type: string;
+  openInNewTab: boolean;
+  position: number;
+}
 
 interface IncludedItemApi {
   title: string;
   description: string;
   icon: string;
+  inlineLinks?: InlineLink[];
 }
 
 interface ServiceDetailApiResponse {
@@ -20,6 +30,7 @@ interface ServiceDetailApiResponse {
     title: string;
     description: string;
     items: IncludedItemApi[];
+    inlineLinks?: InlineLink[];
   };
 }
 
@@ -27,18 +38,50 @@ interface WhatIncludedData {
   title: string;
   description: string;
   items: IncludedItemApi[];
+  inlineLinks?: InlineLink[];
 }
 
 const defaultData: WhatIncludedData = {
   title: "What Is Included in Every Fit-Out",
   description:
     "Our comprehensive fit-out solutions ensure that every project - regardless of scale or type - covers a full suite of craftsmanship, from structural pieces to decorative details.",
+  inlineLinks: [],
   items: [
-    { title: "Custom Joinery", description: "Our expert team crafts bespoke joinery solutions tailored to your space and style.", icon: "" },
-    { title: "Upholstery", description: "We provide high-quality upholstery services that combine comfort with style.", icon: "" },
-    { title: "Turnkey Fit-Out", description: "We deliver complete turnkey solutions, managing every stage of your project.", icon: "" },
-    { title: "Electrical, Lighting & Mechanical Installations", description: "Our team handles all electrical, lighting, and mechanical systems with precision and safety.", icon: "" },
-    { title: "Decor Solutions", description: "We curate furniture, artwork, accessories, and décor elements that bring your vision to life.", icon: "" },
+    {
+      title: "Custom Joinery",
+      description:
+        "Our expert team crafts bespoke joinery solutions tailored to your space and style.",
+      icon: "",
+      inlineLinks: [],
+    },
+    {
+      title: "Upholstery",
+      description:
+        "We provide high-quality upholstery services that combine comfort with style.",
+      icon: "",
+      inlineLinks: [],
+    },
+    {
+      title: "Turnkey Fit-Out",
+      description:
+        "We deliver complete turnkey solutions, managing every stage of your project.",
+      icon: "",
+      inlineLinks: [],
+    },
+    {
+      title: "Electrical, Lighting & Mechanical Installations",
+      description:
+        "Our team handles all electrical, lighting, and mechanical systems with precision and safety.",
+      icon: "",
+      inlineLinks: [],
+    },
+    {
+      title: "Decor Solutions",
+      description:
+        "We curate furniture, artwork, accessories, and décor elements that bring your vision to life.",
+      icon: "",
+      inlineLinks: [],
+    },
   ],
 };
 
@@ -53,7 +96,11 @@ function ChecklistColumn({ items }: { items: IncludedItemApi[] }) {
             </span>
             <p className="text-[15px] leading-7 text-gray-600 md:text-base">
               <span className="font-bold text-[#0c1526]">{item.title}:</span>{" "}
-              {item.description}
+              <InlineLinkedText
+                text={item.description}
+                links={item.inlineLinks || []}
+                linkClassName="inline-block cursor-pointer font-medium text-[#db5e41] underline decoration-[#db5e41]/30 underline-offset-4 transition-all duration-200 hover:text-[#c94f35] hover:decoration-[#db5e41] focus:outline-none focus:ring-2 focus:ring-[#db5e41] focus:ring-offset-2 rounded"
+              />
             </p>
           </li>
         ))}
@@ -71,7 +118,10 @@ function WhatIncludedSkeleton() {
 
         <div className="mt-12 grid grid-cols-1 gap-6 md:mt-16 lg:grid-cols-2 lg:gap-8">
           {Array.from({ length: 2 }).map((_, colIndex) => (
-            <div key={colIndex} className="bg-white p-6 shadow-[0_2px_20px_rgba(0,0,0,0.06)] sm:p-8">
+            <div
+              key={colIndex}
+              className="bg-white p-6 shadow-[0_2px_20px_rgba(0,0,0,0.06)] sm:p-8"
+            >
               <div className="flex flex-col gap-5">
                 {Array.from({ length: 4 }).map((_, i) => (
                   <div key={i} className="flex items-start gap-3">
@@ -93,17 +143,20 @@ export default function WhatIncluded({ slug }: { slug: string }) {
   const [isLoading, setIsLoading] = useState(true);
   const altText = useServiceAltText(slug);
 
-
   useEffect(() => {
     const fetchServiceDetail = async () => {
       try {
         const res = await api.get<ServiceDetailApiResponse>(
-          `/services/detail/${slug}`
+          `/services/detail/${slug}`,
         );
         setData({
           title: res.data.whatIsIncluded.title,
           description: res.data.whatIsIncluded.description,
-          items: res.data.whatIsIncluded.items,
+          items: res.data.whatIsIncluded.items.map((item) => ({
+            ...item,
+            inlineLinks: item.inlineLinks || [],
+          })),
+          inlineLinks: res.data.whatIsIncluded.inlineLinks || [],
         });
       } catch (err) {
         console.error("Failed to fetch what-included section:", err);
@@ -118,10 +171,31 @@ export default function WhatIncluded({ slug }: { slug: string }) {
 
   if (isLoading) return <WhatIncludedSkeleton />;
 
-  // Split the single items array into two roughly-even columns
   const mid = Math.ceil(data.items.length / 2);
   const leftItems = data.items.slice(0, mid);
   const rightItems = data.items.slice(mid);
+
+  const sectionLinks = data.inlineLinks || [];
+
+  const renderText = (
+    text: string,
+    links: InlineLink[],
+    className: string,
+    linkClassName: string,
+  ) => {
+    if (!text) return null;
+    const hasMatchingLink = links.some((link) => text.includes(link.text));
+    if (hasMatchingLink) {
+      return (
+        <InlineLinkedText
+          text={text}
+          links={links}
+          linkClassName={linkClassName}
+        />
+      );
+    }
+    return <span className={className}>{text}</span>;
+  };
 
   return (
     <section className="relative overflow-hidden bg-[#f6edea] py-20 md:py-28">
@@ -131,7 +205,12 @@ export default function WhatIncluded({ slug }: { slug: string }) {
           animate={{ y: [0, -8, 0, 8, 0] }}
           transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
         >
-          <Image src={imagepattern1} alt={altText} priority className="object-cover" />
+          <Image
+            src={imagepattern1}
+            alt={altText}
+            priority
+            className="object-cover"
+          />
         </motion.div>
       </div>
 
@@ -141,18 +220,35 @@ export default function WhatIncluded({ slug }: { slug: string }) {
           animate={{ y: [0, -12, 0, 12, 0], rotate: [0, 2, 0, -2, 0] }}
           transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
         >
-          <Image src={pattern2} alt={altText} priority className="object-cover" />
+          <Image
+            src={pattern2}
+            alt={altText}
+            priority
+            className="object-cover"
+          />
         </motion.div>
       </div>
 
       <div className="relative mx-auto max-w-[1220px] px-4">
-        <h2 className="text-3xl font-bold text-[#0c1526] sm:text-4xl md:text-5xl text-center">
-          {data.title}
-        </h2>
+        {/* Title */}
+        <div className="text-3xl font-bold text-[#0c1526] sm:text-4xl md:text-5xl text-center">
+          {renderText(
+            data.title,
+            sectionLinks,
+            "text-3xl font-bold text-[#0c1526] sm:text-4xl md:text-5xl text-center",
+            "inline-block cursor-pointer font-bold text-[#0c1526] underline decoration-[#db5e41]/30 underline-offset-4 transition-all duration-200 hover:text-[#db5e41] hover:decoration-[#db5e41] focus:outline-none focus:ring-2 focus:ring-[#db5e41] focus:ring-offset-2 rounded",
+          )}
+        </div>
 
-        <p className="mx-auto mt-3 text-sm leading-7 text-gray-600 sm:text-base sm:leading-8 md:text-lg">
-          {data.description}
-        </p>
+        {/* Description */}
+        <div className="mx-auto mt-3 text-sm leading-7 text-gray-600 sm:text-base sm:leading-8 md:text-lg text-center max-w-3xl">
+          {renderText(
+            data.description,
+            sectionLinks,
+            "text-sm leading-7 text-gray-600 sm:text-base sm:leading-8 md:text-lg text-center max-w-3xl",
+            "inline-block cursor-pointer font-medium text-gray-600 underline decoration-[#db5e41]/30 underline-offset-4 transition-all duration-200 hover:text-[#db5e41] hover:decoration-[#db5e41] focus:outline-none focus:ring-2 focus:ring-[#db5e41] focus:ring-offset-2 rounded",
+          )}
+        </div>
 
         <div className="mt-12 grid grid-cols-1 gap-6 md:mt-16 lg:grid-cols-2 lg:gap-8">
           <motion.div
