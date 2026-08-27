@@ -4,20 +4,35 @@ import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { MapPin, Phone, Mail } from "lucide-react";
 import api from "@/lib/axios";
+import { InlineLinkedText } from "../InlineLinkedText";
+
+interface InlineLink {
+  text: string;
+  url: string;
+  type: string;
+  openInNewTab: boolean;
+  position: number;
+}
 
 type FormFieldConfig = {
   name: "name" | "phone" | "email" | "message";
   type: "text" | "tel" | "email" | "textarea";
   placeholder: string;
   required: boolean;
+  inlineLinks?: InlineLink[];
 };
 
 type ContactPageData = {
   title: string;
+  titleInlineLinks?: InlineLink[];
   description: string;
+  descriptionInlineLinks?: InlineLink[];
   infoTitle: string;
+  infoTitleInlineLinks?: InlineLink[];
   infoDescription: string;
+  infoDescriptionInlineLinks?: InlineLink[];
   address: string;
+  addressInlineLinks?: InlineLink[];
   phone1: string;
   phone2: string;
   email: string;
@@ -48,12 +63,13 @@ export default function GetInTouch() {
   useEffect(() => {
     let cancelled = false;
 
-    api.get("/contact-page")
+    api
+      .get("/contact-page")
       .then((res) => {
         let jsonData = null;
         if (Array.isArray(res.data)) {
           jsonData = res.data.length > 0 ? res.data[0] : null;
-        } else if (res.data && typeof res.data === 'object') {
+        } else if (res.data && typeof res.data === "object") {
           jsonData = res.data;
         }
         if (!cancelled) setData(jsonData);
@@ -88,8 +104,7 @@ export default function GetInTouch() {
     return (
       <section className="bg-white py-16 sm:py-20 md:py-28">
         <div className="mx-auto max-w-[1220px] px-4 text-center text-[#232323]">
-          Unable to load contact information right now. Please try again
-          later.
+          Unable to load contact information right now. Please try again later.
         </div>
       </section>
     );
@@ -119,14 +134,23 @@ export default function GetInTouch() {
           {/* Left: Contact Info */}
           <div>
             <h2 className="text-3xl font-bold leading-tight text-[#0c1526] sm:text-4xl md:text-5xl">
-              {data.title}
+              <InlineLinkedText
+                text={data.title}
+                links={data.titleInlineLinks || []}
+                linkClassName="inline-block cursor-pointer font-bold text-[#0c1526] underline decoration-[#db5e41]/30 underline-offset-4 transition-all duration-200 hover:text-[#db5e41] hover:decoration-[#db5e41] focus:outline-none focus:ring-2 focus:ring-[#db5e41] focus:ring-offset-2 rounded"
+              />
             </h2>
 
-            <p className="mt-4 max-w-[420px] text-base leading-7 text-[#232323] sm:text-[18px]">
-              {data.description}
-            </p>
+            <div className="mt-4 max-w-[420px] text-base leading-7 text-[#232323] sm:text-[18px]">
+              <InlineLinkedText
+                text={data.description}
+                links={data.descriptionInlineLinks || []}
+                linkClassName="inline-block cursor-pointer font-medium text-[#db5e41] underline decoration-[#db5e41]/30 underline-offset-4 transition-all duration-200 hover:text-[#c94f35] hover:decoration-[#db5e41] focus:outline-none focus:ring-2 focus:ring-[#db5e41] focus:ring-offset-2 rounded"
+              />
+            </div>
 
             <div className="mt-8 space-y-6 sm:mt-10 sm:space-y-8">
+              {/* Address */}
               <div className="flex items-start gap-4">
                 <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-[#60433e] text-white transition hover:bg-[#db5e41] cursor-pointer sm:h-16 sm:w-16 md:h-[72px] md:w-[72px]">
                   <MapPin size={24} className="sm:hidden" />
@@ -136,12 +160,17 @@ export default function GetInTouch() {
                   <h3 className="text-lg font-bold text-[#0c1526] sm:text-xl md:text-[22px]">
                     Address
                   </h3>
-                  <p className="mt-1 text-base leading-7 text-[#232323] sm:text-[18px]">
-                    {data.address}
-                  </p>
+                  <div className="mt-1 text-base leading-7 text-[#232323] sm:text-[18px]">
+                    <InlineLinkedText
+                      text={data.address}
+                      links={data.addressInlineLinks || []}
+                      linkClassName="inline-block cursor-pointer font-medium text-[#db5e41] underline decoration-[#db5e41]/30 underline-offset-4 transition-all duration-200 hover:text-[#c94f35] hover:decoration-[#db5e41] focus:outline-none focus:ring-2 focus:ring-[#db5e41] focus:ring-offset-2 rounded"
+                    />
+                  </div>
                 </div>
               </div>
 
+              {/* Phone */}
               <div className="flex items-start gap-4">
                 <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-[#60433e] text-white transition hover:bg-[#db5e41] cursor-pointer sm:h-16 sm:w-16 md:h-[72px] md:w-[72px]">
                   <Phone size={20} className="sm:hidden" />
@@ -168,6 +197,7 @@ export default function GetInTouch() {
                 </div>
               </div>
 
+              {/* Email */}
               <div className="flex items-start gap-4">
                 <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-[#60433e] text-white transition hover:bg-[#db5e41] cursor-pointer sm:h-16 sm:w-16 md:h-[72px] md:w-[72px]">
                   <Mail size={20} className="sm:hidden" />
@@ -191,12 +221,20 @@ export default function GetInTouch() {
           {/* Right: Form Card */}
           <div className="bg-[#f4ede9] p-5 sm:p-8 md:p-10 lg:p-12">
             <h3 className="text-2xl font-bold leading-tight text-[#0c1526] sm:text-3xl md:text-4xl">
-              {data.infoTitle}
+              <InlineLinkedText
+                text={data.infoTitle}
+                links={data.infoTitleInlineLinks || []}
+                linkClassName="inline-block cursor-pointer font-bold text-[#0c1526] underline decoration-[#db5e41]/30 underline-offset-4 transition-all duration-200 hover:text-[#db5e41] hover:decoration-[#db5e41] focus:outline-none focus:ring-2 focus:ring-[#db5e41] focus:ring-offset-2 rounded"
+              />
             </h3>
 
-            <p className="mt-4 text-base leading-7 text-gray-600 sm:text-[18px]">
-              {data.infoDescription}
-            </p>
+            <div className="mt-4 text-base leading-7 text-gray-600 sm:text-[18px]">
+              <InlineLinkedText
+                text={data.infoDescription}
+                links={data.infoDescriptionInlineLinks || []}
+                linkClassName="inline-block cursor-pointer font-medium text-[#db5e41] underline decoration-[#db5e41]/30 underline-offset-4 transition-all duration-200 hover:text-[#c94f35] hover:decoration-[#db5e41] focus:outline-none focus:ring-2 focus:ring-[#db5e41] focus:ring-offset-2 rounded"
+              />
+            </div>
 
             <form
               onSubmit={handleSubmit(onSubmit)}
