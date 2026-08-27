@@ -4,6 +4,15 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import api from "@/lib/axios";
 import fallbackTeamPhoto from "../../../public/images/service1.webp";
+import { InlineLinkedText } from "../InlineLinkedText";
+
+interface InlineLink {
+  text: string;
+  url: string;
+  type: string;
+  openInNewTab: boolean;
+  position: number;
+}
 
 interface TeamImage {
   url: string;
@@ -18,6 +27,8 @@ interface OurTeamApiResponse {
   buttonLink: string;
   teamSize: number;
   yearsExperience: number;
+  inlineLinks?: InlineLink[];
+  descriptionInlineLinks?: InlineLink[];
 }
 
 interface TeamPhoto {
@@ -29,10 +40,13 @@ interface OurTeamData {
   heading: string;
   description: string;
   photos: TeamPhoto[];
+  inlineLinks?: InlineLink[];
+  descriptionInlineLinks?: InlineLink[];
 }
 
 const IMAGE_BASE_URL = process.env.NEXT_PUBLIC_IMAGE_URL || "";
-const FALLBACK_ALT = "Wood World Decor team - professional craftsmen and interior fitout experts in Dubai";
+const FALLBACK_ALT =
+  "Wood World Decor team - professional craftsmen and interior fitout experts in Dubai";
 
 function resolveImage(path: string | undefined): string {
   if (!path) return fallbackTeamPhoto.src;
@@ -42,20 +56,23 @@ function resolveImage(path: string | undefined): string {
 
 function mapApiToOurTeam(data: OurTeamApiResponse): OurTeamData {
   let photos: TeamPhoto[] = [];
-  
+
   if (data.teamImages && Array.isArray(data.teamImages)) {
     photos = data.teamImages.map((img) => ({
       image: resolveImage(img.url),
       alt: img.alt || FALLBACK_ALT,
     }));
   }
-  
+
   // Pad to at least 3 images if we don't have enough
   while (photos.length < 3) {
-    const fallbackPhoto = photos.length > 0 ? photos[0] : { 
-      image: fallbackTeamPhoto.src, 
-      alt: FALLBACK_ALT 
-    };
+    const fallbackPhoto =
+      photos.length > 0
+        ? photos[0]
+        : {
+            image: fallbackTeamPhoto.src,
+            alt: FALLBACK_ALT,
+          };
     photos.push({ ...fallbackPhoto });
   }
 
@@ -63,6 +80,8 @@ function mapApiToOurTeam(data: OurTeamApiResponse): OurTeamData {
     heading: data.title,
     description: data.description,
     photos: photos.slice(0, 3),
+    inlineLinks: data.inlineLinks || [],
+    descriptionInlineLinks: data.descriptionInlineLinks || [],
   };
 }
 
@@ -71,10 +90,18 @@ const defaultData: OurTeamData = {
   description:
     "Behind every successful project is our dedicated team, known for their creativity, precision, and client-focused approach. With over 10 years of industry expertise, masterful detailing, and a commitment to on-time project delivery, Wood World Decor stands among the leading joinery fitout companies in Dubai. Our team of 100+ creative professionals collaborates closely with clients to transform spaces with style and innovation.",
   photos: [
-    { image: fallbackTeamPhoto.src, alt: "Wood World Decor team member at work" },
+    {
+      image: fallbackTeamPhoto.src,
+      alt: "Wood World Decor team member at work",
+    },
     { image: fallbackTeamPhoto.src, alt: "Wood World Decor team group photo" },
-    { image: fallbackTeamPhoto.src, alt: "Wood World Decor craftsman in workshop" },
+    {
+      image: fallbackTeamPhoto.src,
+      alt: "Wood World Decor craftsman in workshop",
+    },
   ],
+  inlineLinks: [],
+  descriptionInlineLinks: [],
 };
 
 function OurTeamSkeleton() {
@@ -132,12 +159,20 @@ export default function OurTeam() {
         {/* Heading */}
         <div className="mx-auto max-w-[900px] text-center">
           <h2 className="text-2xl font-bold text-[#0c1526] xs:text-3xl sm:text-4xl md:text-5xl">
-            {data.heading}
+            <InlineLinkedText
+              text={data.heading}
+              links={data.inlineLinks || []}
+              linkClassName="inline-block cursor-pointer font-bold text-[#0c1526] underline decoration-[#db5e41]/30 underline-offset-4 transition-all duration-200 hover:text-[#db5e41] hover:decoration-[#db5e41] focus:outline-none focus:ring-2 focus:ring-[#db5e41] focus:ring-offset-2 rounded"
+            />
           </h2>
 
-          <p className="mx-auto mt-3 text-sm leading-6 text-gray-600 xs:leading-7 sm:text-[18px]">
-            {data.description}
-          </p>
+          <div className="mx-auto mt-3 text-sm leading-6 text-gray-600 xs:leading-7 sm:text-[18px]">
+            <InlineLinkedText
+              text={data.description}
+              links={data.descriptionInlineLinks || []}
+              linkClassName="inline-block cursor-pointer font-medium text-[#db5e41] underline decoration-[#db5e41]/30 underline-offset-4 transition-all duration-200 hover:text-[#c94f35] hover:decoration-[#db5e41] focus:outline-none focus:ring-2 focus:ring-[#db5e41] focus:ring-offset-2 rounded"
+            />
+          </div>
         </div>
 
         {/* Photo Row */}
@@ -152,7 +187,10 @@ export default function OurTeam() {
                 alt={photo.alt}
                 fill
                 sizes="(max-width: 640px) 100vw, 33vw"
-                unoptimized={photo.image.startsWith("http") || photo.image.startsWith(IMAGE_BASE_URL)}
+                unoptimized={
+                  photo.image.startsWith("http") ||
+                  photo.image.startsWith(IMAGE_BASE_URL)
+                }
                 className="object-cover transition-transform duration-500 group-hover:scale-110"
               />
 
