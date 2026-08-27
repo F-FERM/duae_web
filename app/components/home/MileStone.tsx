@@ -13,6 +13,15 @@ import {
 import milestoneTop from "../../../public/images/slide1.webp";
 import milestoneBottom from "../../../public/images/service1.webp";
 import api from "@/lib/axios";
+import { InlineLinkedText } from "../InlineLinkedText";
+
+interface InlineLink {
+  text: string;
+  url: string;
+  type: string;
+  openInNewTab: boolean;
+  position: number;
+}
 
 interface MilestoneApiItem {
   title: string;
@@ -20,6 +29,7 @@ interface MilestoneApiItem {
   icon: string;
   order: number;
   _id: string;
+  inlineLinks?: InlineLink[];
 }
 
 interface AboutApiResponse {
@@ -35,6 +45,7 @@ interface MilestoneItem {
   title: string;
   description: string;
   icon: LucideIcon;
+  inlineLinks?: InlineLink[];
 }
 
 interface MilestonesData {
@@ -71,6 +82,7 @@ function mapApiToMilestones(data: AboutApiResponse): MilestonesData {
         title: m.title,
         description: m.description,
         icon: resolveIcon(m.icon),
+        inlineLinks: m.inlineLinks || [],
       })),
   };
 }
@@ -84,26 +96,33 @@ const defaultData: MilestonesData = {
     {
       id: "1",
       title: "Featured on ArchDaily",
-      description: "Of Palm Pavilion – a sustainable installation crafted from palm waste.",
+      description:
+        "Of Palm Pavilion – a sustainable installation crafted from palm waste.",
       icon: Newspaper,
+      inlineLinks: [],
     },
     {
       id: "2",
       title: "Listed in Dezeen's Top Design Festival Installations 2023",
-      description: "Highlighting creativity and innovation in sustainable design.",
+      description:
+        "Highlighting creativity and innovation in sustainable design.",
       icon: Trophy,
+      inlineLinks: [],
     },
     {
       id: "3",
       title: "Celebrated at Dubai Design Week",
       description: "Chosen as one of the Top 10 installations worldwide.",
       icon: Award,
+      inlineLinks: [],
     },
     {
       id: "4",
       title: "Recognized for Innovation and Sustainability",
-      description: "Ranking Wood World Decor among best joinery fitout companies in Dubai.",
+      description:
+        "Ranking Wood World Decor among best joinery fitout companies in Dubai.",
       icon: Leaf,
+      inlineLinks: [],
     },
   ],
 };
@@ -172,7 +191,7 @@ export default function Milestones() {
           observer.disconnect();
         }
       },
-      { threshold: 0.1, rootMargin: "0px 0px -80px 0px" }
+      { threshold: 0.1, rootMargin: "0px 0px -80px 0px" },
     );
 
     observer.observe(node);
@@ -253,14 +272,26 @@ export default function Milestones() {
               return (
                 <li key={item.id} className="flex items-start gap-3 xs:gap-4">
                   <span className="mt-0.5 flex h-5 w-5 shrink-0 cursor-pointer items-center justify-center rounded-full border border-[#db5e41]/40 bg-[#db5e41]/10 hover:bg-[#db5e41] xs:h-6 xs:w-6">
-                    <Icon className="text-[#db5e41] hover:text-white" size={12} strokeWidth={2.5} />
+                    <Icon
+                      className="text-[#db5e41] hover:text-white"
+                      size={12}
+                      strokeWidth={2.5}
+                    />
                   </span>
                   <div>
                     <p className="text-sm font-semibold leading-6 text-[#0c1526] xs:text-[15px] xs:leading-7 md:text-[18px]">
-                      {item.title}
+                      <InlineLinkedText
+                        text={item.title}
+                        links={item.inlineLinks || []}
+                        linkClassName="inline-block cursor-pointer font-semibold text-[#db5e41] underline decoration-[#db5e41]/30 underline-offset-4 transition-all duration-200 hover:text-[#c94f35] hover:decoration-[#db5e41] focus:outline-none focus:ring-2 focus:ring-[#db5e41] focus:ring-offset-2 rounded"
+                      />
                     </p>
                     <p className="mt-0.5 text-[16px] leading-5 text-gray-500 xs:text-[13px] xs:leading-6">
-                      {item.description}
+                      <InlineLinkedText
+                        text={item.description}
+                        links={item.inlineLinks || []}
+                        linkClassName="inline-block cursor-pointer font-medium text-[#db5e41] underline decoration-[#db5e41]/30 underline-offset-4 transition-all duration-200 hover:text-[#c94f35] hover:decoration-[#db5e41] focus:outline-none focus:ring-2 focus:ring-[#db5e41] focus:ring-offset-2 rounded"
+                      />
                     </p>
                   </div>
                 </li>
