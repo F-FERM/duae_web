@@ -20,6 +20,15 @@ import {
 } from "lucide-react";
 import bgTexture from "../../../public/images/services-one-bg.jpg";
 import api from "@/lib/axios";
+import { InlineLinkedText } from "../InlineLinkedText";
+
+interface InlineLink {
+  text: string;
+  url: string;
+  type: string;
+  openInNewTab: boolean;
+  position: number;
+}
 
 interface ServiceApiItem {
   _id: string;
@@ -29,7 +38,8 @@ interface ServiceApiItem {
   image: string;
   icon: string;
   order: number;
-  isFeatured?: boolean; // optional — API may not send this at all
+  isFeatured?: boolean;
+  inlineLinks?: InlineLink[];
 }
 
 interface ServiceItem {
@@ -39,17 +49,25 @@ interface ServiceItem {
   title: string;
   description: string;
   href: string;
-  alt: string; 
+  alt: string;
+  inlineLinks?: InlineLink[];
 }
 
 const serviceAltMap: Record<string, string> = {
-  "Joinery": "Custom-made furniture Dubai – carpenters assembling bespoke wood furniture at Wood World Decor LLC",
-  "Renovation Services": "Interior space mid-renovation with tools and building materials at Wood World Decor LLC",
-  "Fit-out Solutions": "Workers installing wood paneling during a fit-out project at Wood World Decor LLC",
-  "Metal Works": "Metal fabrication work in progress at the workshop of Wood World Decor LLC",
-  "Kitchen Renovation": "Modern renovated kitchen with island and wood cabinetry by Wood World Decor LLC",
-  "Commercial Fit Out": "Completed commercial interior fit-out space by Wood World Decor LLC",
-  "Residential Fit Out": "Luxury residential interior fit-out with premium finishes by Wood World Decor LLC",
+  Joinery:
+    "Custom-made furniture Dubai – carpenters assembling bespoke wood furniture at Wood World Decor LLC",
+  "Renovation Services":
+    "Interior space mid-renovation with tools and building materials at Wood World Decor LLC",
+  "Fit-out Solutions":
+    "Workers installing wood paneling during a fit-out project at Wood World Decor LLC",
+  "Metal Works":
+    "Metal fabrication work in progress at the workshop of Wood World Decor LLC",
+  "Kitchen Renovation":
+    "Modern renovated kitchen with island and wood cabinetry by Wood World Decor LLC",
+  "Commercial Fit Out":
+    "Completed commercial interior fit-out space by Wood World Decor LLC",
+  "Residential Fit Out":
+    "Luxury residential interior fit-out with premium finishes by Wood World Decor LLC",
 };
 
 const FALLBACK_ALT = "Interior fit out company in Dubai - Wood World Decor LLC";
@@ -95,6 +113,7 @@ function mapApiToServices(data: ServiceApiItem[]): ServiceItem[] {
       description: s.shortDescription,
       href: `/services/${s.slug}`,
       alt: getServiceAlt(s.title),
+      inlineLinks: s.inlineLinks || [],
     }));
 }
 
@@ -105,54 +124,66 @@ const defaultServices: ServiceItem[] = [
     image: "/images/service1.webp",
     icon: Landmark,
     title: "Joinery",
-    description: "From custom furniture to intricate wood detailing, our joinery solutions are designed to add character, durability, and style.",
+    description:
+      "From custom furniture to intricate wood detailing, our joinery solutions are designed to add character, durability, and style.",
     href: "/services/joinery",
     alt: "Custom-made furniture Dubai – carpenters assembling bespoke wood furniture at Wood World Decor LLC",
+    inlineLinks: [],
   },
   {
     id: "renovation-services",
     image: "/images/service1.webp",
     icon: Wrench,
     title: "Renovation Services",
-    description: "We offer complete renovation services including MEP, painting, gypsum works, and wall fixing, specializing in transforming villas, apartments, kitchens, and bathrooms into modern, functional, and stylish spaces.",
+    description:
+      "We offer complete renovation services including MEP, painting, gypsum works, and wall fixing, specializing in transforming villas, apartments, kitchens, and bathrooms into modern, functional, and stylish spaces.",
     href: "/services/renovation-services",
     alt: "Interior space mid-renovation with tools and building materials at Wood World Decor LLC",
+    inlineLinks: [],
   },
   {
     id: "turnkey-solutions",
     image: "/images/service1.webp",
     icon: Package,
     title: "Turnkey Solutions",
-    description: "Our turnkey solutions cover every stage of your project, from design and planning to execution and finishing, ensuring a hassle-free experience and a fully completed space ready for use.",
+    description:
+      "Our turnkey solutions cover every stage of your project, from design and planning to execution and finishing, ensuring a hassle-free experience and a fully completed space ready for use.",
     href: "/services/turnkey-solutions",
     alt: "Complete turnkey interior project execution by Wood World Decor LLC",
+    inlineLinks: [],
   },
   {
     id: "fitout-solutions",
     image: "/images/service1.webp",
     icon: Hammer,
     title: "Fit-out Solutions",
-    description: "Our fit-out solutions cover everything from MEP, painting, gypsum works, and wall fixing to complete finishing touches, tailored for both residential and commercial spaces.",
+    description:
+      "Our fit-out solutions cover everything from MEP, painting, gypsum works, and wall fixing to complete finishing touches, tailored for both residential and commercial spaces.",
     href: "/services/fitout-solutions",
     alt: "Workers installing wood paneling during a fit-out project at Wood World Decor LLC",
+    inlineLinks: [],
   },
   {
     id: "metal-works",
     image: "/images/service1.webp",
     icon: PaintBucket,
     title: "Metal Works",
-    description: "Our metal works services deliver custom-designed solutions with strength, precision, and durability, including fabrications, structural works, and decorative finishes to enhance both residential and commercial projects.",
+    description:
+      "Our metal works services deliver custom-designed solutions with strength, precision, and durability, including fabrications, structural works, and decorative finishes to enhance both residential and commercial projects.",
     href: "/services/metal-works",
     alt: "Metal fabrication work in progress at the workshop of Wood World Decor LLC",
+    inlineLinks: [],
   },
   {
     id: "upholstery",
     image: "/images/service1.webp",
     icon: Sofa,
     title: "Upholstery",
-    description: "Our upholstery services breathe new life into your furniture with premium fabrics, expert craftsmanship, and customized designs, ensuring comfort, durability, and a perfect match to your interior style.",
+    description:
+      "Our upholstery services breathe new life into your furniture with premium fabrics, expert craftsmanship, and customized designs, ensuring comfort, durability, and a perfect match to your interior style.",
     href: "/services/upholstery",
     alt: "Premium upholstery services with expert craftsmanship by Wood World Decor LLC",
+    inlineLinks: [],
   },
 ];
 
@@ -214,22 +245,28 @@ export default function Services() {
   if (isLoading) return <ServicesSkeleton />;
   if (!services || services.length === 0) return null;
 
+  // Section heading with inline links support (if any from API)
+  const sectionInlineLinks =
+    services.length > 0 && services[0].inlineLinks
+      ? services[0].inlineLinks
+      : [];
+
   return (
     <section className="relative overflow-hidden py-12 xs:py-14 sm:py-16 md:py-20 lg:py-28">
       {/* Background image + overlay so text stays readable */}
       <div className="absolute inset-0 -z-10">
-        <Image 
-          src={bgTexture} 
-          alt="Wood World Decor - interior fit out company background texture" 
-          fill 
-          priority={false} 
-          className="object-cover" 
+        <Image
+          src={bgTexture}
+          alt="Wood World Decor - interior fit out company background texture"
+          fill
+          priority={false}
+          className="object-cover"
         />
         <div className="absolute inset-0 bg-[#f7f1ee]/90" />
       </div>
 
       <div className="mx-auto max-w-[1220px] px-4">
-        {/* Heading */}
+        {/* Heading with inline links */}
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -238,13 +275,21 @@ export default function Services() {
           className="mx-auto max-w-[820px] text-center"
         >
           <h2 className="text-2xl font-bold text-[#0c1526] xs:text-3xl sm:text-4xl md:text-5xl">
-            Our Services
+            <InlineLinkedText
+              text="Our Services"
+              links={sectionInlineLinks}
+              className="inline"
+              linkClassName="inline-block cursor-pointer font-bold text-[#0c1526] underline decoration-[#db5e41]/30 underline-offset-4 transition-all duration-200 hover:text-[#db5e41] hover:decoration-[#db5e41] focus:outline-none focus:ring-2 focus:ring-[#db5e41] focus:ring-offset-2 rounded"
+            />
           </h2>
-          <p className="mx-auto mt-2 text-sm leading-6 text-gray-600 xs:leading-7 sm:text-base sm:leading-8 md:text-lg">
-          At Wood World Decor, we bring expertise and craftsmanship together to offer complete solutions for your space. Our comprehensive services ensure every detail is perfected, from joinery to fit outs and beyond.
-
-
-          </p>
+          <div className="mx-auto mt-2 text-sm leading-6 text-gray-600 xs:leading-7 sm:text-base sm:leading-8 md:text-lg">
+            <InlineLinkedText
+              text="At Wood World Decor, we bring expertise and craftsmanship together to offer complete solutions for your space. Our comprehensive services ensure every detail is perfected, from joinery to fit outs and beyond."
+              links={sectionInlineLinks}
+              className="inline"
+              linkClassName="inline-block cursor-pointer font-medium text-[#db5e41] underline decoration-[#db5e41]/30 underline-offset-4 transition-all duration-200 hover:text-[#c94f35] hover:decoration-[#db5e41] focus:outline-none focus:ring-2 focus:ring-[#db5e41] focus:ring-offset-2 rounded"
+            />
+          </div>
         </motion.div>
 
         {/* Cards Grid */}
@@ -289,12 +334,22 @@ export default function Services() {
                 {/* Content */}
                 <div className="flex flex-1 flex-col items-center px-5 pb-8 pt-10 text-center xs:px-6 xs:pb-10 xs:pt-12 sm:px-8 sm:pb-12 sm:pt-14">
                   <h3 className="text-base font-bold text-[#0c1526] transition-colors duration-500 group-hover:text-[#db5e41] xs:text-lg sm:text-xl md:text-2xl">
-                    {service.title}
+                    <InlineLinkedText
+                      text={service.title}
+                      links={service.inlineLinks || []}
+                      className="inline"
+                      linkClassName="inline-block cursor-pointer font-bold text-[#0c1526] underline decoration-[#db5e41]/30 underline-offset-4 transition-all duration-200 hover:text-[#db5e41] hover:decoration-[#db5e41] focus:outline-none focus:ring-2 focus:ring-[#db5e41] focus:ring-offset-2 rounded"
+                    />
                   </h3>
 
-                  <p className="mt-3 text-sm leading-6 text-gray-600 sm:mt-4 sm:text-[15px] sm:leading-7">
-                    {service.description}
-                  </p>
+                  <div className="mt-3 text-sm leading-6 text-gray-600 sm:mt-4 sm:text-[15px] sm:leading-7">
+                    <InlineLinkedText
+                      text={service.description}
+                      links={service.inlineLinks || []}
+                      className="inline"
+                      linkClassName="inline-block cursor-pointer font-medium text-[#db5e41] underline decoration-[#db5e41]/30 underline-offset-4 transition-all duration-200 hover:text-[#c94f35] hover:decoration-[#db5e41] focus:outline-none focus:ring-2 focus:ring-[#db5e41] focus:ring-offset-2 rounded"
+                    />
+                  </div>
 
                   <Link
                     href={service.href}
