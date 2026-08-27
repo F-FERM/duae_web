@@ -8,12 +8,22 @@ import api from "@/lib/axios";
 import imagepattern1 from "../../../public/images/patter3.png";
 import pattern2 from "../../../public/images/pattern4.png";
 import { useServiceAltText } from "@/app/(web)/services/useServiceAltText";
+import { InlineLinkedText } from "../InlineLinkedText";
+
+interface InlineLink {
+  text: string;
+  url: string;
+  type: string;
+  openInNewTab: boolean;
+  position: number;
+}
 
 interface MaterialItemApi {
   name: string;
   description: string;
   image: string;
   icon: string;
+  inlineLinks?: InlineLink[];
 }
 
 interface ServiceDetailApiResponse {
@@ -21,6 +31,7 @@ interface ServiceDetailApiResponse {
     title: string;
     description: string;
     items: MaterialItemApi[];
+    inlineLinks?: InlineLink[];
   };
 }
 
@@ -28,23 +39,73 @@ interface MaterialsData {
   title: string;
   description: string;
   items: MaterialItemApi[];
+  inlineLinks?: InlineLink[];
 }
 
 const defaultData: MaterialsData = {
   title: "Our Fit-Out Materials",
   description:
     "We use only the highest quality materials for all our fit-out projects, ensuring durability, style, and long-lasting performance.",
+  inlineLinks: [],
   items: [
-    { name: "Premium Woods & Veneers", description: "High-quality woods and veneers for elegant and durable joinery and finishing works.", image: "", icon: "" },
-    { name: "Quality Flooring Materials", description: "Premium flooring options including hardwood, tiles, marble, and luxury vinyl.", image: "", icon: "" },
-    { name: "Gypsum & Ceiling Materials", description: "High-quality gypsum and ceiling materials for modern false ceiling solutions.", image: "", icon: "" },
-    { name: "Paints & Wall Finishes", description: "Premium paints and wall finishes for flawless and long-lasting wall aesthetics.", image: "", icon: "" },
-    { name: "Electrical & Lighting Components", description: "Quality electrical and lighting components for safe, modern installations.", image: "", icon: "" },
-    { name: "Decor & Finishing Materials", description: "Premium decor materials, fabrics, and finishes for the perfect finishing touches.", image: "", icon: "" },
+    {
+      name: "Premium Woods & Veneers",
+      description:
+        "High-quality woods and veneers for elegant and durable joinery and finishing works.",
+      image: "",
+      icon: "",
+      inlineLinks: [],
+    },
+    {
+      name: "Quality Flooring Materials",
+      description:
+        "Premium flooring options including hardwood, tiles, marble, and luxury vinyl.",
+      image: "",
+      icon: "",
+      inlineLinks: [],
+    },
+    {
+      name: "Gypsum & Ceiling Materials",
+      description:
+        "High-quality gypsum and ceiling materials for modern false ceiling solutions.",
+      image: "",
+      icon: "",
+      inlineLinks: [],
+    },
+    {
+      name: "Paints & Wall Finishes",
+      description:
+        "Premium paints and wall finishes for flawless and long-lasting wall aesthetics.",
+      image: "",
+      icon: "",
+      inlineLinks: [],
+    },
+    {
+      name: "Electrical & Lighting Components",
+      description:
+        "Quality electrical and lighting components for safe, modern installations.",
+      image: "",
+      icon: "",
+      inlineLinks: [],
+    },
+    {
+      name: "Decor & Finishing Materials",
+      description:
+        "Premium decor materials, fabrics, and finishes for the perfect finishing touches.",
+      image: "",
+      icon: "",
+      inlineLinks: [],
+    },
   ],
 };
 
-function MaterialCard({ item, index }: { item: MaterialItemApi; index: number }) {
+function MaterialCard({
+  item,
+  index,
+}: {
+  item: MaterialItemApi;
+  index: number;
+}) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 24 }}
@@ -61,9 +122,13 @@ function MaterialCard({ item, index }: { item: MaterialItemApi; index: number })
         {item.name}
       </h3>
 
-      <p className="mt-3 text-[17px] leading-7 text-gray-600">
-        {item.description}
-      </p>
+      <div className="mt-3 text-[17px] leading-7 text-gray-600">
+        <InlineLinkedText
+          text={item.description}
+          links={item.inlineLinks || []}
+          linkClassName="inline-block cursor-pointer font-medium text-[#db5e41] underline decoration-[#db5e41]/30 underline-offset-4 transition-all duration-200 hover:text-[#c94f35] hover:decoration-[#db5e41] focus:outline-none focus:ring-2 focus:ring-[#db5e41] focus:ring-offset-2 rounded"
+        />
+      </div>
 
       <div className="pointer-events-none absolute bottom-4 right-4">
         <div className="h-4 w-4 bg-white" />
@@ -99,18 +164,21 @@ export default function OurJoineryMaterials({ slug }: { slug: string }) {
   const [data, setData] = useState<MaterialsData>(defaultData);
   const [isLoading, setIsLoading] = useState(true);
   const altText = useServiceAltText(slug);
-  
 
   useEffect(() => {
     const fetchServiceDetail = async () => {
       try {
         const res = await api.get<ServiceDetailApiResponse>(
-          `/services/detail/${slug}`
+          `/services/detail/${slug}`,
         );
         setData({
           title: res.data.materials.title,
           description: res.data.materials.description,
-          items: res.data.materials.items,
+          items: res.data.materials.items.map((item) => ({
+            ...item,
+            inlineLinks: item.inlineLinks || [],
+          })),
+          inlineLinks: res.data.materials.inlineLinks || [],
         });
       } catch (err) {
         console.error("Failed to fetch materials section:", err);
@@ -133,7 +201,12 @@ export default function OurJoineryMaterials({ slug }: { slug: string }) {
           animate={{ y: [0, -8, 0, 8, 0] }}
           transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
         >
-          <Image src={imagepattern1} alt={altText} priority className="object-cover" />
+          <Image
+            src={imagepattern1}
+            alt={altText}
+            priority
+            className="object-cover"
+          />
         </motion.div>
       </div>
 
@@ -143,18 +216,31 @@ export default function OurJoineryMaterials({ slug }: { slug: string }) {
           animate={{ y: [0, -12, 0, 12, 0], rotate: [0, 2, 0, -2, 0] }}
           transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
         >
-          <Image src={pattern2} alt={altText} priority className="object-cover" />
+          <Image
+            src={pattern2}
+            alt={altText}
+            priority
+            className="object-cover"
+          />
         </motion.div>
       </div>
 
       <div className="relative mx-auto max-w-[1220px] px-4">
-        <h2 className="text-3xl font-bold text-[#0c1526] sm:text-4xl md:text-5xl text-center">
-          {data.title}
-        </h2>
+        <div className="text-3xl font-bold text-[#0c1526] sm:text-4xl md:text-5xl text-center">
+          <InlineLinkedText
+            text={data.title}
+            links={data.inlineLinks || []}
+            linkClassName="inline-block cursor-pointer font-bold text-[#0c1526] underline decoration-[#db5e41]/30 underline-offset-4 transition-all duration-200 hover:text-[#db5e41] hover:decoration-[#db5e41] focus:outline-none focus:ring-2 focus:ring-[#db5e41] focus:ring-offset-2 rounded"
+          />
+        </div>
 
-        <p className="mx-auto mt-3 text-sm leading-7 text-gray-600 sm:text-base sm:leading-8 md:text-lg">
-          {data.description}
-        </p>
+        <div className="mx-auto mt-3 text-sm leading-7 text-gray-600 sm:text-base sm:leading-8 md:text-lg text-center max-w-3xl">
+          <InlineLinkedText
+            text={data.description}
+            links={data.inlineLinks || []}
+            linkClassName="inline-block cursor-pointer font-medium text-gray-600 underline decoration-[#db5e41]/30 underline-offset-4 transition-all duration-200 hover:text-[#db5e41] hover:decoration-[#db5e41] focus:outline-none focus:ring-2 focus:ring-[#db5e41] focus:ring-offset-2 rounded"
+          />
+        </div>
 
         <div className="mt-12 grid grid-cols-1 gap-6 sm:grid-cols-2 md:mt-16 lg:grid-cols-3 lg:gap-8">
           {data.items.map((item, index) => (
