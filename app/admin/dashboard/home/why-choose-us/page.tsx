@@ -20,6 +20,13 @@ import {
   UploadCloud,
   Users,
   X,
+  CircleDot,
+  ExternalLink,
+  Link as LinkIcon,
+  Globe,
+  FileText,
+  Layers,
+  Hash,
 } from "lucide-react";
 import api from "@/lib/axios";
 import { fileUpload } from "@/app/api/admin/upload/upload";
@@ -30,6 +37,16 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 
+// ================= TYPES =================
+
+interface InlineLink {
+  text: string;
+  url: string;
+  type: string;
+  openInNewTab: boolean;
+  position: number;
+}
+
 interface WhyChooseItem {
   _id?: string;
   number: string;
@@ -37,13 +54,17 @@ interface WhyChooseItem {
   description: string;
   icon: string;
   order: number;
+  inlineLinks?: InlineLink[];
 }
 
 interface HomeWhyChooseResponse {
   title: string;
   items: WhyChooseItem[];
+  inlineLinks?: InlineLink[];
   teamTitle: string;
   teamDescription: string;
+  teamInlineLinks?: InlineLink[];
+  teamDescriptionInlineLinks?: InlineLink[];
   teamImage: string[];
   teamButtonText: string;
   teamButtonLink: string;
@@ -62,18 +83,24 @@ interface HomeWhyChoose extends HomeWhyChooseResponse {
   updatedAt?: string;
 }
 
+const LINK_TYPES = [
+  { value: "page", label: "Page", icon: FileText },
+  { value: "section", label: "Section", icon: Layers },
+  { value: "external", label: "External", icon: Globe },
+];
+
 const ICON_OPTIONS = [
   "fa-solid fa-hammer",
-  "fa-solid fa-people-arrows",
-  "fa-solid fa-clock",
-  "fa-solid fa-star",
-  "fa-solid fa-check-circle",
-  "fa-solid fa-wrench",
-  "fa-solid fa-shield-check",
-  "fa-solid fa-trophy",
-  "fa-solid fa-award",
-  "fa-solid fa-leaf",
-  "fa-solid fa-newspaper",
+  "fa-people-arrows",
+  "fa-clock",
+  "fa-star",
+  "fa-check-circle",
+  "fa-wrench",
+  "fa-shield-check",
+  "fa-trophy",
+  "fa-award",
+  "fa-leaf",
+  "fa-newspaper",
 ];
 
 const EMPTY_ITEM: WhyChooseItem = {
@@ -82,13 +109,17 @@ const EMPTY_ITEM: WhyChooseItem = {
   description: "",
   icon: "fa-solid fa-hammer",
   order: 0,
+  inlineLinks: [],
 };
 
 const EMPTY_FORM: HomeWhyChooseResponse = {
   title: "Why Choose Us",
   items: [],
+  inlineLinks: [],
   teamTitle: "Our Team",
   teamDescription: "",
+  teamInlineLinks: [],
+  teamDescriptionInlineLinks: [],
   teamImage: [],
   teamButtonText: "Get Started Now!",
   teamButtonLink: "/contact",
@@ -109,9 +140,179 @@ function resolveImage(path: string): string {
   return `${IMAGE_BASE_URL}${path.startsWith("/") ? path : `/${path}`}`;
 }
 
-function formatItemNumber(index: number): string {
-  return String(index + 1).padStart(2, "0");
+function getLinkTypeIcon(type: string) {
+  const found = LINK_TYPES.find((t) => t.value === type);
+  if (found) {
+    const IconComponent = found.icon;
+    return <IconComponent className="h-3 w-3" />;
+  }
+  return <LinkIcon className="h-3 w-3" />;
 }
+
+// ================= INLINE LINK MANAGER =================
+
+function InlineLinkManager({
+  links = [],
+  onChange,
+  label = "Inline Links",
+  description = "Text within this content that will become clickable.",
+  hasChanged = false,
+}: {
+  links: InlineLink[];
+  onChange: (links: InlineLink[]) => void;
+  label?: string;
+  description?: string;
+  hasChanged?: boolean;
+}) {
+  const [linkText, setLinkText] = useState("");
+  const [linkUrl, setLinkUrl] = useState("");
+  const [linkType, setLinkType] = useState("page");
+  const [linkNewTab, setLinkNewTab] = useState(false);
+
+  const addLink = () => {
+    if (!linkText.trim() || !linkUrl.trim()) {
+      toast.error("Text and URL are required");
+      return;
+    }
+
+    const duplicate = links.some(
+      (link) => link.text.toLowerCase() === linkText.trim().toLowerCase(),
+    );
+
+    if (duplicate) {
+      toast.error(`"${linkText.trim()}" already has a link`);
+      return;
+    }
+
+    const newLink: InlineLink = {
+      text: linkText.trim(),
+      url: linkUrl.trim(),
+      type: linkType,
+      openInNewTab: linkNewTab,
+      position: links.length,
+    };
+
+    onChange([...links, newLink]);
+    setLinkText("");
+    setLinkUrl("");
+    setLinkType("page");
+    setLinkNewTab(false);
+    toast.success("Inline link added");
+  };
+
+  const removeLink = (index: number) => {
+    const updatedLinks = links.filter((_, i) => i !== index);
+    const reindexedLinks = updatedLinks.map((link, idx) => ({
+      ...link,
+      position: idx,
+    }));
+    onChange(reindexedLinks);
+    toast.success("Inline link removed");
+  };
+
+  return (
+    <div
+      className={`mt-3 border-t border-[#E4C9B4] pt-3 ${hasChanged ? "border-2 border-[#EA580C] rounded-[8px] p-3 bg-[#FFF9F4]" : ""}`}
+    >
+      <div className="flex items-center gap-[6px] mb-2">
+        <Label className="text-xs font-medium text-[#2A2A2A]">{label}</Label>
+        {hasChanged && (
+          <span className="flex items-center gap-[4px] text-[10px] font-medium text-[#EA580C]">
+            <CircleDot className="h-[10px] w-[10px] fill-[#EA580C]" />
+            Changed
+          </span>
+        )}
+      </div>
+      <p className="text-[10px] text-[#888888] mb-2">{description}</p>
+
+      {links.length > 0 && (
+        <div className="mb-2 space-y-1 max-h-[120px] overflow-y-auto">
+          {links.map((link, idx) => (
+            <div
+              key={idx}
+              className="flex items-center justify-between rounded-[8px] bg-white px-3 py-2 text-xs border border-[#E4E4E4]"
+            >
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="font-medium text-[#EA580C]">
+                  "{link.text}"
+                </span>
+                <span className="text-[#999]">→</span>
+                <span className="text-[#666] truncate max-w-[120px]">
+                  {link.url}
+                </span>
+                {link.openInNewTab && (
+                  <span className="text-[9px] text-[#999] flex items-center gap-0.5">
+                    <ExternalLink className="h-2.5 w-2.5" /> new tab
+                  </span>
+                )}
+                <span className="text-[9px] text-[#999]">#{link.position}</span>
+                {getLinkTypeIcon(link.type)}
+              </div>
+              <button
+                type="button"
+                onClick={() => removeLink(idx)}
+                className="text-[#DC2626] hover:text-[#b91c1c]"
+              >
+                <X className="h-3 w-3" />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <div className="grid grid-cols-1 gap-2 xs:grid-cols-4">
+        <div className="xs:col-span-1">
+          <Input
+            value={linkText}
+            onChange={(e) => setLinkText(e.target.value)}
+            placeholder="Text to link"
+            className="h-9 rounded-[8px] text-xs"
+          />
+        </div>
+        <div className="xs:col-span-1">
+          <Input
+            value={linkUrl}
+            onChange={(e) => setLinkUrl(e.target.value)}
+            placeholder="URL"
+            className="h-9 rounded-[8px] text-xs"
+          />
+        </div>
+        <div className="xs:col-span-1">
+          <select
+            value={linkType}
+            onChange={(e) => setLinkType(e.target.value)}
+            className="h-9 w-full rounded-[8px] border border-[#E4E4E4] px-2 text-xs bg-white"
+          >
+            {LINK_TYPES.map((type) => (
+              <option key={type.value} value={type.value}>
+                {type.label}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className="xs:col-span-1 flex gap-1">
+          <Button
+            type="button"
+            onClick={addLink}
+            className="h-9 flex-1 rounded-[8px] bg-[#EA580C] text-white hover:bg-[#EA580C] text-xs px-3"
+          >
+            <Plus className="h-3 w-3" /> Add
+          </Button>
+        </div>
+      </div>
+      <div className="mt-1 flex items-center gap-2">
+        <Switch
+          checked={linkNewTab}
+          onCheckedChange={setLinkNewTab}
+          className="h-4 w-7"
+        />
+        <span className="text-[10px] text-[#666666]">Open in new tab</span>
+      </div>
+    </div>
+  );
+}
+
+// ================= MAIN COMPONENT =================
 
 export default function HomeWhyChooseAdminPage() {
   const [sectionData, setSectionData] = useState<HomeWhyChoose | null>(null);
@@ -130,10 +331,14 @@ export default function HomeWhyChooseAdminPage() {
 
   const teamImageInputRef = useRef<HTMLInputElement>(null);
 
+  // ================= FETCH DATA =================
+
   const fetchSection = async () => {
     try {
       setLoading(true);
-      const res = await api.get<HomeWhyChoose | HomeWhyChoose[]>("/home-why-choose");
+      const res = await api.get<HomeWhyChoose | HomeWhyChoose[]>(
+        "/home-why-choose",
+      );
 
       let data: HomeWhyChoose | null = null;
       if (Array.isArray(res.data)) {
@@ -146,9 +351,17 @@ export default function HomeWhyChooseAdminPage() {
       if (data) {
         setForm({
           title: data.title || "Why Choose Us",
-          items: [...(data.items || [])].sort((a, b) => (a.order ?? 0) - (b.order ?? 0)),
+          items: [...(data.items || [])]
+            .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
+            .map((item) => ({
+              ...item,
+              inlineLinks: item.inlineLinks || [],
+            })),
+          inlineLinks: data.inlineLinks || [],
           teamTitle: data.teamTitle || "Our Team",
           teamDescription: data.teamDescription || "",
+          teamInlineLinks: data.teamInlineLinks || [],
+          teamDescriptionInlineLinks: data.teamDescriptionInlineLinks || [],
           teamImage: Array.isArray(data.teamImage) ? data.teamImage : [],
           teamButtonText: data.teamButtonText || "",
           teamButtonLink: data.teamButtonLink || "/contact",
@@ -186,16 +399,27 @@ export default function HomeWhyChooseAdminPage() {
     fetchSection();
   }, []);
 
+  // ================= MODAL HELPERS =================
+
   const openModal = () => {
     if (sectionData) {
       setForm({
         title: sectionData.title || "Why Choose Us",
-        items: [...(sectionData.items || [])].sort(
-          (a, b) => (a.order ?? 0) - (b.order ?? 0)
-        ),
+        items: [...(sectionData.items || [])]
+          .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
+          .map((item) => ({
+            ...item,
+            inlineLinks: item.inlineLinks || [],
+          })),
+        inlineLinks: sectionData.inlineLinks || [],
         teamTitle: sectionData.teamTitle || "Our Team",
         teamDescription: sectionData.teamDescription || "",
-        teamImage: Array.isArray(sectionData.teamImage) ? sectionData.teamImage : [],
+        teamInlineLinks: sectionData.teamInlineLinks || [],
+        teamDescriptionInlineLinks:
+          sectionData.teamDescriptionInlineLinks || [],
+        teamImage: Array.isArray(sectionData.teamImage)
+          ? sectionData.teamImage
+          : [],
         teamButtonText: sectionData.teamButtonText || "",
         teamButtonLink: sectionData.teamButtonLink || "/contact",
         teamSize: sectionData.teamSize || 0,
@@ -220,19 +444,26 @@ export default function HomeWhyChooseAdminPage() {
     setItemDraft(EMPTY_ITEM);
   };
 
-  const handleTeamImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  // ================= IMAGE UPLOAD =================
+
+  const handleTeamImageUpload = async (
+    e: React.ChangeEvent<HTMLInputElement>,
+  ) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
 
     try {
       setUploadingTeamImage(true);
       const uploads = await Promise.all(
-        Array.from(files).map((file) => fileUpload(file))
+        Array.from(files).map((file) => fileUpload(file)),
       );
       const newUrls = uploads.map((result) => result.url);
-      setForm((prev) => ({ ...prev, teamImage: [...prev.teamImage, ...newUrls] }));
+      setForm((prev) => ({
+        ...prev,
+        teamImage: [...prev.teamImage, ...newUrls],
+      }));
       toast.success(
-        newUrls.length > 1 ? "Team images uploaded" : "Team image uploaded"
+        newUrls.length > 1 ? "Team images uploaded" : "Team image uploaded",
       );
     } catch {
       toast.error("Failed to upload team image");
@@ -249,18 +480,21 @@ export default function HomeWhyChooseAdminPage() {
     }));
   };
 
+  // ================= ITEM CRUD =================
+
   const openAddItem = () => {
     setItemDraft({
       ...EMPTY_ITEM,
       number: formatItemNumber(form.items.length),
       order: form.items.length,
+      inlineLinks: [],
     });
     setEditingItemIndex(null);
     setShowItemForm(true);
   };
 
   const openEditItem = (index: number) => {
-    setItemDraft(form.items[index]);
+    setItemDraft({ ...form.items[index] });
     setEditingItemIndex(index);
     setShowItemForm(true);
   };
@@ -280,9 +514,12 @@ export default function HomeWhyChooseAdminPage() {
     setForm((prev) => {
       const items = [...prev.items];
       if (editingItemIndex !== null) {
-        items[editingItemIndex] = itemDraft;
+        items[editingItemIndex] = {
+          ...itemDraft,
+          inlineLinks: itemDraft.inlineLinks || [],
+        };
       } else {
-        items.push(itemDraft);
+        items.push({ ...itemDraft, inlineLinks: itemDraft.inlineLinks || [] });
       }
       return {
         ...prev,
@@ -309,6 +546,14 @@ export default function HomeWhyChooseAdminPage() {
     }));
   };
 
+  // ================= UTILITY =================
+
+  const formatItemNumber = (index: number): string => {
+    return String(index + 1).padStart(2, "0");
+  };
+
+  // ================= SUBMIT =================
+
   const handleSubmit = async () => {
     if (!form.title.trim()) {
       return toast.error("Section title is required");
@@ -316,9 +561,9 @@ export default function HomeWhyChooseAdminPage() {
     if (!form.teamTitle.trim() || !form.teamDescription.trim()) {
       return toast.error("Team title and description are required");
     }
-    if (form.teamImage.length === 0) {
-      return toast.error("At least one team image is required");
-    }
+    // if (form.teamImage.length === 0) {
+    //   return toast.error("At least one team image is required");
+    // }
     if (form.items.length === 0) {
       return toast.error("Add at least one why choose us item");
     }
@@ -326,11 +571,22 @@ export default function HomeWhyChooseAdminPage() {
     try {
       setSubmitting(true);
 
+      const payload = {
+        ...form,
+        items: form.items.map(({ _id, ...rest }) => ({
+          ...rest,
+          inlineLinks: rest.inlineLinks || [],
+        })),
+        inlineLinks: form.inlineLinks || [],
+        teamInlineLinks: form.teamInlineLinks || [],
+        teamDescriptionInlineLinks: form.teamDescriptionInlineLinks || [],
+      };
+
       if (sectionData?._id) {
-        await api.patch("/home-why-choose", form);
+        await api.patch("/home-why-choose", payload);
         toast.success("Why choose us section updated");
       } else {
-        await api.post("/home-why-choose", form);
+        await api.post("/home-why-choose", payload);
         toast.success("Why choose us section created");
       }
 
@@ -357,6 +613,8 @@ export default function HomeWhyChooseAdminPage() {
     }
   };
 
+  // ================= TOGGLE & DELETE =================
+
   const toggleActive = async () => {
     if (!sectionData) return;
 
@@ -364,9 +622,11 @@ export default function HomeWhyChooseAdminPage() {
       setToggling(true);
       await api.patch("/home-why-choose", { isActive: !sectionData.isActive });
       setSectionData((prev) =>
-        prev ? { ...prev, isActive: !prev.isActive } : null
+        prev ? { ...prev, isActive: !prev.isActive } : null,
       );
-      toast.success(!sectionData.isActive ? "Section activated" : "Section deactivated");
+      toast.success(
+        !sectionData.isActive ? "Section activated" : "Section deactivated",
+      );
     } catch {
       toast.error("Failed to update status");
     } finally {
@@ -390,6 +650,8 @@ export default function HomeWhyChooseAdminPage() {
       setDeleting(false);
     }
   };
+
+  // ================= RENDER =================
 
   return (
     <section className="min-h-screen bg-[#FFF4EC] px-[16px] py-[24px] xs:px-[20px] sm:px-[28px] sm:py-[36px] md:px-[36px] lg:px-[48px] lg:py-[48px] 2xl:px-[64px]">
@@ -418,7 +680,8 @@ export default function HomeWhyChooseAdminPage() {
             Why Choose Us & Team
           </h1>
           <p className="mt-[6px] text-[13px] leading-[1.6] text-[#666666] sm:text-[14px] lg:text-[15px]">
-            Manage why choose us items, team section, and contact details for the home page.
+            Manage why choose us items, team section, and contact details for
+            the home page.
           </p>
         </div>
 
@@ -430,6 +693,8 @@ export default function HomeWhyChooseAdminPage() {
           {sectionData ? "Edit Section" : "Create Section"}
         </Button>
       </div>
+
+      {/* ================= CONTENT ================= */}
 
       <div className="mx-auto mt-[22px] max-w-[1600px] sm:mt-[28px] lg:mt-[32px]">
         {loading ? (
@@ -444,7 +709,8 @@ export default function HomeWhyChooseAdminPage() {
                 No why choose us content yet
               </p>
               <p className="text-[12px] text-[#888888] sm:text-[13px]">
-                Create the section to manage items, team info, and contact details.
+                Create the section to manage items, team info, and contact
+                details.
               </p>
             </CardContent>
           </Card>
@@ -486,7 +752,11 @@ export default function HomeWhyChooseAdminPage() {
                       : "bg-black/40 text-white/80"
                   }`}
                 >
-                  {toggling ? "..." : sectionData.isActive ? "Active" : "Inactive"}
+                  {toggling
+                    ? "..."
+                    : sectionData.isActive
+                      ? "Active"
+                      : "Inactive"}
                 </button>
               </div>
 
@@ -581,6 +851,8 @@ export default function HomeWhyChooseAdminPage() {
         )}
       </div>
 
+      {/* ================= MODAL ================= */}
+
       <AnimatePresence>
         {modalOpen && (
           <motion.div
@@ -611,18 +883,32 @@ export default function HomeWhyChooseAdminPage() {
               </div>
 
               <div className="mt-[18px] space-y-[14px] sm:mt-[22px] sm:space-y-[16px]">
+                {/* SECTION TITLE WITH INLINE LINKS */}
                 <div>
                   <Label className="mb-[8px] flex items-center gap-[6px] text-[13px] font-medium text-[#2A2A2A]">
                     <Type className="h-[13px] w-[13px]" /> Section Title
                   </Label>
                   <Input
                     value={form.title}
-                    onChange={(e) => setForm({ ...form, title: e.target.value })}
+                    onChange={(e) =>
+                      setForm({ ...form, title: e.target.value })
+                    }
                     placeholder="Why Choose Us"
                     className="h-[46px] rounded-[12px] border-[#E4E4E4] bg-white text-[14px] focus-visible:ring-[#EA580C]/30 sm:h-[48px]"
                   />
+                  <div className="mt-[8px]">
+                    <InlineLinkManager
+                      links={form.inlineLinks || []}
+                      onChange={(links) =>
+                        setForm({ ...form, inlineLinks: links })
+                      }
+                      label="Section Title Inline Links"
+                      description="Text within the section title that will become clickable."
+                    />
+                  </div>
                 </div>
 
+                {/* WHY CHOOSE ITEMS */}
                 <div className="rounded-[14px] border border-[#E4E4E4] p-[14px] sm:p-[16px]">
                   <div className="flex flex-col gap-[10px] xs:flex-row xs:items-center xs:justify-between">
                     <h3 className="text-[14px] font-semibold text-[#111111] sm:text-[15px]">
@@ -638,6 +924,7 @@ export default function HomeWhyChooseAdminPage() {
                     </Button>
                   </div>
 
+                  {/* Item Form */}
                   {showItemForm && (
                     <div className="mt-[12px] space-y-[10px] rounded-[12px] border border-[#F0D9C8] bg-[#FFF8F3] p-[12px]">
                       <h4 className="text-[13px] font-semibold text-[#111111]">
@@ -648,7 +935,10 @@ export default function HomeWhyChooseAdminPage() {
                         <Input
                           value={itemDraft.number}
                           onChange={(e) =>
-                            setItemDraft((prev) => ({ ...prev, number: e.target.value }))
+                            setItemDraft((prev) => ({
+                              ...prev,
+                              number: e.target.value,
+                            }))
                           }
                           placeholder="01"
                           className="h-[44px] rounded-[10px] border-[#E4E4E4] bg-white text-[13px]"
@@ -656,7 +946,10 @@ export default function HomeWhyChooseAdminPage() {
                         <select
                           value={itemDraft.icon}
                           onChange={(e) =>
-                            setItemDraft((prev) => ({ ...prev, icon: e.target.value }))
+                            setItemDraft((prev) => ({
+                              ...prev,
+                              icon: e.target.value,
+                            }))
                           }
                           className="h-[44px] w-full rounded-[10px] border border-[#E4E4E4] bg-white px-[12px] text-[13px] outline-none focus:border-[#EA580C]"
                         >
@@ -671,7 +964,10 @@ export default function HomeWhyChooseAdminPage() {
                       <Input
                         value={itemDraft.title}
                         onChange={(e) =>
-                          setItemDraft((prev) => ({ ...prev, title: e.target.value }))
+                          setItemDraft((prev) => ({
+                            ...prev,
+                            title: e.target.value,
+                          }))
                         }
                         placeholder="Item title"
                         className="h-[44px] rounded-[10px] border-[#E4E4E4] bg-white text-[13px]"
@@ -689,6 +985,18 @@ export default function HomeWhyChooseAdminPage() {
                         rows={3}
                         className="rounded-[10px] border-[#E4E4E4] bg-white text-[13px]"
                       />
+
+                      {/* Item Inline Links */}
+                      <div className="mt-[8px]">
+                        <InlineLinkManager
+                          links={itemDraft.inlineLinks || []}
+                          onChange={(links) =>
+                            setItemDraft({ ...itemDraft, inlineLinks: links })
+                          }
+                          label="Item Inline Links"
+                          description="Text within this item's title and description that will become clickable."
+                        />
+                      </div>
 
                       <div className="flex flex-col gap-[8px] xs:flex-row">
                         <Button
@@ -710,6 +1018,7 @@ export default function HomeWhyChooseAdminPage() {
                     </div>
                   )}
 
+                  {/* Item List */}
                   <div className="mt-[12px] space-y-[10px]">
                     {form.items.length === 0 && (
                       <p className="text-[12px] text-[#888888]">
@@ -725,6 +1034,13 @@ export default function HomeWhyChooseAdminPage() {
                         <div className="min-w-0 flex-1">
                           <p className="text-[10px] font-medium uppercase tracking-wide text-[#C2410C]">
                             {item.number} • {item.icon}
+                            {item.inlineLinks &&
+                              item.inlineLinks.length > 0 && (
+                                <span className="ml-2 text-[#EA580C]">
+                                  • {item.inlineLinks.length} link
+                                  {item.inlineLinks.length !== 1 ? "s" : ""}
+                                </span>
+                              )}
                           </p>
                           <p className="truncate text-[13px] font-semibold text-[#111111]">
                             {item.title}
@@ -757,28 +1073,64 @@ export default function HomeWhyChooseAdminPage() {
                   </div>
                 </div>
 
+                {/* TEAM SECTION */}
                 <div className="rounded-[14px] border border-[#F0D9C8] bg-[#FFF8F3] p-[14px] sm:p-[16px]">
                   <h3 className="text-[14px] font-semibold text-[#111111] sm:text-[15px]">
                     Team Section
                   </h3>
 
                   <div className="mt-[12px] space-y-[12px]">
-                    <Input
-                      value={form.teamTitle}
-                      onChange={(e) => setForm({ ...form, teamTitle: e.target.value })}
-                      placeholder="Our Team"
-                      className="h-[46px] rounded-[12px] border-[#E4E4E4] bg-white text-[14px] sm:h-[48px]"
-                    />
+                    <div>
+                      <Label className="mb-[6px] block text-[12px] font-medium text-[#2A2A2A]">
+                        Team Title
+                      </Label>
+                      <Input
+                        value={form.teamTitle}
+                        onChange={(e) =>
+                          setForm({ ...form, teamTitle: e.target.value })
+                        }
+                        placeholder="Our Team"
+                        className="h-[46px] rounded-[12px] border-[#E4E4E4] bg-white text-[14px] sm:h-[48px]"
+                      />
+                      <div className="mt-[8px]">
+                        <InlineLinkManager
+                          links={form.teamInlineLinks || []}
+                          onChange={(links) =>
+                            setForm({ ...form, teamInlineLinks: links })
+                          }
+                          label="Team Title Inline Links"
+                          description="Text within the team title that will become clickable."
+                        />
+                      </div>
+                    </div>
 
-                    <Textarea
-                      value={form.teamDescription}
-                      onChange={(e) =>
-                        setForm({ ...form, teamDescription: e.target.value })
-                      }
-                      placeholder="Team description"
-                      rows={4}
-                      className="rounded-[12px] border-[#E4E4E4] bg-white text-[14px]"
-                    />
+                    <div>
+                      <Label className="mb-[6px] block text-[12px] font-medium text-[#2A2A2A]">
+                        Team Description
+                      </Label>
+                      <Textarea
+                        value={form.teamDescription}
+                        onChange={(e) =>
+                          setForm({ ...form, teamDescription: e.target.value })
+                        }
+                        placeholder="Team description"
+                        rows={4}
+                        className="rounded-[12px] border-[#E4E4E4] bg-white text-[14px]"
+                      />
+                      <div className="mt-[8px]">
+                        <InlineLinkManager
+                          links={form.teamDescriptionInlineLinks || []}
+                          onChange={(links) =>
+                            setForm({
+                              ...form,
+                              teamDescriptionInlineLinks: links,
+                            })
+                          }
+                          label="Team Description Inline Links"
+                          description="Text within the team description that will become clickable."
+                        />
+                      </div>
+                    </div>
 
                     <div className="grid grid-cols-1 gap-[12px] xs:grid-cols-2">
                       <Input
@@ -882,6 +1234,7 @@ export default function HomeWhyChooseAdminPage() {
                   </div>
                 </div>
 
+                {/* CONTACT DETAILS */}
                 <div className="rounded-[14px] border border-[#E4E4E4] p-[14px] sm:p-[16px]">
                   <h3 className="text-[14px] font-semibold text-[#111111] sm:text-[15px]">
                     Contact Details
@@ -906,22 +1259,29 @@ export default function HomeWhyChooseAdminPage() {
                     />
                     <Input
                       value={form.email}
-                      onChange={(e) => setForm({ ...form, email: e.target.value })}
+                      onChange={(e) =>
+                        setForm({ ...form, email: e.target.value })
+                      }
                       placeholder="Email"
                       className="h-[46px] rounded-[12px] border-[#E4E4E4] bg-white text-[14px] sm:h-[48px]"
                     />
                     <Input
                       value={form.address}
-                      onChange={(e) => setForm({ ...form, address: e.target.value })}
+                      onChange={(e) =>
+                        setForm({ ...form, address: e.target.value })
+                      }
                       placeholder="Address"
                       className="h-[46px] rounded-[12px] border-[#E4E4E4] bg-white text-[14px] sm:h-[48px]"
                     />
                   </div>
                 </div>
 
+                {/* ACTIVE SWITCH */}
                 <div className="flex items-center justify-between rounded-[12px] border border-[#E4E4E4] px-[14px] py-[12px]">
                   <div>
-                    <p className="text-[13px] font-medium text-[#111111]">Active</p>
+                    <p className="text-[13px] font-medium text-[#111111]">
+                      Active
+                    </p>
                     <p className="text-[12px] text-[#888888]">
                       Show this section on the website
                     </p>
@@ -934,6 +1294,7 @@ export default function HomeWhyChooseAdminPage() {
                   />
                 </div>
 
+                {/* ACTIONS */}
                 <div className="flex flex-col gap-[10px] pt-[4px] xs:flex-row xs:justify-end">
                   <Button
                     type="button"
@@ -968,6 +1329,8 @@ export default function HomeWhyChooseAdminPage() {
         )}
       </AnimatePresence>
 
+      {/* ================= DELETE CONFIRM ================= */}
+
       <AnimatePresence>
         {deleteOpen && (
           <motion.div
@@ -988,7 +1351,8 @@ export default function HomeWhyChooseAdminPage() {
                 Delete Why Choose Us Section?
               </h3>
               <p className="mt-[8px] text-[13px] leading-[1.6] text-[#666666]">
-                This will remove the why choose us section, team info, and contact details.
+                This will remove the why choose us section, team info, and
+                contact details.
               </p>
               <div className="mt-[18px] flex flex-col gap-[10px] xs:flex-row xs:justify-end">
                 <Button
