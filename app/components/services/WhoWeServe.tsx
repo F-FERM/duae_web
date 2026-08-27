@@ -7,14 +7,24 @@ import { motion } from "framer-motion";
 import api from "@/lib/axios";
 import fallbackImg from "../../../public/images/slide1.webp";
 import { useServiceAltText } from "@/app/(web)/services/useServiceAltText";
+import { InlineLinkedText } from "../InlineLinkedText";
+
+interface InlineLink {
+  text: string;
+  url: string;
+  type: string;
+  openInNewTab: boolean;
+  position: number;
+}
 
 interface WhoWeServeItemApi {
   title: string;
   description: string;
   image?: string;
-  alt?: string; // Added alt field
+  alt?: string;
   icon?: string;
   link?: string;
+  inlineLinks?: InlineLink[];
 }
 
 interface ServiceDetailApiResponse {
@@ -22,6 +32,7 @@ interface ServiceDetailApiResponse {
     title: string;
     description: string;
     items: WhoWeServeItemApi[];
+    inlineLinks?: InlineLink[];
   };
 }
 
@@ -29,6 +40,7 @@ interface WhoWeServeData {
   title: string;
   description: string;
   items: WhoWeServeItemApi[];
+  inlineLinks?: InlineLink[];
 }
 
 const IMAGE_BASE_URL = process.env.NEXT_PUBLIC_IMAGE_URL || "";
@@ -43,6 +55,7 @@ const defaultData: WhoWeServeData = {
   title: "Who We Serve",
   description:
     "With expertise in joinery in Dubai, we provide customized solutions that cater to diverse industries. Our joinery works in Dubai are designed to meet the unique requirements of commercial, residential, and hospitality spaces with precision and creativity.",
+  inlineLinks: [],
   items: [
     {
       title: "Commercial Fit-Out",
@@ -52,6 +65,7 @@ const defaultData: WhoWeServeData = {
       alt: "Commercial fit-out services by Wood World Decor",
       icon: "",
       link: "",
+      inlineLinks: [],
     },
     {
       title: "Residential Fit-Out",
@@ -61,6 +75,7 @@ const defaultData: WhoWeServeData = {
       alt: "Residential fit-out services by Wood World Decor",
       icon: "",
       link: "",
+      inlineLinks: [],
     },
     {
       title: "Hospitality Fit-Out",
@@ -70,6 +85,7 @@ const defaultData: WhoWeServeData = {
       alt: "Hospitality fit-out services by Wood World Decor",
       icon: "",
       link: "",
+      inlineLinks: [],
     },
   ],
 };
@@ -83,7 +99,10 @@ function WhoWeServeSkeleton() {
 
         <div className="mt-10 grid grid-cols-1 gap-6 sm:grid-cols-2 md:mt-14 lg:grid-cols-3">
           {Array.from({ length: 3 }).map((_, i) => (
-            <div key={i} className="flex flex-col bg-white shadow-[0_2px_20px_rgba(0,0,0,0.08)]">
+            <div
+              key={i}
+              className="flex flex-col bg-white shadow-[0_2px_20px_rgba(0,0,0,0.08)]"
+            >
               <div className="h-[280px] w-full animate-pulse bg-gray-200 md:h-[340px]" />
               <div className="flex flex-col gap-3 p-6">
                 <div className="h-6 w-2/3 animate-pulse rounded-md bg-gray-200" />
@@ -107,7 +126,7 @@ export default function WhoWeServe({ slug }: { slug: string }) {
     const fetchServiceDetail = async () => {
       try {
         const res = await api.get<ServiceDetailApiResponse>(
-          `/services/detail/${slug}`
+          `/services/detail/${slug}`,
         );
         setData({
           title: res.data.whoWeServe.title,
@@ -115,7 +134,9 @@ export default function WhoWeServe({ slug }: { slug: string }) {
           items: res.data.whoWeServe.items.map((item) => ({
             ...item,
             alt: item.alt || `${item.title} - Wood World Decor`,
+            inlineLinks: item.inlineLinks || [],
           })),
+          inlineLinks: res.data.whoWeServe.inlineLinks || [],
         });
       } catch (err) {
         console.error("Failed to fetch who-we-serve section:", err);
@@ -130,27 +151,63 @@ export default function WhoWeServe({ slug }: { slug: string }) {
 
   if (isLoading) return <WhoWeServeSkeleton />;
 
-  // Helper function to get alt text for an item
   const getItemAlt = (item: WhoWeServeItemApi) => {
     return item.alt || `${item.title} - Wood World Decor`;
+  };
+
+  // Get inline links from the whoWeServe object
+  const sectionLinks = data.inlineLinks || [];
+
+  // Helper to render text with or without inline links
+  const renderText = (
+    text: string,
+    links: InlineLink[],
+    className: string,
+    linkClassName: string,
+  ) => {
+    if (!text) return null;
+    const hasMatchingLink = links.some((link) => text.includes(link.text));
+
+    if (hasMatchingLink) {
+      return (
+        <InlineLinkedText
+          text={text}
+          links={links}
+          linkClassName={linkClassName}
+        />
+      );
+    }
+    return <span className={className}>{text}</span>;
   };
 
   return (
     <section className="w-full bg-white py-16 md:py-20">
       <div className="mx-auto max-w-[1200px] px-5 md:px-10">
-        <h2 className="text-3xl font-bold text-[#0c1526] sm:text-4xl md:text-5xl text-center">
-          {data.title}
-        </h2>
+        {/* Title with inline links */}
+        <div className="text-3xl font-bold text-[#0c1526] sm:text-4xl md:text-5xl text-center">
+          {renderText(
+            data.title,
+            sectionLinks,
+            "text-3xl font-bold text-[#0c1526] sm:text-4xl md:text-5xl text-center",
+            "inline-block cursor-pointer font-bold text-[#0c1526] underline decoration-[#db5e41]/30 underline-offset-4 transition-all duration-200 hover:text-[#db5e41] hover:decoration-[#db5e41] focus:outline-none focus:ring-2 focus:ring-[#db5e41] focus:ring-offset-2 rounded",
+          )}
+        </div>
 
-        <p className="mx-auto mt-3 text-sm leading-7 text-gray-600 sm:text-base sm:leading-8 md:text-lg text-center max-w-4xl">
-          {data.description}
-        </p>
+        {/* Description with inline links */}
+        <div className="mx-auto mt-3 text-sm leading-7 text-gray-600 sm:text-base sm:leading-8 md:text-lg text-center max-w-4xl">
+          {renderText(
+            data.description,
+            sectionLinks,
+            "text-sm leading-7 text-gray-600 sm:text-base sm:leading-8 md:text-lg text-center max-w-4xl",
+            "inline-block cursor-pointer font-medium text-gray-600 underline decoration-[#db5e41]/30 underline-offset-4 transition-all duration-200 hover:text-[#db5e41] hover:decoration-[#db5e41] focus:outline-none focus:ring-2 focus:ring-[#db5e41] focus:ring-offset-2 rounded",
+          )}
+        </div>
 
         <div className="mt-10 grid grid-cols-1 gap-6 sm:grid-cols-2 md:mt-14 lg:grid-cols-3">
           {data.items.map((item, index) => {
             const imgSrc = resolveImage(item?.image);
             const itemAlt = getItemAlt(item);
-            
+
             const content = (
               <>
                 {imgSrc && (
@@ -177,9 +234,15 @@ export default function WhoWeServe({ slug }: { slug: string }) {
                       {item.title}
                     </h3>
                   </div>
-                  <p className="text-sm leading-7 text-[#0d1b2a]/70 md:text-base">
-                    {item.description}
-                  </p>
+                  {/* Item Description with inline links */}
+                  <div className="text-sm leading-7 text-[#0d1b2a]/70 md:text-base">
+                    {renderText(
+                      item.description,
+                      item.inlineLinks || [],
+                      "text-sm leading-7 text-[#0d1b2a]/70 md:text-base",
+                      "inline-block cursor-pointer font-medium text-[#db5e41] underline decoration-[#db5e41]/30 underline-offset-4 transition-all duration-200 hover:text-[#c94f35] hover:decoration-[#db5e41] focus:outline-none focus:ring-2 focus:ring-[#db5e41] focus:ring-offset-2 rounded",
+                    )}
+                  </div>
                 </div>
               </>
             );
