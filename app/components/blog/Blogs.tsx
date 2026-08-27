@@ -6,6 +6,15 @@ import Link from "next/link";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import api from "@/lib/axios";
 import fallbackImage from "../../../public/images/service1.webp";
+import { InlineLinkedText } from "../InlineLinkedText";
+
+interface InlineLink {
+  text: string;
+  url: string;
+  type: string;
+  openInNewTab: boolean;
+  position: number;
+}
 
 interface BlogApiItem {
   _id?: string;
@@ -13,7 +22,9 @@ interface BlogApiItem {
   slug: string;
   image: string;
   date: string;
+  excerpt?: string;
   order?: number;
+  inlineLinks?: InlineLink[];
 }
 
 interface BlogsPaginatedResponse {
@@ -33,6 +44,8 @@ interface BlogItem {
   date: string;
   title: string;
   href: string;
+  excerpt?: string;
+  inlineLinks?: InlineLink[];
 }
 
 const IMAGE_BASE_URL = process.env.NEXT_PUBLIC_IMAGE_URL || "";
@@ -51,12 +64,14 @@ function mapApiToBlogItem(blog: BlogApiItem, index: number): BlogItem {
     date: blog.date,
     title: blog.title,
     href: `/blogs/${blog.slug}`,
+    excerpt: blog.excerpt || "",
+    inlineLinks: blog.inlineLinks || [],
   };
 }
 
 function parseBlogsResponse(
   payload: BlogApiItem[] | BlogsPaginatedResponse,
-  page: number
+  page: number,
 ) {
   if (Array.isArray(payload)) {
     const hasNextPage = payload.length === BLOGS_PER_PAGE;
@@ -94,6 +109,8 @@ const defaultBlogs: BlogItem[] = [
     date: "05 Feb, 2026",
     title: "How Much Does Furniture Upholstery Cost in Dubai",
     href: "/blogs/furniture-upholstery-cost-dubai",
+    excerpt: "Learn about the cost of furniture upholstery in Dubai...",
+    inlineLinks: [],
   },
   {
     id: "2",
@@ -101,6 +118,8 @@ const defaultBlogs: BlogItem[] = [
     date: "05 Feb, 2026",
     title: "Is Villa Renovation in Dubai Cheaper Than Buying New",
     href: "/blogs/villa-renovation-vs-buying-new",
+    excerpt: "Compare villa renovation costs vs buying new in Dubai...",
+    inlineLinks: [],
   },
   {
     id: "3",
@@ -108,6 +127,8 @@ const defaultBlogs: BlogItem[] = [
     date: "16 Jan, 2026",
     title: "Bedroom Joinery Ideas for Modern Dubai Apartments",
     href: "/blogs/bedroom-joinery-ideas-dubai",
+    excerpt: "Explore bedroom joinery ideas for modern Dubai apartments...",
+    inlineLinks: [],
   },
   {
     id: "4",
@@ -115,6 +136,8 @@ const defaultBlogs: BlogItem[] = [
     date: "10 Jan, 2026",
     title: "Top Fit-Out Trends for Commercial Spaces in Dubai",
     href: "/blogs/fit-out-trends-commercial-dubai",
+    excerpt: "Discover the top fit-out trends for commercial spaces...",
+    inlineLinks: [],
   },
   {
     id: "5",
@@ -122,6 +145,8 @@ const defaultBlogs: BlogItem[] = [
     date: "02 Jan, 2026",
     title: "Choosing the Right Wood for Custom Joinery Projects",
     href: "/blogs/choosing-wood-custom-joinery",
+    excerpt: "Learn how to choose the right wood for custom joinery...",
+    inlineLinks: [],
   },
   {
     id: "6",
@@ -129,6 +154,8 @@ const defaultBlogs: BlogItem[] = [
     date: "28 Dec, 2025",
     title: "A Complete Guide to Turnkey Fit-Out Solutions",
     href: "/blogs/turnkey-fit-out-guide",
+    excerpt: "Complete guide to turnkey fit-out solutions in Dubai...",
+    inlineLinks: [],
   },
 ];
 
@@ -165,17 +192,21 @@ export default function Blogs() {
     setIsFetching(true);
 
     try {
-      const res = await api.get<BlogApiItem[] | BlogsPaginatedResponse>("/blogs", {
-        params: {
-          page,
-          limit: BLOGS_PER_PAGE,
+      const res = await api.get<BlogApiItem[] | BlogsPaginatedResponse>(
+        "/blogs",
+        {
+          params: {
+            page,
+            limit: BLOGS_PER_PAGE,
+          },
         },
-      });
-
-      const { items, totalPages: pages, hasNextPage: nextPage } = parseBlogsResponse(
-        res.data,
-        page
       );
+
+      const {
+        items,
+        totalPages: pages,
+        hasNextPage: nextPage,
+      } = parseBlogsResponse(res.data, page);
 
       const mapped = items
         .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
@@ -226,7 +257,8 @@ export default function Blogs() {
 
   if (isInitialLoading) return <BlogsSkeleton />;
 
-  const showPagination = !useFallback && (totalPages > 1 || hasNextPage || currentPage > 1);
+  const showPagination =
+    !useFallback && (totalPages > 1 || hasNextPage || currentPage > 1);
 
   return (
     <section className="relative bg-white py-16 sm:py-20 md:py-28">
@@ -248,7 +280,8 @@ export default function Blogs() {
                   alt={blog.title}
                   fill
                   unoptimized={
-                    blog.image.startsWith("http") || blog.image.startsWith(IMAGE_BASE_URL)
+                    blog.image.startsWith("http") ||
+                    blog.image.startsWith(IMAGE_BASE_URL)
                   }
                   className="object-cover transition-transform duration-500 group-hover:scale-105"
                 />
@@ -270,6 +303,16 @@ export default function Blogs() {
                 <h3 className="text-lg font-bold leading-7 text-[#0c1526] transition-colors duration-500 group-hover:text-[#db5e41] sm:text-xl">
                   {blog.title}
                 </h3>
+                {blog.excerpt && (
+                  <p className="mt-2 text-sm text-gray-600 line-clamp-2">
+                    <InlineLinkedText
+                      text={blog.excerpt}
+                      links={blog.inlineLinks || []}
+                      className="inline"
+                      linkClassName="inline-block cursor-pointer font-medium text-[#db5e41] underline decoration-[#db5e41]/30 underline-offset-4 transition-all duration-200 hover:text-[#c94f35] hover:decoration-[#db5e41] focus:outline-none focus:ring-2 focus:ring-[#db5e41] focus:ring-offset-2 rounded"
+                    />
+                  </p>
+                )}
               </div>
             </Link>
           ))}
@@ -305,7 +348,9 @@ export default function Blogs() {
 
             <button
               onClick={() => goToPage(currentPage + 1)}
-              disabled={isFetching || (!hasNextPage && currentPage >= totalPages)}
+              disabled={
+                isFetching || (!hasNextPage && currentPage >= totalPages)
+              }
               aria-label="Next page"
               className="flex h-11 w-11 items-center justify-center bg-[#d9c5bd] text-white transition hover:bg-[#db5e41] disabled:cursor-not-allowed disabled:opacity-40"
             >
