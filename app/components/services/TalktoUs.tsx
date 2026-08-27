@@ -7,6 +7,15 @@ import { motion } from "framer-motion";
 import api from "@/lib/axios";
 import ctaBg from "../../../public/images/service1.webp";
 import { useServiceAltText } from "@/app/(web)/services/useServiceAltText";
+import { InlineLinkedText } from "../InlineLinkedText";
+
+interface InlineLink {
+  text: string;
+  url: string;
+  type: string;
+  openInNewTab: boolean;
+  position: number;
+}
 
 interface ServiceDetailApiResponse {
   cta: {
@@ -15,6 +24,7 @@ interface ServiceDetailApiResponse {
     buttonText: string;
     whatsappText: string;
     image: string;
+    inlineLinks?: InlineLink[];
   };
 }
 
@@ -24,6 +34,7 @@ interface CallToActionData {
   buttonText: string;
   whatsappText: string;
   image: string;
+  ctaInlineLinks?: InlineLink[];
 }
 
 const IMAGE_BASE_URL = process.env.NEXT_PUBLIC_IMAGE_URL || "";
@@ -41,6 +52,7 @@ const defaultData: CallToActionData = {
   buttonText: "TALK TO US",
   whatsappText: "WHATSAPP US",
   image: ctaBg.src,
+  ctaInlineLinks: [],
 };
 
 function CallToActionSkeleton() {
@@ -62,12 +74,11 @@ export default function CallToAction({ slug }: { slug: string }) {
   const [isLoading, setIsLoading] = useState(true);
   const altText = useServiceAltText(slug);
 
-
   useEffect(() => {
     const fetchServiceDetail = async () => {
       try {
         const res = await api.get<ServiceDetailApiResponse>(
-          `/services/detail/${slug}`
+          `/services/detail/${slug}`,
         );
         setData({
           title: res.data.cta.title,
@@ -75,6 +86,7 @@ export default function CallToAction({ slug }: { slug: string }) {
           buttonText: res.data.cta.buttonText,
           whatsappText: res.data.cta.whatsappText,
           image: resolveImage(res.data.cta.image, ctaBg.src),
+          ctaInlineLinks: res.data.cta.inlineLinks || [],
         });
       } catch (err) {
         console.error("Failed to fetch CTA content:", err);
@@ -88,6 +100,9 @@ export default function CallToAction({ slug }: { slug: string }) {
   }, [slug]);
 
   if (isLoading) return <CallToActionSkeleton />;
+
+  // Section-specific links for title and subtitle
+  const ctaLinks = data.ctaInlineLinks || [];
 
   return (
     <section className="relative w-full overflow-hidden">
@@ -104,13 +119,23 @@ export default function CallToAction({ slug }: { slug: string }) {
       <div className="absolute inset-0 bg-[#3a1f14]/70" />
 
       <div className="relative z-10 mx-auto flex min-h-[320px] max-w-[1220px] flex-col items-center justify-center px-5 py-16 text-center sm:min-h-[360px] md:min-h-[420px] md:py-20">
-        <h2 className="text-2xl font-extrabold leading-tight text-white sm:text-3xl md:text-4xl lg:text-5xl">
-          {data.title}
-        </h2>
+        {/* Title with inline links */}
+        <div className="text-2xl font-extrabold leading-tight text-white sm:text-3xl md:text-4xl lg:text-5xl">
+          <InlineLinkedText
+            text={data.title}
+            links={ctaLinks}
+            linkClassName="inline-block cursor-pointer font-extrabold text-white underline decoration-white/30 underline-offset-8 transition-all duration-200 hover:text-[#db5e41] hover:decoration-[#db5e41] focus:outline-none focus:ring-2 focus:ring-[#db5e41] focus:ring-offset-2 focus:ring-offset-[#3a1f14] rounded"
+          />
+        </div>
 
-        <p className="mx-auto mt-4 max-w-[720px] text-sm leading-7 text-white/85 sm:text-base md:mt-5 md:text-lg">
-          {data.subtitle}
-        </p>
+        {/* Subtitle with inline links */}
+        <div className="mx-auto mt-4 max-w-[720px] text-sm leading-7 text-white/85 sm:text-base md:mt-5 md:text-lg">
+          <InlineLinkedText
+            text={data.subtitle}
+            links={ctaLinks}
+            linkClassName="inline-block cursor-pointer font-medium text-white/85 underline decoration-white/30 underline-offset-4 transition-all duration-200 hover:text-[#db5e41] hover:decoration-[#db5e41] focus:outline-none focus:ring-2 focus:ring-[#db5e41] focus:ring-offset-2 focus:ring-offset-[#3a1f14] rounded"
+          />
+        </div>
 
         <div className="mt-8 flex flex-col items-center justify-center gap-4 sm:flex-row sm:gap-5 md:mt-10">
           <motion.a
