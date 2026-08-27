@@ -4,6 +4,15 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import api from "@/lib/axios";
+import { InlineLinkedText } from "../InlineLinkedText";
+
+interface InlineLink {
+  text: string;
+  url: string;
+  type: string;
+  openInNewTab: boolean;
+  position: number;
+}
 
 interface WorkImageApiItem {
   _id: string;
@@ -12,16 +21,21 @@ interface WorkImageApiItem {
   description: string;
   category: string;
   order: number;
-  alt: string; 
+  alt: string;
+  inlineLinks?: InlineLink[];
 }
 
 interface OurWorksApiResponse {
   introText: string;
+  introInlineLinks?: InlineLink[];
   title: string;
+  titleInlineLinks?: InlineLink[];
   buttonText: string;
   buttonLink: string;
   featuredTitle: string;
+  featuredTitleInlineLinks?: InlineLink[];
   featuredDescription: string;
+  featuredDescriptionInlineLinks?: InlineLink[];
   featuredImage: string;
   featuredCategory: string;
   featuredImageAlt: string;
@@ -36,11 +50,14 @@ interface WorkItem {
   buttonText: string;
   buttonLink: string;
   alt: string;
+  inlineLinks?: InlineLink[];
 }
 
 interface OurWorksData {
   heading: string;
   introText: string;
+  introInlineLinks?: InlineLink[];
+  headingInlineLinks?: InlineLink[];
   items: WorkItem[];
 }
 
@@ -52,16 +69,18 @@ function resolveImage(path: string): string {
   return `${IMAGE_BASE_URL}${path.startsWith("/") ? path : `/${path}`}`;
 }
 
-// Fallback alt text for images without alt
-const FALLBACK_ALT = "Wood World Decor - interior fit out and joinery projects in Dubai";
+const FALLBACK_ALT =
+  "Wood World Decor - interior fit out and joinery projects in Dubai";
 
 function mapApiToOurWorks(data: OurWorksApiResponse): OurWorksData {
   return {
     heading: data.title,
+    headingInlineLinks: data.titleInlineLinks || [],
     introText: data.introText,
+    introInlineLinks: data.introInlineLinks || [],
     items: [...(data.images || [])]
       .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
-      .slice(0, 4) // Only take first 4 for display
+      .slice(0, 4)
       .map((img) => ({
         id: img._id,
         image: resolveImage(img.url),
@@ -70,23 +89,28 @@ function mapApiToOurWorks(data: OurWorksApiResponse): OurWorksData {
         buttonText: data.buttonText,
         buttonLink: data.buttonLink,
         alt: img.alt || FALLBACK_ALT,
+        inlineLinks: img.inlineLinks || [],
       })),
   };
 }
 
 const defaultData: OurWorksData = {
   heading: "Our Works",
+  headingInlineLinks: [],
   introText:
     "With over 10 years of experience, we have successfully delivered a wide range of projects that showcase our expertise in joinery, fit-out, renovations, and turnkey solutions. From luxury villas to commercial spaces, our works reflect quality, creativity, and attention to detail.",
+  introInlineLinks: [],
   items: [
     {
       id: "1",
       image: "/images/slide1.webp",
       title: "Apartments in Burj Khalifa",
-      description: "Luxury apartment interiors with premium joinery and fit-out solutions.",
+      description:
+        "Luxury apartment interiors with premium joinery and fit-out solutions.",
       buttonText: "View Our Works",
       buttonLink: "/our-works",
       alt: "Luxury apartment interiors at Burj Khalifa by Wood World Decor",
+      inlineLinks: [],
     },
     {
       id: "2",
@@ -96,24 +120,29 @@ const defaultData: OurWorksData = {
       buttonText: "View Our Works",
       buttonLink: "/our-works",
       alt: "Custom metal works at Hoof Cafe by Wood World Decor",
+      inlineLinks: [],
     },
     {
       id: "3",
       image: "/images/slide1.webp",
       title: "Abu Dhabi VIP Airport",
-      description: "Premium joinery and fit-out solutions for VIP airport terminal.",
+      description:
+        "Premium joinery and fit-out solutions for VIP airport terminal.",
       buttonText: "View Our Works",
       buttonLink: "/our-works",
       alt: "Premium joinery at Abu Dhabi VIP Airport by Wood World Decor",
+      inlineLinks: [],
     },
     {
       id: "4",
       image: "/images/service1.webp",
       title: "Residential Villa",
-      description: "Complete renovation and fit-out for luxury residential villa.",
+      description:
+        "Complete renovation and fit-out for luxury residential villa.",
       buttonText: "View Our Works",
       buttonLink: "/our-works",
       alt: "Luxury residential villa renovation by Wood World Decor",
+      inlineLinks: [],
     },
   ],
 };
@@ -128,7 +157,6 @@ function OurWorksSkeleton() {
               <div className="h-10 w-40 animate-pulse rounded-md bg-gray-200 xs:h-12 xs:w-48 sm:h-14 sm:w-56 lg:h-16 lg:w-64 xl:h-20 xl:w-72" />
             </div>
           </div>
-
           <div className="space-y-3">
             <div className="h-4 w-full animate-pulse rounded-md bg-gray-200" />
             <div className="h-4 w-11/12 animate-pulse rounded-md bg-gray-200" />
@@ -136,7 +164,6 @@ function OurWorksSkeleton() {
           </div>
         </div>
       </div>
-
       <div className="mt-10 grid grid-cols-2 gap-0 sm:grid-cols-3 lg:grid-cols-4">
         {[0, 1, 2, 3].map((i) => (
           <div
@@ -175,61 +202,72 @@ export default function OurWorks() {
 
   return (
     <section className="overflow-hidden bg-white">
-      {/* Heading + intro text stay inside the max-width container */}
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="grid gap-10 lg:grid-cols-[1.4fr_1.6fr] lg:items-center">
           <div className="relative">
             <div className="p-6 xs:p-8 sm:p-10 lg:p-14">
               <div className="absolute -right-8 top-8 h-24 w-24 rounded-3xl bg-[#f7e4d7] opacity-50 blur-2xl" />
               <h2 className="relative text-3xl font-semibold leading-tight xs:text-4xl sm:text-5xl lg:text-5xl xl:text-7xl">
-                {data.heading}
+                <InlineLinkedText
+                  text={data.heading}
+                  links={data.headingInlineLinks || []}
+                  linkClassName="inline-block cursor-pointer font-semibold text-[#0c1526] underline decoration-[#db5e41]/30 underline-offset-4 transition-all duration-200 hover:text-[#db5e41] hover:decoration-[#db5e41] focus:outline-none focus:ring-2 focus:ring-[#db5e41] focus:ring-offset-2 rounded"
+                />
               </h2>
             </div>
           </div>
 
           <div className="space-y-6 text-slate-900">
-            <p className="text-base text-gray-600 leading-7 sm:text-lg sm:leading-9 lg:pr-10">
-              {data.introText}
-            </p>
+            <div className="text-base text-gray-600 leading-7 sm:text-lg sm:leading-9 lg:pr-10">
+              <InlineLinkedText
+                text={data.introText}
+                links={data.introInlineLinks || []}
+                linkClassName="inline-block cursor-pointer font-medium text-[#db5e41] underline decoration-[#db5e41]/30 underline-offset-4 transition-all duration-200 hover:text-[#c94f35] hover:decoration-[#db5e41] focus:outline-none focus:ring-2 focus:ring-[#db5e41] focus:ring-offset-2 rounded"
+              />
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Full-bleed image grid, edge-to-edge with zero gap between columns */}
       <div className="mt-10 grid grid-cols-2 gap-0 sm:grid-cols-3 lg:grid-cols-4">
         {data.items.map((item, index) => (
           <div key={`${item.id}-${index}`} className="group relative block">
-            {/* Image */}
             <div className="relative h-[260px] w-full overflow-hidden bg-slate-100 sm:h-[420px] md:h-[520px] lg:h-[600px] xl:h-[680px]">
               <Image
                 src={item.image}
-                alt={item.alt || FALLBACK_ALT} 
+                alt={item.alt || FALLBACK_ALT}
                 fill
                 sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
                 className="object-cover transition duration-500 ease-out group-hover:scale-105"
               />
-
-              {/* Dark overlay on hover */}
               <div className="absolute inset-0 z-[1] bg-slate-950/0 transition duration-300 ease-out group-hover:bg-slate-950/50" />
             </div>
 
-            {/* Hover card: centered over the image, wider than the column so text has room to breathe.
-                Width/padding/text now scale down on small screens so the card never overflows the
-                viewport; from sm: up it renders exactly as before (w-[400px], p-8, text-2xl, etc). */}
-            <div className="pointer-events-none absolute left-1/2 bottom-4 z-30 w-[92vw] max-w-[320px] -translate-x-1/2 translate-y-10 scale-95 opacity-0 transition-all duration-300 ease-out group-hover:translate-y-0 group-hover:scale-100 group-hover:opacity-100 xs:max-w-[360px] sm:bottom-6 sm:w-[400px] sm:max-w-none">
+            <div className="absolute left-1/2 bottom-4 z-30 w-[92vw] max-w-[320px] -translate-x-1/2 translate-y-10 scale-95 opacity-0 transition-all duration-300 ease-out group-hover:translate-y-0 group-hover:scale-100 group-hover:opacity-100 xs:max-w-[360px] sm:bottom-6 sm:w-[400px] sm:max-w-none">
               <div className="rounded-xl bg-white p-5 shadow-[0_30px_80px_rgba(15,23,42,0.25)] sm:p-8">
                 <div className="flex items-center gap-3">
                   <span className="h-3 w-3 flex-shrink-0 rounded-full border border-[#f2c4b0] bg-[#fcd5c1]" />
                   <h3 className="text-lg font-semibold text-slate-900 sm:text-2xl">
-                    {item.title}
+                    <InlineLinkedText
+                      text={item.title}
+                      links={item.inlineLinks || []}
+                      linkClassName="inline-block cursor-pointer font-semibold text-slate-900 underline decoration-[#db5e41]/30 underline-offset-4 transition-all duration-200 hover:text-[#db5e41] hover:decoration-[#db5e41] focus:outline-none focus:ring-2 focus:ring-[#db5e41] focus:ring-offset-2 rounded"
+                    />
                   </h3>
                 </div>
 
-                <p className="mt-3 text-sm leading-6 text-slate-600 sm:mt-5 sm:text-[15px] sm:leading-8">
-                  {item.description}
-                </p>
+                <div className="mt-3 text-sm leading-6 text-slate-600 sm:mt-5 sm:text-[15px] sm:leading-8">
+                  <InlineLinkedText
+                    text={item.description}
+                    links={item.inlineLinks || []}
+                    linkClassName="inline-block cursor-pointer font-medium text-[#db5e41] underline decoration-[#db5e41]/30 underline-offset-4 transition-all duration-200 hover:text-[#c94f35] hover:decoration-[#db5e41] focus:outline-none focus:ring-2 focus:ring-[#db5e41] focus:ring-offset-2 rounded"
+                  />
+                </div>
 
-                <Link href={item.buttonLink || "/our-works"} className="pointer-events-auto block">
+                <Link
+                  href={item.buttonLink || "/our-works"}
+                  className="pointer-events-auto block"
+                >
                   <button className="mt-5 w-full rounded-2xl bg-[#dc5c39] py-3 text-sm font-semibold text-white transition hover:bg-[#bb4e2d] sm:mt-8 sm:py-4 sm:text-base">
                     {item.buttonText}
                   </button>
