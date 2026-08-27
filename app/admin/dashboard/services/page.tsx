@@ -17,6 +17,9 @@ import {
   Trash2,
   UploadCloud,
   X,
+  Globe,
+  FileText,
+  Link as LinkIcon,
 } from "lucide-react";
 import Image from "next/image";
 import { useCallback, useEffect, useId, useState } from "react";
@@ -26,9 +29,19 @@ import { fileUpload } from "@/app/api/admin/upload/upload";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import api from "@/lib/axios";
+import { Button } from "@/components/ui/button";
 
 // ===================== TYPES =====================
+
+interface InlineLink {
+  text: string;
+  url: string;
+  type: string;
+  openInNewTab: boolean;
+  position: number;
+}
 
 interface StatFields {
   yearsOfExcellence: number;
@@ -47,6 +60,7 @@ interface WhoWeServeItem {
   image?: string;
   icon: string;
   link?: string | null;
+  inlineLinks?: InlineLink[];
 }
 
 // FIX: whoWeServe from the API is an object with title/description/items,
@@ -55,12 +69,14 @@ interface WhoWeServe {
   title: string;
   description: string;
   items: WhoWeServeItem[];
+  inlineLinks?: InlineLink[];
 }
 
 interface WhatIsIncludedItem {
   title: string;
   description: string;
   icon: string;
+  inlineLinks?: InlineLink[];
 }
 
 // FIX: same issue as whoWeServe — whatIsIncluded is an object with
@@ -69,6 +85,7 @@ interface WhatIsIncluded {
   title: string;
   description: string;
   items: WhatIsIncludedItem[];
+  inlineLinks?: InlineLink[];
 }
 
 interface ProcessStep {
@@ -76,6 +93,7 @@ interface ProcessStep {
   title: string;
   description: string;
   icon: string;
+  inlineLinks?: InlineLink[];
 }
 
 interface MaterialItem {
@@ -83,6 +101,7 @@ interface MaterialItem {
   description: string;
   image?: string;
   icon: string;
+  inlineLinks?: InlineLink[];
 }
 
 interface WhyChooseItem {
@@ -90,11 +109,13 @@ interface WhyChooseItem {
   description: string;
   icon: string;
   image?: string;
+  inlineLinks?: InlineLink[];
 }
 
 interface FaqItem {
   question: string;
   answer: string;
+  inlineLinks?: InlineLink[];
 }
 
 interface ContactField {
@@ -108,12 +129,14 @@ interface TrustedImage {
   url: string;
   title: string;
   description: string;
+  inlineLinks?: InlineLink[];
 }
 
 interface TrustedJoineryWorks {
   title: string;
   description: string;
   images: TrustedImage[];
+  inlineLinks?: InlineLink[];
 }
 
 interface Service {
@@ -124,9 +147,11 @@ interface Service {
   fullDescription: string;
   image: string;
   icon: string;
+  inlineLinks?: InlineLink[];
   heroTitle: string;
   heroSubtitle: string;
   heroImage: string;
+  heroInlineLinks?: InlineLink[];
   order: number;
   isActive: boolean;
   isFeatured: boolean;
@@ -142,37 +167,44 @@ interface Service {
     buttonText: string;
     whatsappText: string;
     image?: string;
+    inlineLinks?: InlineLink[];
   };
   about: {
     title: string;
     description: string;
-    image: string;
+    imageOne: string;
+    imageTwo: string;
     foundedYear: string;
     outlets: number;
     teamSize: number;
     factoryInfo: string;
+    inlineLinks?: InlineLink[];
   };
   process: {
     title: string;
     description: string;
-    image?: string;  // Added for process banner
-    alt?: string;    // Added for process image alt text
+    image?: string; // Added for process banner
+    alt?: string; // Added for process image alt text
     steps: ProcessStep[];
+    inlineLinks?: InlineLink[];
   };
   materials: {
     title: string;
     description: string;
     items: MaterialItem[];
+    inlineLinks?: InlineLink[];
   };
   whyChooseUs: {
     title: string;
     items: WhyChooseItem[];
+    inlineLinks?: InlineLink[];
   };
   faqs: FaqItem[];
   contact: {
     title: string;
     description: string;
     fields: ContactField[];
+    inlineLinks?: InlineLink[];
   };
   seo: {
     metaTitle: string;
@@ -181,10 +213,183 @@ interface Service {
   };
   trustedJoineryWorks: TrustedJoineryWorks;
 }
+
 // ===================== HELPERS =====================
 
 function deepClone<T>(obj: T): T {
   return JSON.parse(JSON.stringify(obj));
+}
+
+// ===================== INLINE LINK MANAGER =====================
+
+const LINK_TYPES = [
+  { value: "page", label: "Page", icon: FileText },
+  { value: "section", label: "Section", icon: Layers },
+  { value: "external", label: "External", icon: Globe },
+];
+
+function InlineLinkManager({
+  links = [],
+  onChange,
+  label = "Inline Links",
+  description = "Text within this content that will become clickable.",
+  hasChanged = false,
+}: {
+  links: InlineLink[];
+  onChange: (links: InlineLink[]) => void;
+  label?: string;
+  description?: string;
+  hasChanged?: boolean;
+}) {
+  const [linkText, setLinkText] = useState("");
+  const [linkUrl, setLinkUrl] = useState("");
+  const [linkType, setLinkType] = useState("page");
+  const [linkNewTab, setLinkNewTab] = useState(false);
+
+  const getLinkTypeIcon = (type: string) => {
+    const found = LINK_TYPES.find((t) => t.value === type);
+    if (found) {
+      const IconComponent = found.icon;
+      return <IconComponent className="h-3 w-3" />;
+    }
+    return <LinkIcon className="h-3 w-3" />;
+  };
+
+  const addLink = () => {
+    if (!linkText.trim() || !linkUrl.trim()) {
+      toast.error("Text and URL are required");
+      return;
+    }
+
+    const duplicate = links.some(
+      (link) => link.text.toLowerCase() === linkText.trim().toLowerCase(),
+    );
+
+    if (duplicate) {
+      toast.error(`"${linkText.trim()}" already has a link`);
+      return;
+    }
+
+    const newLink: InlineLink = {
+      text: linkText.trim(),
+      url: linkUrl.trim(),
+      type: linkType,
+      openInNewTab: linkNewTab,
+      position: links.length,
+    };
+
+    onChange([...links, newLink]);
+    setLinkText("");
+    setLinkUrl("");
+    setLinkType("page");
+    setLinkNewTab(false);
+    toast.success("Inline link added");
+  };
+
+  const removeLink = (index: number) => {
+    onChange(links.filter((_, i) => i !== index));
+    toast.success("Inline link removed");
+  };
+
+  return (
+    <div
+      className={`mt-3 border-t border-[#E4C9B4] pt-3 ${hasChanged ? "border-2 border-[#EA580C] rounded-[8px] p-3 bg-[#FFF9F4]" : ""}`}
+    >
+      <div className="flex items-center gap-[6px] mb-2">
+        <Label className="text-xs font-medium text-[#2A2A2A]">{label}</Label>
+        {hasChanged && (
+          <span className="flex items-center gap-[4px] text-[10px] font-medium text-[#EA580C]">
+            <CircleDot className="h-[10px] w-[10px] fill-[#EA580C]" />
+            Changed
+          </span>
+        )}
+      </div>
+      <p className="text-[10px] text-[#888888] mb-2">{description}</p>
+
+      {links.length > 0 && (
+        <div className="mb-2 space-y-1 max-h-[120px] overflow-y-auto">
+          {links.map((link, idx) => (
+            <div
+              key={idx}
+              className="flex items-center justify-between rounded-[8px] bg-white px-3 py-2 text-xs border border-[#E4E4E4]"
+            >
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="font-medium text-[#EA580C]">
+                  "{link.text}"
+                </span>
+                <span className="text-[#999]">→</span>
+                <span className="text-[#666] truncate max-w-[120px]">
+                  {link.url}
+                </span>
+                {link.openInNewTab && (
+                  <span className="text-[9px] text-[#999] flex items-center gap-0.5">
+                    <ExternalLink className="h-2.5 w-2.5" /> new tab
+                  </span>
+                )}
+                <span className="text-[9px] text-[#999]">#{link.position}</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => removeLink(idx)}
+                className="text-[#DC2626] hover:text-[#b91c1c]"
+              >
+                <X className="h-3 w-3" />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <div className="grid grid-cols-1 gap-2 xs:grid-cols-4">
+        <div className="xs:col-span-1">
+          <Input
+            value={linkText}
+            onChange={(e) => setLinkText(e.target.value)}
+            placeholder="Text to link"
+            className="h-9 rounded-[8px] text-xs"
+          />
+        </div>
+        <div className="xs:col-span-1">
+          <Input
+            value={linkUrl}
+            onChange={(e) => setLinkUrl(e.target.value)}
+            placeholder="URL"
+            className="h-9 rounded-[8px] text-xs"
+          />
+        </div>
+        <div className="xs:col-span-1">
+          <select
+            value={linkType}
+            onChange={(e) => setLinkType(e.target.value)}
+            className="h-9 w-full rounded-[8px] border border-[#E4E4E4] px-2 text-xs bg-white"
+          >
+            {LINK_TYPES.map((type) => (
+              <option key={type.value} value={type.value}>
+                {type.label}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className="xs:col-span-1 flex gap-1">
+          <Button
+            type="button"
+            onClick={addLink}
+            className="h-9 flex-1 rounded-[8px] bg-[#EA580C] text-white hover:bg-[#EA580C] text-xs px-3"
+          >
+            <Plus className="h-3 w-3" /> Add
+          </Button>
+        </div>
+      </div>
+      <div className="mt-1 flex items-center gap-2">
+        <Switch
+          checked={linkNewTab}
+          onCheckedChange={setLinkNewTab}
+          className="h-4 w-7"
+        />
+        <span className="text-[10px] text-[#666666]">Open in new tab</span>
+      </div>
+    </div>
+  );
 }
 
 // ===================== SMALL UI HELPERS =====================
@@ -289,7 +494,9 @@ function ImageUpload({
   return (
     <div>
       <div className="mb-[6px] flex items-center gap-[6px]">
-        <Label className="text-[12px] font-medium text-[#2A2A2A]">{label}</Label>
+        <Label className="text-[12px] font-medium text-[#2A2A2A]">
+          {label}
+        </Label>
         {hasChanged && (
           <span className="flex items-center gap-[4px] text-[10px] font-medium text-[#EA580C]">
             <CircleDot className="h-[10px] w-[10px] fill-[#EA580C]" />
@@ -314,7 +521,13 @@ function ImageUpload({
       >
         {value ? (
           <>
-            <Image src={value} alt={label} fill unoptimized className="object-cover" />
+            <Image
+              src={value}
+              alt={label}
+              fill
+              unoptimized
+              className="object-cover"
+            />
             <div className="absolute inset-0 flex items-center justify-center bg-black/0 opacity-0 transition-opacity hover:bg-black/40 hover:opacity-100">
               <span className="flex items-center gap-[6px] text-[13px] font-medium text-white">
                 <ImagePlus className="h-[14px] w-[14px]" />
@@ -363,13 +576,20 @@ function ItemCard({
         onClick={() => setOpen((v) => !v)}
         className="flex w-full items-center justify-between px-[14px] py-[11px] text-left"
       >
-        <span className="truncate text-[13px] font-medium text-[#333333]">{title}</span>
+        <span className="truncate text-[13px] font-medium text-[#333333]">
+          {title}
+        </span>
         <div className="flex items-center gap-[8px]">
           <span
             role="button"
             tabIndex={0}
-            onClick={(e) => { e.stopPropagation(); onRemove(); }}
-            onKeyDown={(e) => e.key === "Enter" && (e.stopPropagation(), onRemove())}
+            onClick={(e) => {
+              e.stopPropagation();
+              onRemove();
+            }}
+            onKeyDown={(e) =>
+              e.key === "Enter" && (e.stopPropagation(), onRemove())
+            }
             className="rounded-[6px] p-[4px] text-[#DC2626] transition-colors hover:bg-red-50"
           >
             <Trash2 className="h-[13px] w-[13px]" />
@@ -382,9 +602,7 @@ function ItemCard({
         </div>
       </button>
       {open && (
-        <div className="border-t border-[#F1E4D8] p-[14px]">
-          {children}
-        </div>
+        <div className="border-t border-[#F1E4D8] p-[14px]">{children}</div>
       )}
     </div>
   );
@@ -441,7 +659,12 @@ function ServiceEditModal({
       typeof cloned.whoWeServe !== "object" ||
       Array.isArray(cloned.whoWeServe)
     ) {
-      cloned.whoWeServe = { title: "", description: "", items: [] };
+      cloned.whoWeServe = {
+        title: "",
+        description: "",
+        items: [],
+        inlineLinks: [],
+      };
     }
     if (!Array.isArray(cloned.whoWeServe.items)) {
       cloned.whoWeServe.items = [];
@@ -452,32 +675,64 @@ function ServiceEditModal({
       typeof cloned.whatIsIncluded !== "object" ||
       Array.isArray(cloned.whatIsIncluded)
     ) {
-      cloned.whatIsIncluded = { title: "", description: "", items: [] };
+      cloned.whatIsIncluded = {
+        title: "",
+        description: "",
+        items: [],
+        inlineLinks: [],
+      };
     }
     if (!Array.isArray(cloned.whatIsIncluded.items)) {
       cloned.whatIsIncluded.items = [];
     }
 
     if (!cloned.cta) {
-      cloned.cta = { title: "", subtitle: "", buttonText: "", whatsappText: "", image: "" };
+      cloned.cta = {
+        title: "",
+        subtitle: "",
+        buttonText: "",
+        whatsappText: "",
+        image: "",
+        inlineLinks: [],
+      };
     }
     if (!cloned.about) {
-      cloned.about = { title: "", description: "", image: "", foundedYear: "", outlets: 0, teamSize: 0, factoryInfo: "" };
+      cloned.about = {
+        title: "",
+        description: "",
+        imageOne: "",
+        imageTwo: "",
+        foundedYear: "",
+        outlets: 0,
+        teamSize: 0,
+        factoryInfo: "",
+        inlineLinks: [],
+      };
     }
     if (!cloned.process) {
-      cloned.process = { title: "", description: "", steps: [] };
+      cloned.process = {
+        title: "",
+        description: "",
+        steps: [],
+        inlineLinks: [],
+      };
     }
     if (!cloned.process.steps) {
       cloned.process.steps = [];
     }
     if (!cloned.materials) {
-      cloned.materials = { title: "", description: "", items: [] };
+      cloned.materials = {
+        title: "",
+        description: "",
+        items: [],
+        inlineLinks: [],
+      };
     }
     if (!cloned.materials.items) {
       cloned.materials.items = [];
     }
     if (!cloned.whyChooseUs) {
-      cloned.whyChooseUs = { title: "", items: [] };
+      cloned.whyChooseUs = { title: "", items: [], inlineLinks: [] };
     }
     if (!cloned.whyChooseUs.items) {
       cloned.whyChooseUs.items = [];
@@ -486,7 +741,12 @@ function ServiceEditModal({
       cloned.faqs = [];
     }
     if (!cloned.contact) {
-      cloned.contact = { title: "", description: "", fields: [] };
+      cloned.contact = {
+        title: "",
+        description: "",
+        fields: [],
+        inlineLinks: [],
+      };
     }
     if (!cloned.contact.fields) {
       cloned.contact.fields = [];
@@ -498,7 +758,12 @@ function ServiceEditModal({
       cloned.seo.keywords = [];
     }
     if (!cloned.trustedJoineryWorks) {
-      cloned.trustedJoineryWorks = { title: "", description: "", images: [] };
+      cloned.trustedJoineryWorks = {
+        title: "",
+        description: "",
+        images: [],
+        inlineLinks: [],
+      };
     }
     if (!cloned.trustedJoineryWorks.images) {
       cloned.trustedJoineryWorks.images = [];
@@ -511,7 +776,9 @@ function ServiceEditModal({
   const [uploading, setUploading] = useState(false);
   const [uploadingHero, setUploadingHero] = useState(false);
   const [uploadingCta, setUploadingCta] = useState(false);
-  const [uploadingAbout, setUploadingAbout] = useState(false);
+  const [uploadingAboutOne, setUploadingAboutOne] = useState(false);
+  const [uploadingAboutTwo, setUploadingAboutTwo] = useState(false);
+  const [uploadingProcess, setUploadingProcess] = useState(false);
 
   // Check if a field has changed
   const hasChanged = (path: string): boolean => {
@@ -531,14 +798,28 @@ function ServiceEditModal({
 
   // Check if a tab has any changes
   const tabHasChanges = (tab: TabName): boolean => {
-    switch(tab) {
+    switch (tab) {
       case "Basic":
-        return hasChanged("title") || hasChanged("slug") || hasChanged("icon") ||
-               hasChanged("order") || hasChanged("image") || hasChanged("shortDescription") ||
-               hasChanged("fullDescription") || hasChanged("isActive") || hasChanged("isFeatured") ||
-               hasChanged("parentService");
+        return (
+          hasChanged("title") ||
+          hasChanged("slug") ||
+          hasChanged("icon") ||
+          hasChanged("order") ||
+          hasChanged("image") ||
+          hasChanged("shortDescription") ||
+          hasChanged("fullDescription") ||
+          hasChanged("isActive") ||
+          hasChanged("isFeatured") ||
+          hasChanged("parentService") ||
+          hasChanged("inlineLinks")
+        );
       case "Hero":
-        return hasChanged("heroTitle") || hasChanged("heroSubtitle") || hasChanged("heroImage");
+        return (
+          hasChanged("heroTitle") ||
+          hasChanged("heroSubtitle") ||
+          hasChanged("heroImage") ||
+          hasChanged("heroInlineLinks")
+        );
       case "Stats":
         return hasChanged("stats");
       case "Who We Serve":
@@ -548,7 +829,17 @@ function ServiceEditModal({
       case "CTA":
         return hasChanged("cta");
       case "About":
-        return hasChanged("about");
+        return (
+          hasChanged("about.title") ||
+          hasChanged("about.description") ||
+          hasChanged("about.imageOne") ||
+          hasChanged("about.imageTwo") ||
+          hasChanged("about.foundedYear") ||
+          hasChanged("about.outlets") ||
+          hasChanged("about.teamSize") ||
+          hasChanged("about.factoryInfo") ||
+          hasChanged("about.inlineLinks")
+        );
       case "Process":
         return hasChanged("process");
       case "Materials":
@@ -597,7 +888,9 @@ function ServiceEditModal({
 
   useEffect(() => {
     document.body.style.overflow = "hidden";
-    return () => { document.body.style.overflow = ""; };
+    return () => {
+      document.body.style.overflow = "";
+    };
   }, []);
 
   return (
@@ -674,10 +967,20 @@ function ServiceEditModal({
             <StatsTab form={form} setField={setField} hasChanged={hasChanged} />
           )}
           {activeTab === "Who We Serve" && (
-            <WhoWeServeTab form={form} setForm={setForm} setField={setField} hasChanged={hasChanged} />
+            <WhoWeServeTab
+              form={form}
+              setForm={setForm}
+              setField={setField}
+              hasChanged={hasChanged}
+            />
           )}
           {activeTab === "What's Included" && (
-            <WhatIsIncludedTab form={form} setForm={setForm} setField={setField} hasChanged={hasChanged} />
+            <WhatIsIncludedTab
+              form={form}
+              setForm={setForm}
+              setField={setField}
+              hasChanged={hasChanged}
+            />
           )}
           {activeTab === "CTA" && (
             <CtaTab
@@ -692,31 +995,64 @@ function ServiceEditModal({
             <AboutTab
               form={form}
               setField={setField}
-              uploading={uploadingAbout}
-              setUploading={setUploadingAbout}
+              uploadingOne={uploadingAboutOne}
+              setUploadingOne={setUploadingAboutOne}
+              uploadingTwo={uploadingAboutTwo}
+              setUploadingTwo={setUploadingAboutTwo}
               hasChanged={hasChanged}
             />
           )}
           {activeTab === "Process" && (
-            <ProcessTab form={form} setForm={setForm} setField={setField} hasChanged={hasChanged} />
+            <ProcessTab
+              form={form}
+              setForm={setForm}
+              setField={setField}
+              hasChanged={hasChanged}
+              uploading={uploadingProcess}
+              setUploading={setUploadingProcess}
+            />
           )}
           {activeTab === "Materials" && (
-            <MaterialsTab form={form} setForm={setForm} setField={setField} hasChanged={hasChanged} />
+            <MaterialsTab
+              form={form}
+              setForm={setForm}
+              setField={setField}
+              hasChanged={hasChanged}
+            />
           )}
           {activeTab === "Why Choose Us" && (
-            <WhyChooseUsTab form={form} setForm={setForm} setField={setField} hasChanged={hasChanged} />
+            <WhyChooseUsTab
+              form={form}
+              setForm={setForm}
+              setField={setField}
+              hasChanged={hasChanged}
+            />
           )}
           {activeTab === "FAQs" && (
             <FaqsTab form={form} setForm={setForm} hasChanged={hasChanged} />
           )}
           {activeTab === "Contact" && (
-            <ContactTab form={form} setField={setField} hasChanged={hasChanged} />
+            <ContactTab
+              form={form}
+              setField={setField}
+              hasChanged={hasChanged}
+            />
           )}
           {activeTab === "SEO" && (
-            <SeoTab form={form} setField={setField} setForm={setForm} hasChanged={hasChanged} />
+            <SeoTab
+              form={form}
+              setField={setField}
+              setForm={setForm}
+              hasChanged={hasChanged}
+            />
           )}
           {activeTab === "Trusted Works" && (
-            <TrustedWorksTab form={form} setForm={setForm} setField={setField} hasChanged={hasChanged} />
+            <TrustedWorksTab
+              form={form}
+              setForm={setForm}
+              setField={setField}
+              hasChanged={hasChanged}
+            />
           )}
         </div>
 
@@ -760,22 +1096,42 @@ function BasicTab({
   setUploading: (loading: boolean) => void;
   hasChanged: (path: string) => boolean;
 }) {
-  const getInputClass = (path: string) => hasChanged(path) ? inputChangedCls : inputCls;
-  const getTextareaClass = (path: string) => hasChanged(path) ? textareaChangedCls : textareaCls;
+  const getInputClass = (path: string) =>
+    hasChanged(path) ? inputChangedCls : inputCls;
+  const getTextareaClass = (path: string) =>
+    hasChanged(path) ? textareaChangedCls : textareaCls;
 
   return (
     <div className="grid gap-[16px] sm:grid-cols-2">
       <Field label="Title" hasChanged={hasChanged("title")}>
-        <input className={getInputClass("title")} value={form.title} onChange={(e) => setField("title", e.target.value)} />
+        <input
+          className={getInputClass("title")}
+          value={form.title}
+          onChange={(e) => setField("title", e.target.value)}
+        />
       </Field>
       <Field label="Slug" hasChanged={hasChanged("slug")}>
-        <input className={getInputClass("slug")} value={form.slug} onChange={(e) => setField("slug", e.target.value)} />
+        <input
+          className={getInputClass("slug")}
+          value={form.slug}
+          onChange={(e) => setField("slug", e.target.value)}
+        />
       </Field>
       <Field label="Icon" hasChanged={hasChanged("icon")}>
-        <input className={getInputClass("icon")} value={form.icon} onChange={(e) => setField("icon", e.target.value)} placeholder="fa-solid fa-hammer" />
+        <input
+          className={getInputClass("icon")}
+          value={form.icon}
+          onChange={(e) => setField("icon", e.target.value)}
+          placeholder="fa-solid fa-hammer"
+        />
       </Field>
       <Field label="Order" hasChanged={hasChanged("order")}>
-        <input type="number" className={getInputClass("order")} value={form.order} onChange={(e) => setField("order", Number(e.target.value))} />
+        <input
+          type="number"
+          className={getInputClass("order")}
+          value={form.order}
+          onChange={(e) => setField("order", Number(e.target.value))}
+        />
       </Field>
       <div className="sm:col-span-2">
         <ImageUpload
@@ -788,32 +1144,74 @@ function BasicTab({
         />
       </div>
       <div className="sm:col-span-2">
-        <Field label="Short Description" hasChanged={hasChanged("shortDescription")}>
-          <textarea className={getTextareaClass("shortDescription")} value={form.shortDescription} onChange={(e) => setField("shortDescription", e.target.value)} />
+        <Field
+          label="Short Description"
+          hasChanged={hasChanged("shortDescription")}
+        >
+          <textarea
+            className={getTextareaClass("shortDescription")}
+            value={form.shortDescription}
+            onChange={(e) => setField("shortDescription", e.target.value)}
+          />
         </Field>
       </div>
       <div className="sm:col-span-2">
-        <Field label="Full Description" hasChanged={hasChanged("fullDescription")}>
-          <textarea className={getTextareaClass("fullDescription")} style={{ minHeight: 120 }} value={form.fullDescription} onChange={(e) => setField("fullDescription", e.target.value)} />
+        <Field
+          label="Full Description"
+          hasChanged={hasChanged("fullDescription")}
+        >
+          <textarea
+            className={getTextareaClass("fullDescription")}
+            style={{ minHeight: 120 }}
+            value={form.fullDescription}
+            onChange={(e) => setField("fullDescription", e.target.value)}
+          />
         </Field>
+      </div>
+      <div className="sm:col-span-2">
+        <InlineLinkManager
+          links={form.inlineLinks || []}
+          onChange={(links) => setField("inlineLinks", links)}
+          label="Inline Links"
+          description="Text within this content that will become clickable."
+          hasChanged={hasChanged("inlineLinks")}
+        />
       </div>
       <div className="sm:col-span-2 flex flex-wrap gap-[20px] pt-[4px]">
         <label className="flex cursor-pointer items-center gap-[8px]">
-          <input type="checkbox" checked={form.isActive} onChange={(e) => setField("isActive", e.target.checked)} className="h-[15px] w-[15px] accent-[#EA580C]" />
+          <input
+            type="checkbox"
+            checked={form.isActive}
+            onChange={(e) => setField("isActive", e.target.checked)}
+            className="h-[15px] w-[15px] accent-[#EA580C]"
+          />
           <span className="text-[13px] text-[#333333]">Active</span>
           {hasChanged("isActive") && (
             <CircleDot className="h-[10px] w-[10px] fill-[#EA580C] text-[#EA580C]" />
           )}
         </label>
         <label className="flex cursor-pointer items-center gap-[8px]">
-          <input type="checkbox" checked={form.isFeatured} onChange={(e) => setField("isFeatured", e.target.checked)} className="h-[15px] w-[15px] accent-[#EA580C]" />
+          <input
+            type="checkbox"
+            checked={form.isFeatured}
+            onChange={(e) => setField("isFeatured", e.target.checked)}
+            className="h-[15px] w-[15px] accent-[#EA580C]"
+          />
           <span className="text-[13px] text-[#333333]">Featured</span>
           {hasChanged("isFeatured") && (
             <CircleDot className="h-[10px] w-[10px] fill-[#EA580C] text-[#EA580C]" />
           )}
         </label>
-        <Field label="Parent Service ID" hasChanged={hasChanged("parentService")}>
-          <input className={getInputClass("parentService")} value={form.parentService || ''} onChange={(e) => setField("parentService", e.target.value || null)} placeholder="null" />
+        <Field
+          label="Parent Service ID"
+          hasChanged={hasChanged("parentService")}
+        >
+          <input
+            className={getInputClass("parentService")}
+            value={form.parentService || ""}
+            onChange={(e) => setField("parentService", e.target.value || null)}
+            placeholder="null"
+          />
         </Field>
       </div>
     </div>
@@ -833,19 +1231,29 @@ function HeroTab({
   setUploading: (loading: boolean) => void;
   hasChanged: (path: string) => boolean;
 }) {
-  const getInputClass = (path: string) => hasChanged(path) ? inputChangedCls : inputCls;
-  const getTextareaClass = (path: string) => hasChanged(path) ? textareaChangedCls : textareaCls;
+  const getInputClass = (path: string) =>
+    hasChanged(path) ? inputChangedCls : inputCls;
+  const getTextareaClass = (path: string) =>
+    hasChanged(path) ? textareaChangedCls : textareaCls;
 
   return (
     <div className="grid gap-[16px] sm:grid-cols-2">
       <div className="sm:col-span-2">
         <Field label="Hero Title" hasChanged={hasChanged("heroTitle")}>
-          <input className={getInputClass("heroTitle")} value={form.heroTitle} onChange={(e) => setField("heroTitle", e.target.value)} />
+          <input
+            className={getInputClass("heroTitle")}
+            value={form.heroTitle}
+            onChange={(e) => setField("heroTitle", e.target.value)}
+          />
         </Field>
       </div>
       <div className="sm:col-span-2">
         <Field label="Hero Subtitle" hasChanged={hasChanged("heroSubtitle")}>
-          <textarea className={getTextareaClass("heroSubtitle")} value={form.heroSubtitle} onChange={(e) => setField("heroSubtitle", e.target.value)} />
+          <textarea
+            className={getTextareaClass("heroSubtitle")}
+            value={form.heroSubtitle}
+            onChange={(e) => setField("heroSubtitle", e.target.value)}
+          />
         </Field>
       </div>
       <div className="sm:col-span-2">
@@ -856,6 +1264,15 @@ function HeroTab({
           uploading={uploading}
           setUploading={setUploading}
           hasChanged={hasChanged("heroImage")}
+        />
+      </div>
+      <div className="sm:col-span-2">
+        <InlineLinkManager
+          links={form.heroInlineLinks || []}
+          onChange={(links) => setField("heroInlineLinks", links)}
+          label="Hero Inline Links"
+          description="Text within hero content that will become clickable."
+          hasChanged={hasChanged("heroInlineLinks")}
         />
       </div>
     </div>
@@ -872,33 +1289,99 @@ function StatsTab({
   hasChanged: (path: string) => boolean;
 }) {
   const s = form.stats ?? {};
-  const getInputClass = (path: string) => hasChanged(path) ? inputChangedCls : inputCls;
+  const getInputClass = (path: string) =>
+    hasChanged(path) ? inputChangedCls : inputCls;
 
   return (
     <div className="grid gap-[16px] sm:grid-cols-2">
-      <Field label="Years of Excellence" hasChanged={hasChanged("stats.yearsOfExcellence")}>
-        <input type="number" className={getInputClass("stats.yearsOfExcellence")} value={s.yearsOfExcellence} onChange={(e) => setField("stats.yearsOfExcellence", Number(e.target.value))} />
+      <Field
+        label="Years of Excellence"
+        hasChanged={hasChanged("stats.yearsOfExcellence")}
+      >
+        <input
+          type="number"
+          className={getInputClass("stats.yearsOfExcellence")}
+          value={s.yearsOfExcellence}
+          onChange={(e) =>
+            setField("stats.yearsOfExcellence", Number(e.target.value))
+          }
+        />
       </Field>
       <Field label="Years Label" hasChanged={hasChanged("stats.yearsLabel")}>
-        <input className={getInputClass("stats.yearsLabel")} value={s.yearsLabel} onChange={(e) => setField("stats.yearsLabel", e.target.value)} />
+        <input
+          className={getInputClass("stats.yearsLabel")}
+          value={s.yearsLabel}
+          onChange={(e) => setField("stats.yearsLabel", e.target.value)}
+        />
       </Field>
-      <Field label="Skilled Professionals" hasChanged={hasChanged("stats.skilledProfessionals")}>
-        <input type="number" className={getInputClass("stats.skilledProfessionals")} value={s.skilledProfessionals} onChange={(e) => setField("stats.skilledProfessionals", Number(e.target.value))} />
+      <Field
+        label="Skilled Professionals"
+        hasChanged={hasChanged("stats.skilledProfessionals")}
+      >
+        <input
+          type="number"
+          className={getInputClass("stats.skilledProfessionals")}
+          value={s.skilledProfessionals}
+          onChange={(e) =>
+            setField("stats.skilledProfessionals", Number(e.target.value))
+          }
+        />
       </Field>
-      <Field label="Professionals Label" hasChanged={hasChanged("stats.professionalsLabel")}>
-        <input className={getInputClass("stats.professionalsLabel")} value={s.professionalsLabel} onChange={(e) => setField("stats.professionalsLabel", e.target.value)} />
+      <Field
+        label="Professionals Label"
+        hasChanged={hasChanged("stats.professionalsLabel")}
+      >
+        <input
+          className={getInputClass("stats.professionalsLabel")}
+          value={s.professionalsLabel}
+          onChange={(e) => setField("stats.professionalsLabel", e.target.value)}
+        />
       </Field>
-      <Field label="Successful Projects" hasChanged={hasChanged("stats.successfulProjects")}>
-        <input type="number" className={getInputClass("stats.successfulProjects")} value={s.successfulProjects} onChange={(e) => setField("stats.successfulProjects", Number(e.target.value))} />
+      <Field
+        label="Successful Projects"
+        hasChanged={hasChanged("stats.successfulProjects")}
+      >
+        <input
+          type="number"
+          className={getInputClass("stats.successfulProjects")}
+          value={s.successfulProjects}
+          onChange={(e) =>
+            setField("stats.successfulProjects", Number(e.target.value))
+          }
+        />
       </Field>
-      <Field label="Projects Label" hasChanged={hasChanged("stats.projectsLabel")}>
-        <input className={getInputClass("stats.projectsLabel")} value={s.projectsLabel} onChange={(e) => setField("stats.projectsLabel", e.target.value)} />
+      <Field
+        label="Projects Label"
+        hasChanged={hasChanged("stats.projectsLabel")}
+      >
+        <input
+          className={getInputClass("stats.projectsLabel")}
+          value={s.projectsLabel}
+          onChange={(e) => setField("stats.projectsLabel", e.target.value)}
+        />
       </Field>
-      <Field label="Happy Clients" hasChanged={hasChanged("stats.happyClients")}>
-        <input type="number" className={getInputClass("stats.happyClients")} value={s.happyClients} onChange={(e) => setField("stats.happyClients", Number(e.target.value))} />
+      <Field
+        label="Happy Clients"
+        hasChanged={hasChanged("stats.happyClients")}
+      >
+        <input
+          type="number"
+          className={getInputClass("stats.happyClients")}
+          value={s.happyClients}
+          onChange={(e) =>
+            setField("stats.happyClients", Number(e.target.value))
+          }
+        />
       </Field>
-      <Field label="Clients Label" hasChanged={hasChanged("stats.clientsLabel")}>
-        <input className={getInputClass("stats.clientsLabel")} value={s.clientsLabel} onChange={(e) => setField("stats.clientsLabel", e.target.value)} />
+      <Field
+        label="Clients Label"
+        hasChanged={hasChanged("stats.clientsLabel")}
+      >
+        <input
+          className={getInputClass("stats.clientsLabel")}
+          value={s.clientsLabel}
+          onChange={(e) => setField("stats.clientsLabel", e.target.value)}
+        />
       </Field>
     </div>
   );
@@ -920,22 +1403,68 @@ function WhoWeServeTab({
 }) {
   const [uploadingIdx, setUploadingIdx] = useState<number | null>(null);
 
-  const section = form.whoWeServe ?? { title: "", description: "", items: [] };
+  const section = form.whoWeServe ?? {
+    title: "",
+    description: "",
+    items: [],
+    inlineLinks: [],
+  };
   const items = Array.isArray(section.items) ? section.items : [];
 
   const updateItem = (idx: number, key: keyof WhoWeServeItem, val: string) => {
     setForm((prev) => {
       const clone = deepClone(prev);
       if (!clone.whoWeServe) {
-        clone.whoWeServe = { title: "", description: "", items: [] };
+        clone.whoWeServe = {
+          title: "",
+          description: "",
+          items: [],
+          inlineLinks: [],
+        };
       }
       if (!Array.isArray(clone.whoWeServe.items)) {
         clone.whoWeServe.items = [];
       }
       if (!clone.whoWeServe.items[idx]) {
-        clone.whoWeServe.items[idx] = { title: "", description: "", image: "", icon: "", link: null };
+        clone.whoWeServe.items[idx] = {
+          title: "",
+          description: "",
+          image: "",
+          icon: "",
+          link: null,
+          inlineLinks: [],
+        };
       }
       (clone.whoWeServe.items[idx] as any)[key] = val;
+      return clone;
+    });
+  };
+
+  const updateItemInlineLinks = (idx: number, links: InlineLink[]) => {
+    setForm((prev) => {
+      const clone = deepClone(prev);
+      if (!clone.whoWeServe) {
+        clone.whoWeServe = {
+          title: "",
+          description: "",
+          items: [],
+          inlineLinks: [],
+        };
+      }
+      if (!Array.isArray(clone.whoWeServe.items)) {
+        clone.whoWeServe.items = [];
+      }
+      if (!clone.whoWeServe.items[idx]) {
+        clone.whoWeServe.items[idx] = {
+          title: "",
+          description: "",
+          image: "",
+          icon: "",
+          link: null,
+          inlineLinks: [],
+        };
+      }
+      clone.whoWeServe.items[idx].inlineLinks = links;
       return clone;
     });
   };
@@ -944,7 +1473,12 @@ function WhoWeServeTab({
     setForm((prev) => {
       const clone = deepClone(prev);
       if (!clone.whoWeServe) {
-        clone.whoWeServe = { title: "", description: "", items: [] };
+        clone.whoWeServe = {
+          title: "",
+          description: "",
+          items: [],
+          inlineLinks: [],
+        };
       }
       if (!Array.isArray(clone.whoWeServe.items)) {
         clone.whoWeServe.items = [];
@@ -955,6 +1489,7 @@ function WhoWeServeTab({
         image: "",
         icon: "",
         link: null,
+        inlineLinks: [],
       });
       return clone;
     });
@@ -970,8 +1505,10 @@ function WhoWeServeTab({
     });
   };
 
-  const getInputClass = (path: string) => hasChanged(path) ? inputChangedCls : inputCls;
-  const getTextareaClass = (path: string) => hasChanged(path) ? textareaChangedCls : textareaCls;
+  const getInputClass = (path: string) =>
+    hasChanged(path) ? inputChangedCls : inputCls;
+  const getTextareaClass = (path: string) =>
+    hasChanged(path) ? textareaChangedCls : textareaCls;
 
   return (
     <div className="flex flex-col gap-[16px]">
@@ -982,7 +1519,10 @@ function WhoWeServeTab({
           onChange={(e) => setField("whoWeServe.title", e.target.value)}
         />
       </Field>
-      <Field label="Section Description" hasChanged={hasChanged("whoWeServe.description")}>
+      <Field
+        label="Section Description"
+        hasChanged={hasChanged("whoWeServe.description")}
+      >
         <textarea
           className={getTextareaClass("whoWeServe.description")}
           value={section.description}
@@ -990,51 +1530,92 @@ function WhoWeServeTab({
         />
       </Field>
 
-      <p className="text-[11px] font-semibold uppercase tracking-widest text-[#888888]">Items ({items.length})</p>
+      <InlineLinkManager
+        links={section.inlineLinks || []}
+        onChange={(links) => setField("whoWeServe.inlineLinks", links)}
+        label="Section Inline Links"
+        description="Text within the section title/description that will become clickable."
+        hasChanged={hasChanged("whoWeServe.inlineLinks")}
+      />
+
+      <p className="text-[11px] font-semibold uppercase tracking-widest text-[#888888]">
+        Items ({items.length})
+      </p>
       {items.map((item, idx) => (
-        <ItemCard key={idx} title={item.title || `Item ${idx + 1}`} onRemove={() => removeItem(idx)}>
+        <ItemCard
+          key={idx}
+          title={item.title || `Item ${idx + 1}`}
+          onRemove={() => removeItem(idx)}
+        >
           <div className="grid gap-[12px] sm:grid-cols-2">
-            <Field label="Title" hasChanged={hasChanged(`whoWeServe.items.${idx}.title`)}>
+            <Field
+              label="Title"
+              hasChanged={hasChanged(`whoWeServe.items.${idx}.title`)}
+            >
               <input
                 className={getInputClass(`whoWeServe.items.${idx}.title`)}
-                value={item.title || ''}
+                value={item.title || ""}
                 onChange={(e) => updateItem(idx, "title", e.target.value)}
               />
             </Field>
-            <Field label="Icon" hasChanged={hasChanged(`whoWeServe.items.${idx}.icon`)}>
+            <Field
+              label="Icon"
+              hasChanged={hasChanged(`whoWeServe.items.${idx}.icon`)}
+            >
               <input
                 className={getInputClass(`whoWeServe.items.${idx}.icon`)}
-                value={item.icon || ''}
+                value={item.icon || ""}
                 onChange={(e) => updateItem(idx, "icon", e.target.value)}
                 placeholder="fa-solid fa-building"
               />
             </Field>
             <div className="sm:col-span-2">
               <ImageUpload
-                value={item.image || ''}
+                value={item.image || ""}
                 onChange={(url) => updateItem(idx, "image", url)}
                 label="Image"
                 uploading={uploadingIdx === idx}
-                setUploading={(loading) => setUploadingIdx(loading ? idx : null)}
+                setUploading={(loading) =>
+                  setUploadingIdx(loading ? idx : null)
+                }
                 hasChanged={hasChanged(`whoWeServe.items.${idx}.image`)}
               />
             </div>
-            <Field label="Link" hasChanged={hasChanged(`whoWeServe.items.${idx}.link`)}>
+            <Field
+              label="Link"
+              hasChanged={hasChanged(`whoWeServe.items.${idx}.link`)}
+            >
               <input
                 className={getInputClass(`whoWeServe.items.${idx}.link`)}
-                value={item.link || ''}
+                value={item.link || ""}
                 onChange={(e) => updateItem(idx, "link", e.target.value)}
                 placeholder="/services/..."
               />
             </Field>
             <div className="sm:col-span-2">
-              <Field label="Description" hasChanged={hasChanged(`whoWeServe.items.${idx}.description`)}>
+              <Field
+                label="Description"
+                hasChanged={hasChanged(`whoWeServe.items.${idx}.description`)}
+              >
                 <textarea
-                  className={getTextareaClass(`whoWeServe.items.${idx}.description`)}
-                  value={item.description || ''}
-                  onChange={(e) => updateItem(idx, "description", e.target.value)}
+                  className={getTextareaClass(
+                    `whoWeServe.items.${idx}.description`,
+                  )}
+                  value={item.description || ""}
+                  onChange={(e) =>
+                    updateItem(idx, "description", e.target.value)
+                  }
                 />
               </Field>
+            </div>
+            <div className="sm:col-span-2">
+              <InlineLinkManager
+                links={item.inlineLinks || []}
+                onChange={(links) => updateItemInlineLinks(idx, links)}
+                label={`Item Inline Links`}
+                description="Text within this item's description that will become clickable."
+                hasChanged={hasChanged(`whoWeServe.items.${idx}.inlineLinks`)}
+              />
             </div>
           </div>
         </ItemCard>
@@ -1058,22 +1639,68 @@ function WhatIsIncludedTab({
   setField: (path: string, value: unknown) => void;
   hasChanged: (path: string) => boolean;
 }) {
-  const section = form.whatIsIncluded ?? { title: "", description: "", items: [] };
+  const section = form.whatIsIncluded ?? {
+    title: "",
+    description: "",
+    items: [],
+    inlineLinks: [],
+  };
   const items = Array.isArray(section.items) ? section.items : [];
 
-  const updateItem = (idx: number, key: keyof WhatIsIncludedItem, val: string) => {
+  const updateItem = (
+    idx: number,
+    key: keyof WhatIsIncludedItem,
+    val: string,
+  ) => {
     setForm((prev) => {
       const clone = deepClone(prev);
       if (!clone.whatIsIncluded) {
-        clone.whatIsIncluded = { title: "", description: "", items: [] };
+        clone.whatIsIncluded = {
+          title: "",
+          description: "",
+          items: [],
+          inlineLinks: [],
+        };
       }
       if (!Array.isArray(clone.whatIsIncluded.items)) {
         clone.whatIsIncluded.items = [];
       }
       if (!clone.whatIsIncluded.items[idx]) {
-        clone.whatIsIncluded.items[idx] = { title: "", description: "", icon: "" };
+        clone.whatIsIncluded.items[idx] = {
+          title: "",
+          description: "",
+          icon: "",
+          inlineLinks: [],
+        };
       }
       (clone.whatIsIncluded.items[idx] as any)[key] = val;
+      return clone;
+    });
+  };
+
+  const updateItemInlineLinks = (idx: number, links: InlineLink[]) => {
+    setForm((prev) => {
+      const clone = deepClone(prev);
+      if (!clone.whatIsIncluded) {
+        clone.whatIsIncluded = {
+          title: "",
+          description: "",
+          items: [],
+          inlineLinks: [],
+        };
+      }
+      if (!Array.isArray(clone.whatIsIncluded.items)) {
+        clone.whatIsIncluded.items = [];
+      }
+      if (!clone.whatIsIncluded.items[idx]) {
+        clone.whatIsIncluded.items[idx] = {
+          title: "",
+          description: "",
+          icon: "",
+          inlineLinks: [],
+        };
+      }
+      clone.whatIsIncluded.items[idx].inlineLinks = links;
       return clone;
     });
   };
@@ -1082,7 +1709,12 @@ function WhatIsIncludedTab({
     setForm((prev) => {
       const clone = deepClone(prev);
       if (!clone.whatIsIncluded) {
-        clone.whatIsIncluded = { title: "", description: "", items: [] };
+        clone.whatIsIncluded = {
+          title: "",
+          description: "",
+          items: [],
+          inlineLinks: [],
+        };
       }
       if (!Array.isArray(clone.whatIsIncluded.items)) {
         clone.whatIsIncluded.items = [];
@@ -1091,6 +1723,7 @@ function WhatIsIncludedTab({
         title: "",
         description: "",
         icon: "",
+        inlineLinks: [],
       });
       return clone;
     });
@@ -1106,52 +1739,102 @@ function WhatIsIncludedTab({
     });
   };
 
-  const getInputClass = (path: string) => hasChanged(path) ? inputChangedCls : inputCls;
-  const getTextareaClass = (path: string) => hasChanged(path) ? textareaChangedCls : textareaCls;
+  const getInputClass = (path: string) =>
+    hasChanged(path) ? inputChangedCls : inputCls;
+  const getTextareaClass = (path: string) =>
+    hasChanged(path) ? textareaChangedCls : textareaCls;
 
   return (
     <div className="flex flex-col gap-[16px]">
-      <Field label="Section Title" hasChanged={hasChanged("whatIsIncluded.title")}>
+      <Field
+        label="Section Title"
+        hasChanged={hasChanged("whatIsIncluded.title")}
+      >
         <input
           className={getInputClass("whatIsIncluded.title")}
           value={section.title}
           onChange={(e) => setField("whatIsIncluded.title", e.target.value)}
         />
       </Field>
-      <Field label="Section Description" hasChanged={hasChanged("whatIsIncluded.description")}>
+      <Field
+        label="Section Description"
+        hasChanged={hasChanged("whatIsIncluded.description")}
+      >
         <textarea
           className={getTextareaClass("whatIsIncluded.description")}
           value={section.description}
-          onChange={(e) => setField("whatIsIncluded.description", e.target.value)}
+          onChange={(e) =>
+            setField("whatIsIncluded.description", e.target.value)
+          }
         />
       </Field>
 
-      <p className="text-[11px] font-semibold uppercase tracking-widest text-[#888888]">Items ({items.length})</p>
+      <InlineLinkManager
+        links={section.inlineLinks || []}
+        onChange={(links) => setField("whatIsIncluded.inlineLinks", links)}
+        label="Section Inline Links"
+        description="Text within the section title/description that will become clickable."
+        hasChanged={hasChanged("whatIsIncluded.inlineLinks")}
+      />
+
+      <p className="text-[11px] font-semibold uppercase tracking-widest text-[#888888]">
+        Items ({items.length})
+      </p>
       {items.map((item, idx) => (
-        <ItemCard key={idx} title={item.title || `Item ${idx + 1}`} onRemove={() => removeItem(idx)}>
+        <ItemCard
+          key={idx}
+          title={item.title || `Item ${idx + 1}`}
+          onRemove={() => removeItem(idx)}
+        >
           <div className="grid gap-[12px] sm:grid-cols-2">
-            <Field label="Title" hasChanged={hasChanged(`whatIsIncluded.items.${idx}.title`)}>
+            <Field
+              label="Title"
+              hasChanged={hasChanged(`whatIsIncluded.items.${idx}.title`)}
+            >
               <input
                 className={getInputClass(`whatIsIncluded.items.${idx}.title`)}
-                value={item.title || ''}
+                value={item.title || ""}
                 onChange={(e) => updateItem(idx, "title", e.target.value)}
               />
             </Field>
-            <Field label="Icon" hasChanged={hasChanged(`whatIsIncluded.items.${idx}.icon`)}>
+            <Field
+              label="Icon"
+              hasChanged={hasChanged(`whatIsIncluded.items.${idx}.icon`)}
+            >
               <input
                 className={getInputClass(`whatIsIncluded.items.${idx}.icon`)}
-                value={item.icon || ''}
+                value={item.icon || ""}
                 onChange={(e) => updateItem(idx, "icon", e.target.value)}
               />
             </Field>
             <div className="sm:col-span-2">
-              <Field label="Description" hasChanged={hasChanged(`whatIsIncluded.items.${idx}.description`)}>
+              <Field
+                label="Description"
+                hasChanged={hasChanged(
+                  `whatIsIncluded.items.${idx}.description`,
+                )}
+              >
                 <textarea
-                  className={getTextareaClass(`whatIsIncluded.items.${idx}.description`)}
-                  value={item.description || ''}
-                  onChange={(e) => updateItem(idx, "description", e.target.value)}
+                  className={getTextareaClass(
+                    `whatIsIncluded.items.${idx}.description`,
+                  )}
+                  value={item.description || ""}
+                  onChange={(e) =>
+                    updateItem(idx, "description", e.target.value)
+                  }
                 />
               </Field>
+            </div>
+            <div className="sm:col-span-2">
+              <InlineLinkManager
+                links={item.inlineLinks || []}
+                onChange={(links) => updateItemInlineLinks(idx, links)}
+                label="Item Inline Links"
+                description="Text within this item's description that will become clickable."
+                hasChanged={hasChanged(
+                  `whatIsIncluded.items.${idx}.inlineLinks`,
+                )}
+              />
             </div>
           </div>
         </ItemCard>
@@ -1174,36 +1857,70 @@ function CtaTab({
   setUploading: (loading: boolean) => void;
   hasChanged: (path: string) => boolean;
 }) {
-  const cta = form.cta ?? { title: "", subtitle: "", buttonText: "", whatsappText: "", image: "" };
-  const getInputClass = (path: string) => hasChanged(path) ? inputChangedCls : inputCls;
-  const getTextareaClass = (path: string) => hasChanged(path) ? textareaChangedCls : textareaCls;
+  const cta = form.cta ?? {
+    title: "",
+    subtitle: "",
+    buttonText: "",
+    whatsappText: "",
+    image: "",
+    inlineLinks: [],
+  };
+  const getInputClass = (path: string) =>
+    hasChanged(path) ? inputChangedCls : inputCls;
+  const getTextareaClass = (path: string) =>
+    hasChanged(path) ? textareaChangedCls : textareaCls;
 
   return (
     <div className="grid gap-[16px] sm:grid-cols-2">
       <div className="sm:col-span-2">
         <Field label="Title" hasChanged={hasChanged("cta.title")}>
-          <input className={getInputClass("cta.title")} value={cta.title} onChange={(e) => setField("cta.title", e.target.value)} />
+          <input
+            className={getInputClass("cta.title")}
+            value={cta.title}
+            onChange={(e) => setField("cta.title", e.target.value)}
+          />
         </Field>
       </div>
       <div className="sm:col-span-2">
         <Field label="Subtitle" hasChanged={hasChanged("cta.subtitle")}>
-          <textarea className={getTextareaClass("cta.subtitle")} value={cta.subtitle} onChange={(e) => setField("cta.subtitle", e.target.value)} />
+          <textarea
+            className={getTextareaClass("cta.subtitle")}
+            value={cta.subtitle}
+            onChange={(e) => setField("cta.subtitle", e.target.value)}
+          />
         </Field>
       </div>
       <Field label="Button Text" hasChanged={hasChanged("cta.buttonText")}>
-        <input className={getInputClass("cta.buttonText")} value={cta.buttonText} onChange={(e) => setField("cta.buttonText", e.target.value)} />
+        <input
+          className={getInputClass("cta.buttonText")}
+          value={cta.buttonText}
+          onChange={(e) => setField("cta.buttonText", e.target.value)}
+        />
       </Field>
       <Field label="WhatsApp Text" hasChanged={hasChanged("cta.whatsappText")}>
-        <input className={getInputClass("cta.whatsappText")} value={cta.whatsappText} onChange={(e) => setField("cta.whatsappText", e.target.value)} />
+        <input
+          className={getInputClass("cta.whatsappText")}
+          value={cta.whatsappText}
+          onChange={(e) => setField("cta.whatsappText", e.target.value)}
+        />
       </Field>
       <div className="sm:col-span-2">
         <ImageUpload
-          value={cta.image || ''}
+          value={cta.image || ""}
           onChange={(url) => setField("cta.image", url)}
           label="CTA Image"
           uploading={uploading}
           setUploading={setUploading}
           hasChanged={hasChanged("cta.image")}
+        />
+      </div>
+      <div className="sm:col-span-2">
+        <InlineLinkManager
+          links={cta.inlineLinks || []}
+          onChange={(links) => setField("cta.inlineLinks", links)}
+          label="CTA Inline Links"
+          description="Text within CTA that will become clickable."
+          hasChanged={hasChanged("cta.inlineLinks")}
         />
       </div>
     </div>
@@ -1213,54 +1930,124 @@ function CtaTab({
 function AboutTab({
   form,
   setField,
-  uploading,
-  setUploading,
+  uploadingOne,
+  setUploadingOne,
+  uploadingTwo,
+  setUploadingTwo,
   hasChanged,
 }: {
   form: Service;
   setField: (path: string, value: unknown) => void;
-  uploading: boolean;
-  setUploading: (loading: boolean) => void;
+  uploadingOne: boolean;
+  setUploadingOne: (loading: boolean) => void;
+  uploadingTwo: boolean;
+  setUploadingTwo: (loading: boolean) => void;
   hasChanged: (path: string) => boolean;
 }) {
-  const about = form.about ?? { title: "", description: "", image: "", foundedYear: "", outlets: 0, teamSize: 0, factoryInfo: "" };
-  const getInputClass = (path: string) => hasChanged(path) ? inputChangedCls : inputCls;
-  const getTextareaClass = (path: string) => hasChanged(path) ? textareaChangedCls : textareaCls;
+  const about = form.about ?? {
+    title: "",
+    description: "",
+    imageOne: "",
+    imageTwo: "",
+    foundedYear: "",
+    outlets: 0,
+    teamSize: 0,
+    factoryInfo: "",
+    inlineLinks: [],
+  };
+  const getInputClass = (path: string) =>
+    hasChanged(path) ? inputChangedCls : inputCls;
+  const getTextareaClass = (path: string) =>
+    hasChanged(path) ? textareaChangedCls : textareaCls;
 
   return (
     <div className="grid gap-[16px] sm:grid-cols-2">
       <div className="sm:col-span-2">
         <Field label="Title" hasChanged={hasChanged("about.title")}>
-          <input className={getInputClass("about.title")} value={about.title} onChange={(e) => setField("about.title", e.target.value)} />
+          <input
+            className={getInputClass("about.title")}
+            value={about.title}
+            onChange={(e) => setField("about.title", e.target.value)}
+          />
         </Field>
       </div>
       <div className="sm:col-span-2">
         <Field label="Description" hasChanged={hasChanged("about.description")}>
-          <textarea className={getTextareaClass("about.description")} style={{ minHeight: 100 }} value={about.description} onChange={(e) => setField("about.description", e.target.value)} />
+          <textarea
+            className={getTextareaClass("about.description")}
+            style={{ minHeight: 100 }}
+            value={about.description}
+            onChange={(e) => setField("about.description", e.target.value)}
+          />
         </Field>
       </div>
-      <div className="sm:col-span-2">
+
+      {/* Image One Upload */}
+      <div className="sm:col-span-1">
         <ImageUpload
-          value={about.image}
-          onChange={(url) => setField("about.image", url)}
-          label="About Image"
-          uploading={uploading}
-          setUploading={setUploading}
-          hasChanged={hasChanged("about.image")}
+          value={about.imageOne || ""}
+          onChange={(url) => setField("about.imageOne", url)}
+          label="Image One"
+          uploading={uploadingOne}
+          setUploading={setUploadingOne}
+          hasChanged={hasChanged("about.imageOne")}
+        />
+      </div>
+
+      {/* Image Two Upload */}
+      <div className="sm:col-span-1">
+        <ImageUpload
+          value={about.imageTwo || ""}
+          onChange={(url) => setField("about.imageTwo", url)}
+          label="Image Two"
+          uploading={uploadingTwo}
+          setUploading={setUploadingTwo}
+          hasChanged={hasChanged("about.imageTwo")}
+        />
+      </div>
+
+      <div className="sm:col-span-2">
+        <InlineLinkManager
+          links={about.inlineLinks || []}
+          onChange={(links) => setField("about.inlineLinks", links)}
+          label="About Inline Links"
+          description="Text within About section that will become clickable."
+          hasChanged={hasChanged("about.inlineLinks")}
         />
       </div>
       <Field label="Founded Year" hasChanged={hasChanged("about.foundedYear")}>
-        <input className={getInputClass("about.foundedYear")} value={about.foundedYear} onChange={(e) => setField("about.foundedYear", e.target.value)} />
+        <input
+          className={getInputClass("about.foundedYear")}
+          value={about.foundedYear}
+          onChange={(e) => setField("about.foundedYear", e.target.value)}
+        />
       </Field>
       <Field label="Outlets" hasChanged={hasChanged("about.outlets")}>
-        <input type="number" className={getInputClass("about.outlets")} value={about.outlets} onChange={(e) => setField("about.outlets", Number(e.target.value))} />
+        <input
+          type="number"
+          className={getInputClass("about.outlets")}
+          value={about.outlets}
+          onChange={(e) => setField("about.outlets", Number(e.target.value))}
+        />
       </Field>
       <Field label="Team Size" hasChanged={hasChanged("about.teamSize")}>
-        <input type="number" className={getInputClass("about.teamSize")} value={about.teamSize} onChange={(e) => setField("about.teamSize", Number(e.target.value))} />
+        <input
+          type="number"
+          className={getInputClass("about.teamSize")}
+          value={about.teamSize}
+          onChange={(e) => setField("about.teamSize", Number(e.target.value))}
+        />
       </Field>
       <div className="sm:col-span-2">
-        <Field label="Factory Info" hasChanged={hasChanged("about.factoryInfo")}>
-          <textarea className={getTextareaClass("about.factoryInfo")} value={about.factoryInfo} onChange={(e) => setField("about.factoryInfo", e.target.value)} />
+        <Field
+          label="Factory Info"
+          hasChanged={hasChanged("about.factoryInfo")}
+        >
+          <textarea
+            className={getTextareaClass("about.factoryInfo")}
+            value={about.factoryInfo}
+            onChange={(e) => setField("about.factoryInfo", e.target.value)}
+          />
         </Field>
       </div>
     </div>
@@ -1272,26 +2059,79 @@ function ProcessTab({
   setForm,
   setField,
   hasChanged,
+  uploading,
+  setUploading,
 }: {
   form: Service;
   setForm: React.Dispatch<React.SetStateAction<Service>>;
   setField: (path: string, value: unknown) => void;
   hasChanged: (path: string) => boolean;
+  uploading: boolean;
+  setUploading: (loading: boolean) => void;
 }) {
-  const section = form.process ?? { title: "", description: "", image: "", alt: "", steps: [] };
-  const [uploadingProcessImage, setUploadingProcessImage] = useState(false);
-  const getInputClass = (path: string) => hasChanged(path) ? inputChangedCls : inputCls;
-  const getTextareaClass = (path: string) => hasChanged(path) ? textareaChangedCls : textareaCls;
+  const section = form.process ?? {
+    title: "",
+    description: "",
+    image: "",
+    alt: "",
+    steps: [],
+    inlineLinks: [],
+  };
+  const getInputClass = (path: string) =>
+    hasChanged(path) ? inputChangedCls : inputCls;
+  const getTextareaClass = (path: string) =>
+    hasChanged(path) ? textareaChangedCls : textareaCls;
 
   const updateStep = (idx: number, key: keyof ProcessStep, val: string) => {
     setForm((prev) => {
       const clone = deepClone(prev);
-      if (!clone.process) clone.process = { title: "", description: "", image: "", alt: "", steps: [] };
+      if (!clone.process)
+        clone.process = {
+          title: "",
+          description: "",
+          image: "",
+          alt: "",
+          steps: [],
+          inlineLinks: [],
+        };
       if (!clone.process.steps) clone.process.steps = [];
       if (!clone.process.steps[idx]) {
-        clone.process.steps[idx] = { step: "", title: "", description: "", icon: "" };
+        clone.process.steps[idx] = {
+          step: "",
+          title: "",
+          description: "",
+          icon: "",
+          inlineLinks: [],
+        };
       }
       (clone.process.steps[idx] as any)[key] = val;
+      return clone;
+    });
+  };
+
+  const updateStepInlineLinks = (idx: number, links: InlineLink[]) => {
+    setForm((prev) => {
+      const clone = deepClone(prev);
+      if (!clone.process)
+        clone.process = {
+          title: "",
+          description: "",
+          image: "",
+          alt: "",
+          steps: [],
+          inlineLinks: [],
+        };
+      if (!clone.process.steps) clone.process.steps = [];
+      if (!clone.process.steps[idx]) {
+        clone.process.steps[idx] = {
+          step: "",
+          title: "",
+          description: "",
+          icon: "",
+          inlineLinks: [],
+        };
+      }
+      clone.process.steps[idx].inlineLinks = links;
       return clone;
     });
   };
@@ -1299,10 +2139,24 @@ function ProcessTab({
   const addStep = () => {
     setForm((prev) => {
       const clone = deepClone(prev);
-      if (!clone.process) clone.process = { title: "", description: "", image: "", alt: "", steps: [] };
+      if (!clone.process)
+        clone.process = {
+          title: "",
+          description: "",
+          image: "",
+          alt: "",
+          steps: [],
+          inlineLinks: [],
+        };
       if (!clone.process.steps) clone.process.steps = [];
       const n = clone.process.steps.length + 1;
-      clone.process.steps.push({ step: String(n).padStart(2, "0"), title: "", description: "", icon: "" });
+      clone.process.steps.push({
+        step: String(n).padStart(2, "0"),
+        title: "",
+        description: "",
+        icon: "",
+        inlineLinks: [],
+      });
       return clone;
     });
   };
@@ -1320,50 +2174,61 @@ function ProcessTab({
   return (
     <div className="flex flex-col gap-[16px]">
       <Field label="Section Title" hasChanged={hasChanged("process.title")}>
-        <input 
-          className={getInputClass("process.title")} 
-          value={section.title || ''} 
-          onChange={(e) => setField("process.title", e.target.value)} 
+        <input
+          className={getInputClass("process.title")}
+          value={section.title || ""}
+          onChange={(e) => setField("process.title", e.target.value)}
           placeholder="e.g., Our Joinery Process"
         />
       </Field>
-      
-      <Field label="Section Description" hasChanged={hasChanged("process.description")}>
-        <textarea 
-          className={getTextareaClass("process.description")} 
-          value={section.description || ''} 
-          onChange={(e) => setField("process.description", e.target.value)} 
+
+      <Field
+        label="Section Description"
+        hasChanged={hasChanged("process.description")}
+      >
+        <textarea
+          className={getTextareaClass("process.description")}
+          value={section.description || ""}
+          onChange={(e) => setField("process.description", e.target.value)}
           placeholder="Describe the overall process..."
           rows={3}
         />
       </Field>
-      
-      {/* Process Banner Image Upload */}
+
       <div className="sm:col-span-2">
         <ImageUpload
-          value={section.image || ''}
+          value={section.image || ""}
           onChange={(url) => setField("process.image", url)}
           label="Process Banner Image"
-          uploading={uploadingProcessImage}
-          setUploading={setUploadingProcessImage}
+          uploading={uploading}
+          setUploading={setUploading}
           hasChanged={hasChanged("process.image")}
         />
         <p className="mt-1 text-[11px] text-[#888888]">
-          Upload a banner image for the process section (recommended size: 1200x600px)
+          Upload a banner image for the process section (recommended size:
+          1200x600px)
         </p>
       </div>
-      
+
       <Field label="Image Alt Text" hasChanged={hasChanged("process.alt")}>
-        <input 
-          className={getInputClass("process.alt")} 
-          value={section.alt || ''} 
-          onChange={(e) => setField("process.alt", e.target.value)} 
+        <input
+          className={getInputClass("process.alt")}
+          value={section.alt || ""}
+          onChange={(e) => setField("process.alt", e.target.value)}
           placeholder="e.g., Renovation process steps banner showing the workflow from consultation to handover"
         />
       </Field>
-      
+
+      <InlineLinkManager
+        links={section.inlineLinks || []}
+        onChange={(links) => setField("process.inlineLinks", links)}
+        label="Process Inline Links"
+        description="Text within process section that will become clickable."
+        hasChanged={hasChanged("process.inlineLinks")}
+      />
+
       <hr className="border-[#E4C9B4]" />
-      
+
       <div className="flex items-center justify-between">
         <p className="text-[11px] font-semibold uppercase tracking-widest text-[#888888]">
           Steps ({section.steps?.length || 0})
@@ -1372,51 +2237,80 @@ function ProcessTab({
           Drag to reorder (coming soon)
         </span>
       </div>
-      
+
       {(section.steps ?? []).map((step, idx) => (
-        <ItemCard key={idx} title={step.title || `Step ${step.step}`} onRemove={() => removeStep(idx)}>
+        <ItemCard
+          key={idx}
+          title={step.title || `Step ${step.step}`}
+          onRemove={() => removeStep(idx)}
+        >
           <div className="grid gap-[12px] sm:grid-cols-2">
-            <Field label="Step Number" hasChanged={hasChanged(`process.steps.${idx}.step`)}>
-              <input 
-                className={getInputClass(`process.steps.${idx}.step`)} 
-                value={step.step || ''} 
-                onChange={(e) => updateStep(idx, "step", e.target.value)} 
+            <Field
+              label="Step Number"
+              hasChanged={hasChanged(`process.steps.${idx}.step`)}
+            >
+              <input
+                className={getInputClass(`process.steps.${idx}.step`)}
+                value={step.step || ""}
+                onChange={(e) => updateStep(idx, "step", e.target.value)}
                 placeholder="01"
               />
             </Field>
-            <Field label="Icon Class" hasChanged={hasChanged(`process.steps.${idx}.icon`)}>
-              <input 
-                className={getInputClass(`process.steps.${idx}.icon`)} 
-                value={step.icon || ''} 
-                onChange={(e) => updateStep(idx, "icon", e.target.value)} 
+            <Field
+              label="Icon Class"
+              hasChanged={hasChanged(`process.steps.${idx}.icon`)}
+            >
+              <input
+                className={getInputClass(`process.steps.${idx}.icon`)}
+                value={step.icon || ""}
+                onChange={(e) => updateStep(idx, "icon", e.target.value)}
                 placeholder="fa-solid fa-users"
               />
             </Field>
             <div className="sm:col-span-2">
-              <Field label="Step Title" hasChanged={hasChanged(`process.steps.${idx}.title`)}>
-                <input 
-                  className={getInputClass(`process.steps.${idx}.title`)} 
-                  value={step.title || ''} 
-                  onChange={(e) => updateStep(idx, "title", e.target.value)} 
+              <Field
+                label="Step Title"
+                hasChanged={hasChanged(`process.steps.${idx}.title`)}
+              >
+                <input
+                  className={getInputClass(`process.steps.${idx}.title`)}
+                  value={step.title || ""}
+                  onChange={(e) => updateStep(idx, "title", e.target.value)}
                   placeholder="e.g., Project Consultation & Briefing"
                 />
               </Field>
             </div>
             <div className="sm:col-span-2">
-              <Field label="Step Description" hasChanged={hasChanged(`process.steps.${idx}.description`)}>
-                <textarea 
-                  className={getTextareaClass(`process.steps.${idx}.description`)} 
-                  value={step.description || ''} 
-                  onChange={(e) => updateStep(idx, "description", e.target.value)} 
+              <Field
+                label="Step Description"
+                hasChanged={hasChanged(`process.steps.${idx}.description`)}
+              >
+                <textarea
+                  className={getTextareaClass(
+                    `process.steps.${idx}.description`,
+                  )}
+                  value={step.description || ""}
+                  onChange={(e) =>
+                    updateStep(idx, "description", e.target.value)
+                  }
                   placeholder="Describe what happens in this step..."
                   rows={2}
                 />
               </Field>
             </div>
+            <div className="sm:col-span-2">
+              <InlineLinkManager
+                links={step.inlineLinks || []}
+                onChange={(links) => updateStepInlineLinks(idx, links)}
+                label="Step Inline Links"
+                description="Text within this step's description that will become clickable."
+                hasChanged={hasChanged(`process.steps.${idx}.inlineLinks`)}
+              />
+            </div>
           </div>
         </ItemCard>
       ))}
-      
+
       <AddButton onClick={addStep} label="Add Step" />
     </div>
   );
@@ -1433,20 +2327,68 @@ function MaterialsTab({
   setField: (path: string, value: unknown) => void;
   hasChanged: (path: string) => boolean;
 }) {
-  const section = form.materials ?? { title: "", description: "", items: [] };
+  const section = form.materials ?? {
+    title: "",
+    description: "",
+    items: [],
+    inlineLinks: [],
+  };
   const [uploadingIdx, setUploadingIdx] = useState<number | null>(null);
-  const getInputClass = (path: string) => hasChanged(path) ? inputChangedCls : inputCls;
-  const getTextareaClass = (path: string) => hasChanged(path) ? textareaChangedCls : textareaCls;
+  const getInputClass = (path: string) =>
+    hasChanged(path) ? inputChangedCls : inputCls;
+  const getTextareaClass = (path: string) =>
+    hasChanged(path) ? textareaChangedCls : textareaCls;
 
-  const updateItem = (idx: number, key: keyof MaterialItem, val: string) => {
+  const updateItem = (
+    idx: number,
+    key: Exclude<keyof MaterialItem, "inlineLinks">,
+    val: string,
+  ) => {
     setForm((prev) => {
       const clone = deepClone(prev);
-      if (!clone.materials) clone.materials = { title: "", description: "", items: [] };
+      if (!clone.materials)
+        clone.materials = {
+          title: "",
+          description: "",
+          items: [],
+          inlineLinks: [],
+        };
       if (!clone.materials.items) clone.materials.items = [];
       if (!clone.materials.items[idx]) {
-        clone.materials.items[idx] = { name: "", description: "", image: "", icon: "" };
+        clone.materials.items[idx] = {
+          name: "",
+          description: "",
+          image: "",
+          icon: "",
+          inlineLinks: [],
+        };
       }
       clone.materials.items[idx][key] = val;
+      return clone;
+    });
+  };
+
+  const updateItemInlineLinks = (idx: number, links: InlineLink[]) => {
+    setForm((prev) => {
+      const clone = deepClone(prev);
+      if (!clone.materials)
+        clone.materials = {
+          title: "",
+          description: "",
+          items: [],
+          inlineLinks: [],
+        };
+      if (!clone.materials.items) clone.materials.items = [];
+      if (!clone.materials.items[idx]) {
+        clone.materials.items[idx] = {
+          name: "",
+          description: "",
+          image: "",
+          icon: "",
+          inlineLinks: [],
+        };
+      }
+      clone.materials.items[idx].inlineLinks = links;
       return clone;
     });
   };
@@ -1454,9 +2396,21 @@ function MaterialsTab({
   const addItem = () => {
     setForm((prev) => {
       const clone = deepClone(prev);
-      if (!clone.materials) clone.materials = { title: "", description: "", items: [] };
+      if (!clone.materials)
+        clone.materials = {
+          title: "",
+          description: "",
+          items: [],
+          inlineLinks: [],
+        };
       if (!clone.materials.items) clone.materials.items = [];
-      clone.materials.items.push({ name: "", description: "", image: "", icon: "" });
+      clone.materials.items.push({
+        name: "",
+        description: "",
+        image: "",
+        icon: "",
+        inlineLinks: [],
+      });
       return clone;
     });
   };
@@ -1474,35 +2428,97 @@ function MaterialsTab({
   return (
     <div className="flex flex-col gap-[16px]">
       <Field label="Section Title" hasChanged={hasChanged("materials.title")}>
-        <input className={getInputClass("materials.title")} value={section.title} onChange={(e) => setField("materials.title", e.target.value)} />
+        <input
+          className={getInputClass("materials.title")}
+          value={section.title}
+          onChange={(e) => setField("materials.title", e.target.value)}
+        />
       </Field>
-      <Field label="Section Description" hasChanged={hasChanged("materials.description")}>
-        <textarea className={getTextareaClass("materials.description")} value={section.description} onChange={(e) => setField("materials.description", e.target.value)} />
+      <Field
+        label="Section Description"
+        hasChanged={hasChanged("materials.description")}
+      >
+        <textarea
+          className={getTextareaClass("materials.description")}
+          value={section.description}
+          onChange={(e) => setField("materials.description", e.target.value)}
+        />
       </Field>
-      <p className="text-[11px] font-semibold uppercase tracking-widest text-[#888888]">Items</p>
+
+      <InlineLinkManager
+        links={section.inlineLinks || []}
+        onChange={(links) => setField("materials.inlineLinks", links)}
+        label="Materials Inline Links"
+        description="Text within materials section that will become clickable."
+        hasChanged={hasChanged("materials.inlineLinks")}
+      />
+
+      <p className="text-[11px] font-semibold uppercase tracking-widest text-[#888888]">
+        Items
+      </p>
       {(section.items ?? []).map((item, idx) => (
-        <ItemCard key={idx} title={item.name || `Material ${idx + 1}`} onRemove={() => removeItem(idx)}>
+        <ItemCard
+          key={idx}
+          title={item.name || `Material ${idx + 1}`}
+          onRemove={() => removeItem(idx)}
+        >
           <div className="grid gap-[12px] sm:grid-cols-2">
-            <Field label="Name" hasChanged={hasChanged(`materials.items.${idx}.name`)}>
-              <input className={getInputClass(`materials.items.${idx}.name`)} value={item.name} onChange={(e) => updateItem(idx, "name", e.target.value)} />
+            <Field
+              label="Name"
+              hasChanged={hasChanged(`materials.items.${idx}.name`)}
+            >
+              <input
+                className={getInputClass(`materials.items.${idx}.name`)}
+                value={item.name}
+                onChange={(e) => updateItem(idx, "name", e.target.value)}
+              />
             </Field>
-            <Field label="Icon" hasChanged={hasChanged(`materials.items.${idx}.icon`)}>
-              <input className={getInputClass(`materials.items.${idx}.icon`)} value={item.icon} onChange={(e) => updateItem(idx, "icon", e.target.value)} />
+            <Field
+              label="Icon"
+              hasChanged={hasChanged(`materials.items.${idx}.icon`)}
+            >
+              <input
+                className={getInputClass(`materials.items.${idx}.icon`)}
+                value={item.icon}
+                onChange={(e) => updateItem(idx, "icon", e.target.value)}
+              />
             </Field>
             <div className="sm:col-span-2">
               <ImageUpload
-                value={item.image || ''}
+                value={item.image || ""}
                 onChange={(url) => updateItem(idx, "image", url)}
                 label="Image"
                 uploading={uploadingIdx === idx}
-                setUploading={(loading) => setUploadingIdx(loading ? idx : null)}
+                setUploading={(loading) =>
+                  setUploadingIdx(loading ? idx : null)
+                }
                 hasChanged={hasChanged(`materials.items.${idx}.image`)}
               />
             </div>
             <div className="sm:col-span-2">
-              <Field label="Description" hasChanged={hasChanged(`materials.items.${idx}.description`)}>
-                <textarea className={getTextareaClass(`materials.items.${idx}.description`)} value={item.description} onChange={(e) => updateItem(idx, "description", e.target.value)} />
+              <Field
+                label="Description"
+                hasChanged={hasChanged(`materials.items.${idx}.description`)}
+              >
+                <textarea
+                  className={getTextareaClass(
+                    `materials.items.${idx}.description`,
+                  )}
+                  value={item.description}
+                  onChange={(e) =>
+                    updateItem(idx, "description", e.target.value)
+                  }
+                />
               </Field>
+            </div>
+            <div className="sm:col-span-2">
+              <InlineLinkManager
+                links={item.inlineLinks || []}
+                onChange={(links) => updateItemInlineLinks(idx, links)}
+                label="Item Inline Links"
+                description="Text within this item's description that will become clickable."
+                hasChanged={hasChanged(`materials.items.${idx}.inlineLinks`)}
+              />
             </div>
           </div>
         </ItemCard>
@@ -1523,20 +2539,53 @@ function WhyChooseUsTab({
   setField: (path: string, value: unknown) => void;
   hasChanged: (path: string) => boolean;
 }) {
-  const section = form.whyChooseUs ?? { title: "", items: [] };
+  const section = form.whyChooseUs ?? { title: "", items: [], inlineLinks: [] };
   const [uploadingIdx, setUploadingIdx] = useState<number | null>(null);
-  const getInputClass = (path: string) => hasChanged(path) ? inputChangedCls : inputCls;
-  const getTextareaClass = (path: string) => hasChanged(path) ? textareaChangedCls : textareaCls;
+  const getInputClass = (path: string) =>
+    hasChanged(path) ? inputChangedCls : inputCls;
+  const getTextareaClass = (path: string) =>
+    hasChanged(path) ? textareaChangedCls : textareaCls;
 
-  const updateItem = (idx: number, key: keyof WhyChooseItem, val: string) => {
+  const updateItem = (
+    idx: number,
+    key: Exclude<keyof WhyChooseItem, "inlineLinks">,
+    val: string,
+  ) => {
     setForm((prev) => {
       const clone = deepClone(prev);
-      if (!clone.whyChooseUs) clone.whyChooseUs = { title: "", items: [] };
+      if (!clone.whyChooseUs)
+        clone.whyChooseUs = { title: "", items: [], inlineLinks: [] };
       if (!clone.whyChooseUs.items) clone.whyChooseUs.items = [];
       if (!clone.whyChooseUs.items[idx]) {
-        clone.whyChooseUs.items[idx] = { title: "", description: "", icon: "", image: "" };
+        clone.whyChooseUs.items[idx] = {
+          title: "",
+          description: "",
+          icon: "",
+          image: "",
+          inlineLinks: [],
+        };
       }
       clone.whyChooseUs.items[idx][key] = val;
+      return clone;
+    });
+  };
+
+  const updateItemInlineLinks = (idx: number, links: InlineLink[]) => {
+    setForm((prev) => {
+      const clone = deepClone(prev);
+      if (!clone.whyChooseUs)
+        clone.whyChooseUs = { title: "", items: [], inlineLinks: [] };
+      if (!clone.whyChooseUs.items) clone.whyChooseUs.items = [];
+      if (!clone.whyChooseUs.items[idx]) {
+        clone.whyChooseUs.items[idx] = {
+          title: "",
+          description: "",
+          icon: "",
+          image: "",
+          inlineLinks: [],
+        };
+      }
+      clone.whyChooseUs.items[idx].inlineLinks = links;
       return clone;
     });
   };
@@ -1544,9 +2593,16 @@ function WhyChooseUsTab({
   const addItem = () => {
     setForm((prev) => {
       const clone = deepClone(prev);
-      if (!clone.whyChooseUs) clone.whyChooseUs = { title: "", items: [] };
+      if (!clone.whyChooseUs)
+        clone.whyChooseUs = { title: "", items: [], inlineLinks: [] };
       if (!clone.whyChooseUs.items) clone.whyChooseUs.items = [];
-      clone.whyChooseUs.items.push({ title: "", description: "", icon: "", image: "" });
+      clone.whyChooseUs.items.push({
+        title: "",
+        description: "",
+        icon: "",
+        image: "",
+        inlineLinks: [],
+      });
       return clone;
     });
   };
@@ -1564,32 +2620,87 @@ function WhyChooseUsTab({
   return (
     <div className="flex flex-col gap-[16px]">
       <Field label="Section Title" hasChanged={hasChanged("whyChooseUs.title")}>
-        <input className={getInputClass("whyChooseUs.title")} value={section.title} onChange={(e) => setField("whyChooseUs.title", e.target.value)} />
+        <input
+          className={getInputClass("whyChooseUs.title")}
+          value={section.title}
+          onChange={(e) => setField("whyChooseUs.title", e.target.value)}
+        />
       </Field>
-      <p className="text-[11px] font-semibold uppercase tracking-widest text-[#888888]">Items</p>
+
+      <InlineLinkManager
+        links={section.inlineLinks || []}
+        onChange={(links) => setField("whyChooseUs.inlineLinks", links)}
+        label="Why Choose Us Inline Links"
+        description="Text within Why Choose Us section that will become clickable."
+        hasChanged={hasChanged("whyChooseUs.inlineLinks")}
+      />
+
+      <p className="text-[11px] font-semibold uppercase tracking-widest text-[#888888]">
+        Items
+      </p>
       {(section.items ?? []).map((item, idx) => (
-        <ItemCard key={idx} title={item.title || `Item ${idx + 1}`} onRemove={() => removeItem(idx)}>
+        <ItemCard
+          key={idx}
+          title={item.title || `Item ${idx + 1}`}
+          onRemove={() => removeItem(idx)}
+        >
           <div className="grid gap-[12px] sm:grid-cols-2">
-            <Field label="Title" hasChanged={hasChanged(`whyChooseUs.items.${idx}.title`)}>
-              <input className={getInputClass(`whyChooseUs.items.${idx}.title`)} value={item.title} onChange={(e) => updateItem(idx, "title", e.target.value)} />
+            <Field
+              label="Title"
+              hasChanged={hasChanged(`whyChooseUs.items.${idx}.title`)}
+            >
+              <input
+                className={getInputClass(`whyChooseUs.items.${idx}.title`)}
+                value={item.title}
+                onChange={(e) => updateItem(idx, "title", e.target.value)}
+              />
             </Field>
-            <Field label="Icon" hasChanged={hasChanged(`whyChooseUs.items.${idx}.icon`)}>
-              <input className={getInputClass(`whyChooseUs.items.${idx}.icon`)} value={item.icon} onChange={(e) => updateItem(idx, "icon", e.target.value)} />
+            <Field
+              label="Icon"
+              hasChanged={hasChanged(`whyChooseUs.items.${idx}.icon`)}
+            >
+              <input
+                className={getInputClass(`whyChooseUs.items.${idx}.icon`)}
+                value={item.icon}
+                onChange={(e) => updateItem(idx, "icon", e.target.value)}
+              />
             </Field>
             <div className="sm:col-span-2">
               <ImageUpload
-                value={item.image || ''}
+                value={item.image || ""}
                 onChange={(url) => updateItem(idx, "image", url)}
                 label="Image"
                 uploading={uploadingIdx === idx}
-                setUploading={(loading) => setUploadingIdx(loading ? idx : null)}
+                setUploading={(loading) =>
+                  setUploadingIdx(loading ? idx : null)
+                }
                 hasChanged={hasChanged(`whyChooseUs.items.${idx}.image`)}
               />
             </div>
             <div className="sm:col-span-2">
-              <Field label="Description" hasChanged={hasChanged(`whyChooseUs.items.${idx}.description`)}>
-                <textarea className={getTextareaClass(`whyChooseUs.items.${idx}.description`)} value={item.description} onChange={(e) => updateItem(idx, "description", e.target.value)} />
+              <Field
+                label="Description"
+                hasChanged={hasChanged(`whyChooseUs.items.${idx}.description`)}
+              >
+                <textarea
+                  className={getTextareaClass(
+                    `whyChooseUs.items.${idx}.description`,
+                  )}
+                  value={item.description}
+                  onChange={(e) =>
+                    updateItem(idx, "description", e.target.value)
+                  }
+                />
               </Field>
+            </div>
+            <div className="sm:col-span-2">
+              <InlineLinkManager
+                links={item.inlineLinks || []}
+                onChange={(links) => updateItemInlineLinks(idx, links)}
+                label="Item Inline Links"
+                description="Text within this item's description that will become clickable."
+                hasChanged={hasChanged(`whyChooseUs.items.${idx}.inlineLinks`)}
+              />
             </div>
           </div>
         </ItemCard>
@@ -1608,17 +2719,31 @@ function FaqsTab({
   setForm: React.Dispatch<React.SetStateAction<Service>>;
   hasChanged: (path: string) => boolean;
 }) {
-  const getInputClass = (path: string) => hasChanged(path) ? inputChangedCls : inputCls;
-  const getTextareaClass = (path: string) => hasChanged(path) ? textareaChangedCls : textareaCls;
+  const getInputClass = (path: string) =>
+    hasChanged(path) ? inputChangedCls : inputCls;
+  const getTextareaClass = (path: string) =>
+    hasChanged(path) ? textareaChangedCls : textareaCls;
 
-  const updateFaq = (idx: number, key: keyof FaqItem, val: string) => {
+  const updateFaq = (idx: number, key: "question" | "answer", val: string) => {
     setForm((prev) => {
       const clone = deepClone(prev);
       if (!clone.faqs) clone.faqs = [];
       if (!clone.faqs[idx]) {
-        clone.faqs[idx] = { question: "", answer: "" };
+        clone.faqs[idx] = { question: "", answer: "", inlineLinks: [] };
       }
       clone.faqs[idx][key] = val;
+      return clone;
+    });
+  };
+
+  const updateFaqInlineLinks = (idx: number, links: InlineLink[]) => {
+    setForm((prev) => {
+      const clone = deepClone(prev);
+      if (!clone.faqs) clone.faqs = [];
+      if (!clone.faqs[idx]) {
+        clone.faqs[idx] = { question: "", answer: "", inlineLinks: [] };
+      }
+      clone.faqs[idx].inlineLinks = links;
       return clone;
     });
   };
@@ -1627,7 +2752,7 @@ function FaqsTab({
     setForm((prev) => {
       const clone = deepClone(prev);
       if (!clone.faqs) clone.faqs = [];
-      clone.faqs.push({ question: "", answer: "" });
+      clone.faqs.push({ question: "", answer: "", inlineLinks: [] });
       return clone;
     });
   };
@@ -1645,14 +2770,38 @@ function FaqsTab({
   return (
     <div className="flex flex-col gap-[14px]">
       {(form.faqs ?? []).map((faq, idx) => (
-        <ItemCard key={idx} title={faq.question || `FAQ ${idx + 1}`} onRemove={() => removeFaq(idx)}>
-          <Field label="Question" hasChanged={hasChanged(`faqs.${idx}.question`)}>
-            <input className={getInputClass(`faqs.${idx}.question`)} value={faq.question} onChange={(e) => updateFaq(idx, "question", e.target.value)} />
+        <ItemCard
+          key={idx}
+          title={faq.question || `FAQ ${idx + 1}`}
+          onRemove={() => removeFaq(idx)}
+        >
+          <Field
+            label="Question"
+            hasChanged={hasChanged(`faqs.${idx}.question`)}
+          >
+            <input
+              className={getInputClass(`faqs.${idx}.question`)}
+              value={faq.question}
+              onChange={(e) => updateFaq(idx, "question", e.target.value)}
+            />
           </Field>
           <div className="mt-[10px]">
             <Field label="Answer" hasChanged={hasChanged(`faqs.${idx}.answer`)}>
-              <textarea className={getTextareaClass(`faqs.${idx}.answer`)} value={faq.answer} onChange={(e) => updateFaq(idx, "answer", e.target.value)} />
+              <textarea
+                className={getTextareaClass(`faqs.${idx}.answer`)}
+                value={faq.answer}
+                onChange={(e) => updateFaq(idx, "answer", e.target.value)}
+              />
             </Field>
+          </div>
+          <div className="sm:col-span-2">
+            <InlineLinkManager
+              links={faq.inlineLinks || []}
+              onChange={(links) => updateFaqInlineLinks(idx, links)}
+              label="FAQ Inline Links"
+              description="Text within this FAQ answer that will become clickable."
+              hasChanged={hasChanged(`faqs.${idx}.inlineLinks`)}
+            />
           </div>
         </ItemCard>
       ))}
@@ -1670,25 +2819,53 @@ function ContactTab({
   setField: (path: string, value: unknown) => void;
   hasChanged: (path: string) => boolean;
 }) {
-  const contact = form.contact;
-  const getInputClass = (path: string) => hasChanged(path) ? inputChangedCls : inputCls;
-  const getTextareaClass = (path: string) => hasChanged(path) ? textareaChangedCls : textareaCls;
+  const contact = form.contact ?? {
+    title: "",
+    description: "",
+    fields: [],
+    inlineLinks: [],
+  };
+  const getInputClass = (path: string) =>
+    hasChanged(path) ? inputChangedCls : inputCls;
+  const getTextareaClass = (path: string) =>
+    hasChanged(path) ? textareaChangedCls : textareaCls;
 
   return (
     <div className="grid gap-[16px] sm:grid-cols-2">
       <div className="sm:col-span-2">
         <Field label="Title" hasChanged={hasChanged("contact.title")}>
-          <input className={getInputClass("contact.title")} value={contact.title} onChange={(e) => setField("contact.title", e.target.value)} />
+          <input
+            className={getInputClass("contact.title")}
+            value={contact.title}
+            onChange={(e) => setField("contact.title", e.target.value)}
+          />
         </Field>
       </div>
       <div className="sm:col-span-2">
-        <Field label="Description" hasChanged={hasChanged("contact.description")}>
-          <textarea className={getTextareaClass("contact.description")} value={contact.description} onChange={(e) => setField("contact.description", e.target.value)} />
+        <Field
+          label="Description"
+          hasChanged={hasChanged("contact.description")}
+        >
+          <textarea
+            className={getTextareaClass("contact.description")}
+            value={contact.description}
+            onChange={(e) => setField("contact.description", e.target.value)}
+          />
         </Field>
+      </div>
+      <div className="sm:col-span-2">
+        <InlineLinkManager
+          links={contact.inlineLinks || []}
+          onChange={(links) => setField("contact.inlineLinks", links)}
+          label="Contact Inline Links"
+          description="Text within Contact section that will become clickable."
+          hasChanged={hasChanged("contact.inlineLinks")}
+        />
       </div>
       <div className="sm:col-span-2">
         <p className="text-[12px] text-[#888888]">
-          Contact form fields are managed directly in the database. Showing {contact.fields?.length ?? 0} fields.
+          Contact form fields are managed directly in the database. Showing{" "}
+          {contact.fields?.length ?? 0} fields.
         </p>
       </div>
     </div>
@@ -1707,13 +2884,16 @@ function SeoTab({
   hasChanged: (path: string) => boolean;
 }) {
   const seo = form.seo;
-  const getInputClass = (path: string) => hasChanged(path) ? inputChangedCls : inputCls;
-  const getTextareaClass = (path: string) => hasChanged(path) ? textareaChangedCls : textareaCls;
+  const getInputClass = (path: string) =>
+    hasChanged(path) ? inputChangedCls : inputCls;
+  const getTextareaClass = (path: string) =>
+    hasChanged(path) ? textareaChangedCls : textareaCls;
 
   const updateKeyword = (idx: number, val: string) => {
     setForm((prev) => {
       const clone = deepClone(prev);
-      if (!clone.seo) clone.seo = { metaTitle: "", metaDescription: "", keywords: [] };
+      if (!clone.seo)
+        clone.seo = { metaTitle: "", metaDescription: "", keywords: [] };
       if (!clone.seo.keywords) clone.seo.keywords = [];
       clone.seo.keywords[idx] = val;
       return clone;
@@ -1723,7 +2903,8 @@ function SeoTab({
   const addKeyword = () => {
     setForm((prev) => {
       const clone = deepClone(prev);
-      if (!clone.seo) clone.seo = { metaTitle: "", metaDescription: "", keywords: [] };
+      if (!clone.seo)
+        clone.seo = { metaTitle: "", metaDescription: "", keywords: [] };
       if (!clone.seo.keywords) clone.seo.keywords = [];
       clone.seo.keywords.push("");
       return clone;
@@ -1743,12 +2924,25 @@ function SeoTab({
   return (
     <div className="flex flex-col gap-[16px]">
       <Field label="Meta Title" hasChanged={hasChanged("seo.metaTitle")}>
-        <input className={getInputClass("seo.metaTitle")} value={seo.metaTitle} onChange={(e) => setField("seo.metaTitle", e.target.value)} />
+        <input
+          className={getInputClass("seo.metaTitle")}
+          value={seo.metaTitle}
+          onChange={(e) => setField("seo.metaTitle", e.target.value)}
+        />
       </Field>
-      <Field label="Meta Description" hasChanged={hasChanged("seo.metaDescription")}>
-        <textarea className={getTextareaClass("seo.metaDescription")} value={seo.metaDescription} onChange={(e) => setField("seo.metaDescription", e.target.value)} />
+      <Field
+        label="Meta Description"
+        hasChanged={hasChanged("seo.metaDescription")}
+      >
+        <textarea
+          className={getTextareaClass("seo.metaDescription")}
+          value={seo.metaDescription}
+          onChange={(e) => setField("seo.metaDescription", e.target.value)}
+        />
       </Field>
-      <p className="text-[11px] font-semibold uppercase tracking-widest text-[#888888]">Keywords</p>
+      <p className="text-[11px] font-semibold uppercase tracking-widest text-[#888888]">
+        Keywords
+      </p>
       <div className="flex flex-col gap-[8px]">
         {seo.keywords.map((kw, idx) => (
           <div key={idx} className="flex items-center gap-[8px]">
@@ -1783,20 +2977,68 @@ function TrustedWorksTab({
   setField: (path: string, value: unknown) => void;
   hasChanged: (path: string) => boolean;
 }) {
-  const trusted = form.trustedJoineryWorks ?? { title: "", description: "", images: [] };
+  const trusted = form.trustedJoineryWorks ?? {
+    title: "",
+    description: "",
+    images: [],
+    inlineLinks: [],
+  };
   const [uploadingIdx, setUploadingIdx] = useState<number | null>(null);
-  const getInputClass = (path: string) => hasChanged(path) ? inputChangedCls : inputCls;
-  const getTextareaClass = (path: string) => hasChanged(path) ? textareaChangedCls : textareaCls;
+  const getInputClass = (path: string) =>
+    hasChanged(path) ? inputChangedCls : inputCls;
+  const getTextareaClass = (path: string) =>
+    hasChanged(path) ? textareaChangedCls : textareaCls;
 
-  const updateImage = (idx: number, key: keyof TrustedImage, val: string) => {
+  const updateImage = (
+    idx: number,
+    key: Exclude<keyof TrustedImage, "inlineLinks">,
+    val: string,
+  ) => {
     setForm((prev) => {
       const clone = deepClone(prev);
-      if (!clone.trustedJoineryWorks) clone.trustedJoineryWorks = { title: "", description: "", images: [] };
-      if (!clone.trustedJoineryWorks.images) clone.trustedJoineryWorks.images = [];
+      if (!clone.trustedJoineryWorks)
+        clone.trustedJoineryWorks = {
+          title: "",
+          description: "",
+          images: [],
+          inlineLinks: [],
+        };
+      if (!clone.trustedJoineryWorks.images)
+        clone.trustedJoineryWorks.images = [];
       if (!clone.trustedJoineryWorks.images[idx]) {
-        clone.trustedJoineryWorks.images[idx] = { url: "", title: "", description: "" };
+        clone.trustedJoineryWorks.images[idx] = {
+          url: "",
+          title: "",
+          description: "",
+          inlineLinks: [],
+        };
       }
       clone.trustedJoineryWorks.images[idx][key] = val;
+      return clone;
+    });
+  };
+
+  const updateImageInlineLinks = (idx: number, links: InlineLink[]) => {
+    setForm((prev) => {
+      const clone = deepClone(prev);
+      if (!clone.trustedJoineryWorks)
+        clone.trustedJoineryWorks = {
+          title: "",
+          description: "",
+          images: [],
+          inlineLinks: [],
+        };
+      if (!clone.trustedJoineryWorks.images)
+        clone.trustedJoineryWorks.images = [];
+      if (!clone.trustedJoineryWorks.images[idx]) {
+        clone.trustedJoineryWorks.images[idx] = {
+          url: "",
+          title: "",
+          description: "",
+          inlineLinks: [],
+        };
+      }
+      clone.trustedJoineryWorks.images[idx].inlineLinks = links;
       return clone;
     });
   };
@@ -1804,9 +3046,21 @@ function TrustedWorksTab({
   const addImage = () => {
     setForm((prev) => {
       const clone = deepClone(prev);
-      if (!clone.trustedJoineryWorks) clone.trustedJoineryWorks = { title: "", description: "", images: [] };
-      if (!clone.trustedJoineryWorks.images) clone.trustedJoineryWorks.images = [];
-      clone.trustedJoineryWorks.images.push({ url: "", title: "", description: "" });
+      if (!clone.trustedJoineryWorks)
+        clone.trustedJoineryWorks = {
+          title: "",
+          description: "",
+          images: [],
+          inlineLinks: [],
+        };
+      if (!clone.trustedJoineryWorks.images)
+        clone.trustedJoineryWorks.images = [];
+      clone.trustedJoineryWorks.images.push({
+        url: "",
+        title: "",
+        description: "",
+        inlineLinks: [],
+      });
       return clone;
     });
   };
@@ -1823,17 +3077,48 @@ function TrustedWorksTab({
 
   return (
     <div className="flex flex-col gap-[16px]">
-      <Field label="Section Title" hasChanged={hasChanged("trustedJoineryWorks.title")}>
-        <input className={getInputClass("trustedJoineryWorks.title")} value={trusted.title} onChange={(e) => setField("trustedJoineryWorks.title", e.target.value)} />
+      <Field
+        label="Section Title"
+        hasChanged={hasChanged("trustedJoineryWorks.title")}
+      >
+        <input
+          className={getInputClass("trustedJoineryWorks.title")}
+          value={trusted.title}
+          onChange={(e) =>
+            setField("trustedJoineryWorks.title", e.target.value)
+          }
+        />
       </Field>
-      <Field label="Section Description" hasChanged={hasChanged("trustedJoineryWorks.description")}>
-        <textarea className={getTextareaClass("trustedJoineryWorks.description")} value={trusted.description} onChange={(e) => setField("trustedJoineryWorks.description", e.target.value)} />
+      <Field
+        label="Section Description"
+        hasChanged={hasChanged("trustedJoineryWorks.description")}
+      >
+        <textarea
+          className={getTextareaClass("trustedJoineryWorks.description")}
+          value={trusted.description}
+          onChange={(e) =>
+            setField("trustedJoineryWorks.description", e.target.value)
+          }
+        />
       </Field>
+
+      <InlineLinkManager
+        links={trusted.inlineLinks || []}
+        onChange={(links) => setField("trustedJoineryWorks.inlineLinks", links)}
+        label="Trusted Works Inline Links"
+        description="Text within Trusted Works section that will become clickable."
+        hasChanged={hasChanged("trustedJoineryWorks.inlineLinks")}
+      />
+
       <p className="text-[11px] font-semibold uppercase tracking-widest text-[#888888]">
         Images ({trusted.images.length})
       </p>
       {(trusted.images ?? []).map((img, idx) => (
-        <ItemCard key={idx} title={img.title || `Image ${idx + 1}`} onRemove={() => removeImage(idx)}>
+        <ItemCard
+          key={idx}
+          title={img.title || `Image ${idx + 1}`}
+          onRemove={() => removeImage(idx)}
+        >
           <div className="grid gap-[12px] sm:grid-cols-2">
             <div className="sm:col-span-2">
               <ImageUpload
@@ -1841,17 +3126,52 @@ function TrustedWorksTab({
                 onChange={(url) => updateImage(idx, "url", url)}
                 label="Image URL"
                 uploading={uploadingIdx === idx}
-                setUploading={(loading) => setUploadingIdx(loading ? idx : null)}
+                setUploading={(loading) =>
+                  setUploadingIdx(loading ? idx : null)
+                }
                 hasChanged={hasChanged(`trustedJoineryWorks.images.${idx}.url`)}
               />
             </div>
-            <Field label="Title" hasChanged={hasChanged(`trustedJoineryWorks.images.${idx}.title`)}>
-              <input className={getInputClass(`trustedJoineryWorks.images.${idx}.title`)} value={img.title} onChange={(e) => updateImage(idx, "title", e.target.value)} />
+            <Field
+              label="Title"
+              hasChanged={hasChanged(`trustedJoineryWorks.images.${idx}.title`)}
+            >
+              <input
+                className={getInputClass(
+                  `trustedJoineryWorks.images.${idx}.title`,
+                )}
+                value={img.title}
+                onChange={(e) => updateImage(idx, "title", e.target.value)}
+              />
             </Field>
             <div className="sm:col-span-2">
-              <Field label="Description" hasChanged={hasChanged(`trustedJoineryWorks.images.${idx}.description`)}>
-                <textarea className={getTextareaClass(`trustedJoineryWorks.images.${idx}.description`)} value={img.description} onChange={(e) => updateImage(idx, "description", e.target.value)} />
+              <Field
+                label="Description"
+                hasChanged={hasChanged(
+                  `trustedJoineryWorks.images.${idx}.description`,
+                )}
+              >
+                <textarea
+                  className={getTextareaClass(
+                    `trustedJoineryWorks.images.${idx}.description`,
+                  )}
+                  value={img.description}
+                  onChange={(e) =>
+                    updateImage(idx, "description", e.target.value)
+                  }
+                />
               </Field>
+            </div>
+            <div className="sm:col-span-2">
+              <InlineLinkManager
+                links={img.inlineLinks || []}
+                onChange={(links) => updateImageInlineLinks(idx, links)}
+                label="Image Inline Links"
+                description="Text within this image's description that will become clickable."
+                hasChanged={hasChanged(
+                  `trustedJoineryWorks.images.${idx}.inlineLinks`,
+                )}
+              />
             </div>
           </div>
         </ItemCard>
@@ -1882,7 +3202,9 @@ export default function ServicesListPage() {
     }
   }, []);
 
-  useEffect(() => { fetchServices(); }, [fetchServices]);
+  useEffect(() => {
+    fetchServices();
+  }, [fetchServices]);
 
   return (
     <section className="min-h-screen bg-[#FFF4EC] px-[16px] py-[24px] xs:px-[20px] sm:px-[28px] sm:py-[36px] md:px-[36px] lg:px-[48px] lg:py-[48px] 2xl:px-[64px]">
@@ -1890,7 +3212,12 @@ export default function ServicesListPage() {
         position="top-right"
         toastOptions={{
           duration: 3000,
-          style: { borderRadius: "12px", background: "#111111", color: "#fff", fontSize: "14px" },
+          style: {
+            borderRadius: "12px",
+            background: "#111111",
+            color: "#fff",
+            fontSize: "14px",
+          },
           success: { iconTheme: { primary: "#EA580C", secondary: "#fff" } },
           error: { iconTheme: { primary: "#DC2626", secondary: "#fff" } },
         }}
@@ -1902,7 +3229,8 @@ export default function ServicesListPage() {
             Services
           </h1>
           <p className="mt-[6px] text-[13px] leading-[1.6] text-[#666666] sm:text-[14px] lg:text-[15px]">
-            Click a card to edit its details. Changed fields are highlighted in orange.
+            Click a card to edit its details. Changed fields are highlighted in
+            orange.
           </p>
         </div>
         {!loading && services.length > 0 && (
@@ -1924,8 +3252,12 @@ export default function ServicesListPage() {
           <Card className="rounded-[20px] border border-dashed border-[#E4C9B4] bg-white/60">
             <CardContent className="flex flex-col items-center justify-center gap-[10px] p-[48px] text-center">
               <Layers className="h-[32px] w-[32px] text-[#C2410C]/50" />
-              <p className="text-[14px] font-medium text-[#333333]">No services found</p>
-              <p className="text-[12px] text-[#888888]">Services added in the database will appear here.</p>
+              <p className="text-[14px] font-medium text-[#333333]">
+                No services found
+              </p>
+              <p className="text-[12px] text-[#888888]">
+                Services added in the database will appear here.
+              </p>
             </CardContent>
           </Card>
         ) : (
@@ -1963,7 +3295,9 @@ export default function ServicesListPage() {
                         Order {service.order}
                       </div>
 
-                      <div className={`absolute right-[10px] top-[10px] rounded-full px-[9px] py-[4px] text-[10px] font-medium backdrop-blur-sm sm:right-[12px] sm:top-[12px] ${service.isActive ? "bg-[#16A34A]/90 text-white" : "bg-black/40 text-white/80"}`}>
+                      <div
+                        className={`absolute right-[10px] top-[10px] rounded-full px-[9px] py-[4px] text-[10px] font-medium backdrop-blur-sm sm:right-[12px] sm:top-[12px] ${service.isActive ? "bg-[#16A34A]/90 text-white" : "bg-black/40 text-white/80"}`}
+                      >
                         {service.isActive ? "Active" : "Inactive"}
                       </div>
 
@@ -1996,7 +3330,9 @@ export default function ServicesListPage() {
 
                       <div className="flex items-center gap-[5px] text-[11px] text-[#888888]">
                         <Tag className="h-[11px] w-[11px] shrink-0" />
-                        <span className="truncate font-mono">{service.slug}</span>
+                        <span className="truncate font-mono">
+                          {service.slug}
+                        </span>
                       </div>
 
                       <p className="line-clamp-2 text-[12px] leading-[1.65] text-[#666666] sm:text-[13px]">
