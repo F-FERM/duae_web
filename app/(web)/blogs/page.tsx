@@ -36,6 +36,72 @@ export const metadata: Metadata = {
 export default function Blog() {
   return (
     <>
+      {/* Blog Collection Page Schema */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@graph": [
+              {
+                "@type": "CollectionPage",
+                "@id": "https://wwduae.com/blogs/#webpage",
+                url: "https://wwduae.com/blogs/",
+                name: "Blogs | Wood World Decor LLC",
+                description:
+                  "Explore the latest insights, ideas and expert guidance from Wood World Decor LLC on joinery, interior fit-out, renovation, furniture, metal works and interior solutions in Dubai.",
+                isPartOf: {
+                  "@id": "https://wwduae.com/#website",
+                },
+                about: {
+                  "@id": "https://wwduae.com/#organization",
+                },
+                publisher: {
+                  "@id": "https://wwduae.com/#organization",
+                },
+                breadcrumb: {
+                  "@id": "https://wwduae.com/blogs/#breadcrumb",
+                },
+                inLanguage: "en-AE",
+              },
+              {
+                "@type": "Blog",
+                "@id": "https://wwduae.com/blogs/#blog",
+                url: "https://wwduae.com/blogs/",
+                name: "Wood World Decor LLC Blog",
+                description:
+                  "Insights and expert guidance from Wood World Decor LLC covering joinery, interior fit-out, renovation, furniture, metal works, upholstery and interior design in Dubai.",
+                publisher: {
+                  "@id": "https://wwduae.com/#organization",
+                },
+                isPartOf: {
+                  "@id": "https://wwduae.com/blogs/#webpage",
+                },
+                inLanguage: "en-AE",
+              },
+              {
+                "@type": "BreadcrumbList",
+                "@id": "https://wwduae.com/blogs/#breadcrumb",
+                itemListElement: [
+                  {
+                    "@type": "ListItem",
+                    position: 1,
+                    name: "Home",
+                    item: "https://wwduae.com/",
+                  },
+                  {
+                    "@type": "ListItem",
+                    position: 2,
+                    name: "Blogs",
+                    item: "https://wwduae.com/blogs/",
+                  },
+                ],
+              },
+            ],
+          }),
+        }}
+      />
+
       <Navbar />
       <HeroOurblogs />
       <Blogs />
