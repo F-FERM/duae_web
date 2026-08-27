@@ -183,8 +183,8 @@ interface Service {
   process: {
     title: string;
     description: string;
-    image?: string; // Added for process banner
-    alt?: string; // Added for process image alt text
+    image?: string;
+    alt?: string;
     steps: ProcessStep[];
     inlineLinks?: InlineLink[];
   };
@@ -286,8 +286,15 @@ function InlineLinkManager({
     toast.success("Inline link added");
   };
 
+  // FIXED: Properly remove link and re-index
   const removeLink = (index: number) => {
-    onChange(links.filter((_, i) => i !== index));
+    const updatedLinks = links.filter((_, i) => i !== index);
+    // Re-index the remaining links
+    const reindexedLinks = updatedLinks.map((link, idx) => ({
+      ...link,
+      position: idx,
+    }));
+    onChange(reindexedLinks);
     toast.success("Inline link removed");
   };
 
@@ -327,6 +334,7 @@ function InlineLinkManager({
                   </span>
                 )}
                 <span className="text-[9px] text-[#999]">#{link.position}</span>
+                {getLinkTypeIcon(link.type)}
               </div>
               <button
                 type="button"
