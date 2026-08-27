@@ -37,6 +37,32 @@ export const metadata: Metadata = {
 export default function Contact() {
   return (
     <>
+      {/* Contact Page Schema */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "ContactPage",
+            "@id": "https://wwduae.com/contact/#contactpage",
+            url: "https://wwduae.com/contact/",
+            name: "Contact Wood World Decor LLC",
+            description:
+              "Contact Wood World Decor LLC in Dubai for custom joinery, interior fit-out, furniture, renovation, upholstery, wall cladding, painting and polishing, sculpture fabrication and metal fabrication services.",
+            isPartOf: {
+              "@id": "https://wwduae.com/#website",
+            },
+            about: {
+              "@id": "https://wwduae.com/#localbusiness",
+            },
+            publisher: {
+              "@id": "https://wwduae.com/#organization",
+            },
+            inLanguage: "en-AE",
+          }),
+        }}
+      />
+
       <Navbar />
       <HeroContactUs />
       <GetInTouch />
