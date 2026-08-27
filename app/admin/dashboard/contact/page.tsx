@@ -27,6 +27,13 @@ import {
   ArrowUp,
   ArrowDown,
   MessageCircle,
+  CircleDot,
+  ExternalLink,
+  Link as LinkIcon,
+  Globe,
+  FileText as FileTextIcon,
+  Layers,
+  Hash,
 } from "lucide-react";
 
 import api from "@/lib/axios";
@@ -40,12 +47,21 @@ import { fileUpload } from "@/app/api/admin/upload/upload";
 
 // ================= TYPES =================
 
+interface InlineLink {
+  text: string;
+  url: string;
+  type: string;
+  openInNewTab: boolean;
+  position: number;
+}
+
 export interface FormField {
   _id?: string;
   name: string;
   type: string;
   placeholder: string;
   required: boolean;
+  inlineLinks?: InlineLink[];
   createdAt?: string;
   updatedAt?: string;
 }
@@ -53,18 +69,26 @@ export interface FormField {
 export interface ContactPageResponse {
   breadcrumbLabel: string;
   breadcrumbLink: string;
+  breadcrumbInlineLinks?: InlineLink[];
   currentPage: string;
   title: string;
+  titleInlineLinks?: InlineLink[];
   description: string;
+  descriptionInlineLinks?: InlineLink[];
   image: string;
   infoTitle: string;
+  infoTitleInlineLinks?: InlineLink[];
   infoDescription: string;
+  infoDescriptionInlineLinks?: InlineLink[];
   address: string;
+  addressInlineLinks?: InlineLink[];
   phone1: string;
   phone2: string;
   email: string;
   formTitle: string;
+  formTitleInlineLinks?: InlineLink[];
   formSubtitle: string;
+  formSubtitleInlineLinks?: InlineLink[];
   formButtonText: string;
   formFields: FormField[];
   isActive: boolean;
@@ -76,28 +100,43 @@ interface ContactPage extends ContactPageResponse {
   updatedAt: string;
 }
 
+const LINK_TYPES = [
+  { value: "page", label: "Page", icon: FileTextIcon },
+  { value: "section", label: "Section", icon: Layers },
+  { value: "external", label: "External", icon: Globe },
+];
+
 const EMPTY_FORM_FIELD: FormField = {
   name: "",
   type: "text",
   placeholder: "",
   required: true,
+  inlineLinks: [],
 };
 
 const EMPTY_FORM: ContactPageResponse = {
   breadcrumbLabel: "Home",
   breadcrumbLink: "/",
+  breadcrumbInlineLinks: [],
   currentPage: "Contact Us",
   title: "",
+  titleInlineLinks: [],
   description: "",
+  descriptionInlineLinks: [],
   image: "",
   infoTitle: "",
+  infoTitleInlineLinks: [],
   infoDescription: "",
+  infoDescriptionInlineLinks: [],
   address: "",
+  addressInlineLinks: [],
   phone1: "",
   phone2: "",
   email: "",
   formTitle: "Send A Message",
+  formTitleInlineLinks: [],
   formSubtitle: "We respond within 24 hours",
+  formSubtitleInlineLinks: [],
   formButtonText: "Send A Message",
   formFields: [],
   isActive: true,
@@ -111,7 +150,179 @@ const FIELD_TYPES = [
   { label: "Number", value: "number" },
 ];
 
-export default function ContactPage() {
+function getLinkTypeIcon(type: string) {
+  const found = LINK_TYPES.find((t) => t.value === type);
+  if (found) {
+    const IconComponent = found.icon;
+    return <IconComponent className="h-3 w-3" />;
+  }
+  return <LinkIcon className="h-3 w-3" />;
+}
+
+// ================= INLINE LINK MANAGER =================
+
+function InlineLinkManager({
+  links = [],
+  onChange,
+  label = "Inline Links",
+  description = "Text within this content that will become clickable.",
+  hasChanged = false,
+}: {
+  links: InlineLink[];
+  onChange: (links: InlineLink[]) => void;
+  label?: string;
+  description?: string;
+  hasChanged?: boolean;
+}) {
+  const [linkText, setLinkText] = useState("");
+  const [linkUrl, setLinkUrl] = useState("");
+  const [linkType, setLinkType] = useState("page");
+  const [linkNewTab, setLinkNewTab] = useState(false);
+
+  const addLink = () => {
+    if (!linkText.trim() || !linkUrl.trim()) {
+      toast.error("Text and URL are required");
+      return;
+    }
+
+    const duplicate = links.some(
+      (link) => link.text.toLowerCase() === linkText.trim().toLowerCase(),
+    );
+
+    if (duplicate) {
+      toast.error(`"${linkText.trim()}" already has a link`);
+      return;
+    }
+
+    const newLink: InlineLink = {
+      text: linkText.trim(),
+      url: linkUrl.trim(),
+      type: linkType,
+      openInNewTab: linkNewTab,
+      position: links.length,
+    };
+
+    onChange([...links, newLink]);
+    setLinkText("");
+    setLinkUrl("");
+    setLinkType("page");
+    setLinkNewTab(false);
+    toast.success("Inline link added");
+  };
+
+  const removeLink = (index: number) => {
+    const updatedLinks = links.filter((_, i) => i !== index);
+    const reindexedLinks = updatedLinks.map((link, idx) => ({
+      ...link,
+      position: idx,
+    }));
+    onChange(reindexedLinks);
+    toast.success("Inline link removed");
+  };
+
+  return (
+    <div
+      className={`mt-3 border-t border-[#E4C9B4] pt-3 ${hasChanged ? "border-2 border-[#EA580C] rounded-[8px] p-3 bg-[#FFF9F4]" : ""}`}
+    >
+      <div className="flex items-center gap-[6px] mb-2">
+        <Label className="text-xs font-medium text-[#2A2A2A]">{label}</Label>
+        {hasChanged && (
+          <span className="flex items-center gap-[4px] text-[10px] font-medium text-[#EA580C]">
+            <CircleDot className="h-[10px] w-[10px] fill-[#EA580C]" />
+            Changed
+          </span>
+        )}
+      </div>
+      <p className="text-[10px] text-[#888888] mb-2">{description}</p>
+
+      {links.length > 0 && (
+        <div className="mb-2 space-y-1 max-h-[120px] overflow-y-auto">
+          {links.map((link, idx) => (
+            <div
+              key={idx}
+              className="flex items-center justify-between rounded-[8px] bg-white px-3 py-2 text-xs border border-[#E4E4E4]"
+            >
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="font-medium text-[#EA580C]">
+                  "{link.text}"
+                </span>
+                <span className="text-[#999]">→</span>
+                <span className="text-[#666] truncate max-w-[120px]">
+                  {link.url}
+                </span>
+                {link.openInNewTab && (
+                  <span className="text-[9px] text-[#999] flex items-center gap-0.5">
+                    <ExternalLink className="h-2.5 w-2.5" /> new tab
+                  </span>
+                )}
+                <span className="text-[9px] text-[#999]">#{link.position}</span>
+                {getLinkTypeIcon(link.type)}
+              </div>
+              <button
+                type="button"
+                onClick={() => removeLink(idx)}
+                className="text-[#DC2626] hover:text-[#b91c1c]"
+              >
+                <X className="h-3 w-3" />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <div className="grid grid-cols-1 gap-2 xs:grid-cols-4">
+        <div className="xs:col-span-1">
+          <Input
+            value={linkText}
+            onChange={(e) => setLinkText(e.target.value)}
+            placeholder="Text to link"
+            className="h-9 rounded-[8px] text-xs"
+          />
+        </div>
+        <div className="xs:col-span-1">
+          <Input
+            value={linkUrl}
+            onChange={(e) => setLinkUrl(e.target.value)}
+            placeholder="URL"
+            className="h-9 rounded-[8px] text-xs"
+          />
+        </div>
+        <div className="xs:col-span-1">
+          <select
+            value={linkType}
+            onChange={(e) => setLinkType(e.target.value)}
+            className="h-9 w-full rounded-[8px] border border-[#E4E4E4] px-2 text-xs bg-white"
+          >
+            {LINK_TYPES.map((type) => (
+              <option key={type.value} value={type.value}>
+                {type.label}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className="xs:col-span-1 flex gap-1">
+          <Button
+            type="button"
+            onClick={addLink}
+            className="h-9 flex-1 rounded-[8px] bg-[#EA580C] text-white hover:bg-[#EA580C] text-xs px-3"
+          >
+            <Plus className="h-3 w-3" /> Add
+          </Button>
+        </div>
+      </div>
+      <div className="mt-1 flex items-center gap-2">
+        <Switch
+          checked={linkNewTab}
+          onCheckedChange={setLinkNewTab}
+          className="h-4 w-7"
+        />
+        <span className="text-[10px] text-[#666666]">Open in new tab</span>
+      </div>
+    </div>
+  );
+}
+
+export default function ContactPageAdmin() {
   const [contactData, setContactData] = useState<ContactPage | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -127,7 +338,9 @@ export default function ContactPage() {
 
   // Form field modal
   const [fieldModalOpen, setFieldModalOpen] = useState(false);
-  const [editingFieldIndex, setEditingFieldIndex] = useState<number | null>(null);
+  const [editingFieldIndex, setEditingFieldIndex] = useState<number | null>(
+    null,
+  );
   const [tempField, setTempField] = useState<FormField>(EMPTY_FORM_FIELD);
 
   // Collapse states
@@ -145,39 +358,52 @@ export default function ContactPage() {
     try {
       setLoading(true);
       const res = await api.get("/contact-page");
-      
+
       let data = null;
       if (Array.isArray(res.data)) {
         data = res.data.length > 0 ? res.data[0] : null;
-      } else if (res.data && typeof res.data === 'object') {
+      } else if (res.data && typeof res.data === "object") {
         data = res.data;
       }
-      
+
       setContactData(data);
-      
+
       if (data) {
         setForm({
           breadcrumbLabel: data.breadcrumbLabel || "Home",
           breadcrumbLink: data.breadcrumbLink || "/",
+          breadcrumbInlineLinks: data.breadcrumbInlineLinks || [],
           currentPage: data.currentPage || "Contact Us",
           title: data.title || "",
+          titleInlineLinks: data.titleInlineLinks || [],
           description: data.description || "",
+          descriptionInlineLinks: data.descriptionInlineLinks || [],
           image: data.image || "",
           infoTitle: data.infoTitle || "",
+          infoTitleInlineLinks: data.infoTitleInlineLinks || [],
           infoDescription: data.infoDescription || "",
+          infoDescriptionInlineLinks: data.infoDescriptionInlineLinks || [],
           address: data.address || "",
+          addressInlineLinks: data.addressInlineLinks || [],
           phone1: data.phone1 || "",
           phone2: data.phone2 || "",
           email: data.email || "",
           formTitle: data.formTitle || "Send A Message",
+          formTitleInlineLinks: data.formTitleInlineLinks || [],
           formSubtitle: data.formSubtitle || "We respond within 24 hours",
+          formSubtitleInlineLinks: data.formSubtitleInlineLinks || [],
           formButtonText: data.formButtonText || "Send A Message",
-          formFields: data.formFields || [],
+          formFields: (data.formFields || []).map((field: any) => ({
+            ...field,
+            inlineLinks: field.inlineLinks || [],
+          })),
           isActive: data.isActive ?? true,
         });
       }
     } catch (err: any) {
-      toast.error(err?.response?.data?.message || "Failed to load contact page data");
+      toast.error(
+        err?.response?.data?.message || "Failed to load contact page data",
+      );
     } finally {
       setLoading(false);
     }
@@ -194,20 +420,32 @@ export default function ContactPage() {
       setForm({
         breadcrumbLabel: contactData.breadcrumbLabel || "Home",
         breadcrumbLink: contactData.breadcrumbLink || "/",
+        breadcrumbInlineLinks: contactData.breadcrumbInlineLinks || [],
         currentPage: contactData.currentPage || "Contact Us",
         title: contactData.title || "",
+        titleInlineLinks: contactData.titleInlineLinks || [],
         description: contactData.description || "",
+        descriptionInlineLinks: contactData.descriptionInlineLinks || [],
         image: contactData.image || "",
         infoTitle: contactData.infoTitle || "",
+        infoTitleInlineLinks: contactData.infoTitleInlineLinks || [],
         infoDescription: contactData.infoDescription || "",
+        infoDescriptionInlineLinks:
+          contactData.infoDescriptionInlineLinks || [],
         address: contactData.address || "",
+        addressInlineLinks: contactData.addressInlineLinks || [],
         phone1: contactData.phone1 || "",
         phone2: contactData.phone2 || "",
         email: contactData.email || "",
         formTitle: contactData.formTitle || "Send A Message",
+        formTitleInlineLinks: contactData.formTitleInlineLinks || [],
         formSubtitle: contactData.formSubtitle || "We respond within 24 hours",
+        formSubtitleInlineLinks: contactData.formSubtitleInlineLinks || [],
         formButtonText: contactData.formButtonText || "Send A Message",
-        formFields: contactData.formFields || [],
+        formFields: (contactData.formFields || []).map((field: any) => ({
+          ...field,
+          inlineLinks: field.inlineLinks || [],
+        })),
         isActive: contactData.isActive ?? true,
       });
     } else {
@@ -223,20 +461,32 @@ export default function ContactPage() {
       setForm({
         breadcrumbLabel: contactData.breadcrumbLabel || "Home",
         breadcrumbLink: contactData.breadcrumbLink || "/",
+        breadcrumbInlineLinks: contactData.breadcrumbInlineLinks || [],
         currentPage: contactData.currentPage || "Contact Us",
         title: contactData.title || "",
+        titleInlineLinks: contactData.titleInlineLinks || [],
         description: contactData.description || "",
+        descriptionInlineLinks: contactData.descriptionInlineLinks || [],
         image: contactData.image || "",
         infoTitle: contactData.infoTitle || "",
+        infoTitleInlineLinks: contactData.infoTitleInlineLinks || [],
         infoDescription: contactData.infoDescription || "",
+        infoDescriptionInlineLinks:
+          contactData.infoDescriptionInlineLinks || [],
         address: contactData.address || "",
+        addressInlineLinks: contactData.addressInlineLinks || [],
         phone1: contactData.phone1 || "",
         phone2: contactData.phone2 || "",
         email: contactData.email || "",
         formTitle: contactData.formTitle || "Send A Message",
+        formTitleInlineLinks: contactData.formTitleInlineLinks || [],
         formSubtitle: contactData.formSubtitle || "We respond within 24 hours",
+        formSubtitleInlineLinks: contactData.formSubtitleInlineLinks || [],
         formButtonText: contactData.formButtonText || "Send A Message",
-        formFields: contactData.formFields || [],
+        formFields: (contactData.formFields || []).map((field: any) => ({
+          ...field,
+          inlineLinks: field.inlineLinks || [],
+        })),
         isActive: contactData.isActive ?? true,
       });
     } else {
@@ -258,6 +508,7 @@ export default function ContactPage() {
         ...form,
         formFields: form.formFields.map((field, index) => ({
           ...field,
+          inlineLinks: field.inlineLinks || [],
           order: index,
         })),
       };
@@ -275,7 +526,9 @@ export default function ContactPage() {
     } catch (err: any) {
       toast.error(
         err?.response?.data?.message ||
-          (contactData ? "Failed to update contact page" : "Failed to create contact page")
+          (contactData
+            ? "Failed to update contact page"
+            : "Failed to create contact page"),
       );
     } finally {
       setSubmitting(false);
@@ -291,9 +544,11 @@ export default function ContactPage() {
         isActive: !data.isActive,
       });
       setContactData((prev) =>
-        prev ? { ...prev, isActive: !prev.isActive } : null
+        prev ? { ...prev, isActive: !prev.isActive } : null,
       );
-      toast.success(!data.isActive ? "Contact page activated" : "Contact page deactivated");
+      toast.success(
+        !data.isActive ? "Contact page activated" : "Contact page deactivated",
+      );
     } catch (err: any) {
       toast.error(err?.response?.data?.message || "Failed to update status");
     } finally {
@@ -339,7 +594,9 @@ export default function ContactPage() {
       toast.success("Contact page deleted");
       setDeleteTarget(null);
     } catch (err: any) {
-      toast.error(err?.response?.data?.message || "Failed to delete contact page");
+      toast.error(
+        err?.response?.data?.message || "Failed to delete contact page",
+      );
     } finally {
       setDeletingId(null);
     }
@@ -384,8 +641,8 @@ export default function ContactPage() {
     setForm({ ...form, formFields });
   };
 
-  const moveField = (index: number, direction: 'up' | 'down') => {
-    const newIndex = direction === 'up' ? index - 1 : index + 1;
+  const moveField = (index: number, direction: "up" | "down") => {
+    const newIndex = direction === "up" ? index - 1 : index + 1;
     if (newIndex < 0 || newIndex >= form.formFields.length) return;
 
     const newFormFields = [...form.formFields];
@@ -398,11 +655,13 @@ export default function ContactPage() {
   // ================= RENDER HELPERS =================
 
   const toggleSection = (section: keyof typeof sections) => {
-    setSections(prev => ({ ...prev, [section]: !prev[section] }));
+    setSections((prev) => ({ ...prev, [section]: !prev[section] }));
   };
 
   const renderSectionHeader = (title: string, icon?: React.ReactNode) => {
-    const sectionKey = title.toLowerCase().replace(/\s+/g, '') as keyof typeof sections;
+    const sectionKey = title
+      .toLowerCase()
+      .replace(/\s+/g, "") as keyof typeof sections;
     return (
       <button
         onClick={() => toggleSection(sectionKey)}
@@ -436,7 +695,9 @@ export default function ContactPage() {
         onChange={handleImageUpload}
       />
       <div
-        onClick={() => !uploading && document.getElementById('contactImage')?.click()}
+        onClick={() =>
+          !uploading && document.getElementById("contactImage")?.click()
+        }
         className={`
           relative flex h-[100px] w-full cursor-pointer items-center justify-center overflow-hidden rounded-[12px] border border-dashed border-[#E4C9B4] bg-[#FFF9F4] transition-colors hover:bg-[#FFF4EC]
           ${uploading ? "pointer-events-none opacity-70" : ""}
@@ -547,7 +808,8 @@ export default function ContactPage() {
                   <div className="flex flex-wrap items-center gap-[8px]">
                     <div>
                       <p className="text-[11px] text-[#999]">
-                        {contactData.breadcrumbLabel} / {contactData.currentPage}
+                        {contactData.breadcrumbLabel} /{" "}
+                        {contactData.currentPage}
                       </p>
                       <h3 className="text-[17px] font-semibold text-[#111111] sm:text-[19px] lg:text-[21px]">
                         {contactData.title}
@@ -568,8 +830,8 @@ export default function ContactPage() {
                       {togglingId === contactData._id
                         ? "..."
                         : contactData.isActive
-                        ? "Active"
-                        : "Inactive"}
+                          ? "Active"
+                          : "Inactive"}
                     </button>
                   </div>
                 </div>
@@ -628,25 +890,33 @@ export default function ContactPage() {
                 {contactData.address && (
                   <div className="flex items-center gap-[8px] rounded-[8px] bg-[#FFF9F4] p-[10px]">
                     <MapPin className="h-[16px] w-[16px] text-[#EA580C]" />
-                    <span className="text-[12px] text-[#666] line-clamp-1">{contactData.address}</span>
+                    <span className="text-[12px] text-[#666] line-clamp-1">
+                      {contactData.address}
+                    </span>
                   </div>
                 )}
                 {contactData.phone1 && (
                   <div className="flex items-center gap-[8px] rounded-[8px] bg-[#FFF9F4] p-[10px]">
                     <Phone className="h-[16px] w-[16px] text-[#EA580C]" />
-                    <span className="text-[12px] text-[#666]">{contactData.phone1}</span>
+                    <span className="text-[12px] text-[#666]">
+                      {contactData.phone1}
+                    </span>
                   </div>
                 )}
                 {contactData.phone2 && (
                   <div className="flex items-center gap-[8px] rounded-[8px] bg-[#FFF9F4] p-[10px]">
                     <Phone className="h-[16px] w-[16px] text-[#EA580C]" />
-                    <span className="text-[12px] text-[#666]">{contactData.phone2}</span>
+                    <span className="text-[12px] text-[#666]">
+                      {contactData.phone2}
+                    </span>
                   </div>
                 )}
                 {contactData.email && (
                   <div className="flex items-center gap-[8px] rounded-[8px] bg-[#FFF9F4] p-[10px]">
                     <Mail className="h-[16px] w-[16px] text-[#EA580C]" />
-                    <span className="text-[12px] text-[#666]">{contactData.email}</span>
+                    <span className="text-[12px] text-[#666]">
+                      {contactData.email}
+                    </span>
                   </div>
                 )}
               </div>
@@ -685,7 +955,7 @@ export default function ContactPage() {
               exit={{ y: 20, opacity: 0, scale: 0.98 }}
               transition={{ duration: 0.25, ease: "easeOut" }}
               onClick={(e) => e.stopPropagation()}
-              className="relative max-h-[94vh] w-full overflow-y-auto rounded-t-[24px] bg-white p-[18px] shadow-[0_30px_80px_rgba(0,0,0,0.25)] xs:p-[22px] sm:max-h-[92vh] sm:max-w-[600px] sm:rounded-[28px] sm:p-[32px] md:max-w-[650px]"
+              className="relative max-h-[94vh] w-full overflow-y-auto rounded-t-[24px] bg-white p-[18px] shadow-[0_30px_80px_rgba(0,0,0,0.25)] xs:p-[22px] sm:max-h-[92vh] sm:max-w-[650px] sm:rounded-[28px] sm:p-[32px] md:max-w-[700px]"
             >
               <div className="flex items-center justify-between">
                 <h2 className="text-[18px] font-semibold text-[#111111] xs:text-[20px] sm:text-[24px]">
@@ -702,7 +972,10 @@ export default function ContactPage() {
               <div className="mt-[18px] space-y-[14px] sm:mt-[22px] sm:space-y-[16px]">
                 {/* BASIC INFO */}
                 <div className="rounded-[12px] border border-[#E4E4E4] p-[14px]">
-                  {renderSectionHeader("Basic Info", <Settings className="h-[16px] w-[16px]" />)}
+                  {renderSectionHeader(
+                    "Basic Info",
+                    <Settings className="h-[16px] w-[16px]" />,
+                  )}
                   {sections.basic && (
                     <div className="mt-[12px] space-y-[12px]">
                       <div className="grid grid-cols-2 gap-[10px]">
@@ -712,10 +985,28 @@ export default function ContactPage() {
                           </Label>
                           <Input
                             value={form.breadcrumbLabel}
-                            onChange={(e) => setForm({ ...form, breadcrumbLabel: e.target.value })}
+                            onChange={(e) =>
+                              setForm({
+                                ...form,
+                                breadcrumbLabel: e.target.value,
+                              })
+                            }
                             placeholder="Home"
                             className="h-[38px] rounded-[10px] border-[#E4E4E4] bg-white text-[13px] focus-visible:ring-[#EA580C]/30"
                           />
+                          <div className="mt-[4px]">
+                            <InlineLinkManager
+                              links={form.breadcrumbInlineLinks || []}
+                              onChange={(links) =>
+                                setForm({
+                                  ...form,
+                                  breadcrumbInlineLinks: links,
+                                })
+                              }
+                              label="Breadcrumb Label Inline Links"
+                              description="Text within the breadcrumb label that will become clickable."
+                            />
+                          </div>
                         </div>
                         <div>
                           <Label className="mb-[4px] block text-[11px] font-medium text-[#2A2A2A]">
@@ -723,7 +1014,12 @@ export default function ContactPage() {
                           </Label>
                           <Input
                             value={form.breadcrumbLink}
-                            onChange={(e) => setForm({ ...form, breadcrumbLink: e.target.value })}
+                            onChange={(e) =>
+                              setForm({
+                                ...form,
+                                breadcrumbLink: e.target.value,
+                              })
+                            }
                             placeholder="/"
                             className="h-[38px] rounded-[10px] border-[#E4E4E4] bg-white text-[13px] focus-visible:ring-[#EA580C]/30"
                           />
@@ -735,7 +1031,9 @@ export default function ContactPage() {
                         </Label>
                         <Input
                           value={form.currentPage}
-                          onChange={(e) => setForm({ ...form, currentPage: e.target.value })}
+                          onChange={(e) =>
+                            setForm({ ...form, currentPage: e.target.value })
+                          }
                           placeholder="Contact Us"
                           className="h-[38px] rounded-[10px] border-[#E4E4E4] bg-white text-[13px] focus-visible:ring-[#EA580C]/30"
                         />
@@ -746,10 +1044,22 @@ export default function ContactPage() {
                         </Label>
                         <Input
                           value={form.title}
-                          onChange={(e) => setForm({ ...form, title: e.target.value })}
+                          onChange={(e) =>
+                            setForm({ ...form, title: e.target.value })
+                          }
                           placeholder="Get in Touch with Us"
                           className="h-[42px] rounded-[10px] border-[#E4E4E4] bg-white text-[13px] focus-visible:ring-[#EA580C]/30"
                         />
+                        <div className="mt-[4px]">
+                          <InlineLinkManager
+                            links={form.titleInlineLinks || []}
+                            onChange={(links) =>
+                              setForm({ ...form, titleInlineLinks: links })
+                            }
+                            label="Title Inline Links"
+                            description="Text within the title that will become clickable."
+                          />
+                        </div>
                       </div>
                       <div>
                         <Label className="mb-[6px] block text-[12px] font-medium text-[#2A2A2A]">
@@ -757,11 +1067,26 @@ export default function ContactPage() {
                         </Label>
                         <Textarea
                           value={form.description}
-                          onChange={(e) => setForm({ ...form, description: e.target.value })}
+                          onChange={(e) =>
+                            setForm({ ...form, description: e.target.value })
+                          }
                           placeholder="Page description..."
                           rows={2}
                           className="rounded-[10px] border-[#E4E4E4] bg-white text-[13px] focus-visible:ring-[#EA580C]/30"
                         />
+                        <div className="mt-[4px]">
+                          <InlineLinkManager
+                            links={form.descriptionInlineLinks || []}
+                            onChange={(links) =>
+                              setForm({
+                                ...form,
+                                descriptionInlineLinks: links,
+                              })
+                            }
+                            label="Description Inline Links"
+                            description="Text within the description that will become clickable."
+                          />
+                        </div>
                       </div>
                       {renderImageUpload()}
                       <div className="flex items-center gap-[10px]">
@@ -769,9 +1094,13 @@ export default function ContactPage() {
                           <div className="flex items-center gap-[8px]">
                             <Switch
                               checked={form.isActive}
-                              onCheckedChange={(checked) => setForm({ ...form, isActive: checked })}
+                              onCheckedChange={(checked) =>
+                                setForm({ ...form, isActive: checked })
+                              }
                             />
-                            <Label className="text-[12px] font-medium text-[#2A2A2A]">Active</Label>
+                            <Label className="text-[12px] font-medium text-[#2A2A2A]">
+                              Active
+                            </Label>
                           </div>
                         </div>
                       </div>
@@ -781,7 +1110,10 @@ export default function ContactPage() {
 
                 {/* INFO SECTION */}
                 <div className="rounded-[12px] border border-[#E4E4E4] p-[14px]">
-                  {renderSectionHeader("Info Section", <FileText className="h-[16px] w-[16px]" />)}
+                  {renderSectionHeader(
+                    "Info Section",
+                    <FileText className="h-[16px] w-[16px]" />,
+                  )}
                   {sections.info && (
                     <div className="mt-[12px] space-y-[12px]">
                       <div>
@@ -790,10 +1122,22 @@ export default function ContactPage() {
                         </Label>
                         <Input
                           value={form.infoTitle}
-                          onChange={(e) => setForm({ ...form, infoTitle: e.target.value })}
+                          onChange={(e) =>
+                            setForm({ ...form, infoTitle: e.target.value })
+                          }
                           placeholder="Fill out the form & get a call back!"
                           className="h-[42px] rounded-[10px] border-[#E4E4E4] bg-white text-[13px] focus-visible:ring-[#EA580C]/30"
                         />
+                        <div className="mt-[4px]">
+                          <InlineLinkManager
+                            links={form.infoTitleInlineLinks || []}
+                            onChange={(links) =>
+                              setForm({ ...form, infoTitleInlineLinks: links })
+                            }
+                            label="Info Title Inline Links"
+                            description="Text within the info title that will become clickable."
+                          />
+                        </div>
                       </div>
                       <div>
                         <Label className="mb-[6px] block text-[12px] font-medium text-[#2A2A2A]">
@@ -801,11 +1145,29 @@ export default function ContactPage() {
                         </Label>
                         <Textarea
                           value={form.infoDescription}
-                          onChange={(e) => setForm({ ...form, infoDescription: e.target.value })}
+                          onChange={(e) =>
+                            setForm({
+                              ...form,
+                              infoDescription: e.target.value,
+                            })
+                          }
                           placeholder="Info description..."
                           rows={2}
                           className="rounded-[10px] border-[#E4E4E4] bg-white text-[13px] focus-visible:ring-[#EA580C]/30"
                         />
+                        <div className="mt-[4px]">
+                          <InlineLinkManager
+                            links={form.infoDescriptionInlineLinks || []}
+                            onChange={(links) =>
+                              setForm({
+                                ...form,
+                                infoDescriptionInlineLinks: links,
+                              })
+                            }
+                            label="Info Description Inline Links"
+                            description="Text within the info description that will become clickable."
+                          />
+                        </div>
                       </div>
                     </div>
                   )}
@@ -813,7 +1175,10 @@ export default function ContactPage() {
 
                 {/* CONTACT INFO */}
                 <div className="rounded-[12px] border border-[#E4E4E4] p-[14px]">
-                  {renderSectionHeader("Contact Details", <Phone className="h-[16px] w-[16px]" />)}
+                  {renderSectionHeader(
+                    "Contact Details",
+                    <Phone className="h-[16px] w-[16px]" />,
+                  )}
                   {sections.contact && (
                     <div className="mt-[12px] space-y-[12px]">
                       <div>
@@ -822,10 +1187,22 @@ export default function ContactPage() {
                         </Label>
                         <Input
                           value={form.address}
-                          onChange={(e) => setForm({ ...form, address: e.target.value })}
+                          onChange={(e) =>
+                            setForm({ ...form, address: e.target.value })
+                          }
                           placeholder="Al Quoz Industrial Area 1, Dubai, UAE"
                           className="h-[42px] rounded-[10px] border-[#E4E4E4] bg-white text-[13px] focus-visible:ring-[#EA580C]/30"
                         />
+                        <div className="mt-[4px]">
+                          <InlineLinkManager
+                            links={form.addressInlineLinks || []}
+                            onChange={(links) =>
+                              setForm({ ...form, addressInlineLinks: links })
+                            }
+                            label="Address Inline Links"
+                            description="Text within the address that will become clickable."
+                          />
+                        </div>
                       </div>
                       <div className="grid grid-cols-2 gap-[10px]">
                         <div>
@@ -834,7 +1211,9 @@ export default function ContactPage() {
                           </Label>
                           <Input
                             value={form.phone1}
-                            onChange={(e) => setForm({ ...form, phone1: e.target.value })}
+                            onChange={(e) =>
+                              setForm({ ...form, phone1: e.target.value })
+                            }
                             placeholder="+971565066845"
                             className="h-[38px] rounded-[10px] border-[#E4E4E4] bg-white text-[13px] focus-visible:ring-[#EA580C]/30"
                           />
@@ -845,7 +1224,9 @@ export default function ContactPage() {
                           </Label>
                           <Input
                             value={form.phone2}
-                            onChange={(e) => setForm({ ...form, phone2: e.target.value })}
+                            onChange={(e) =>
+                              setForm({ ...form, phone2: e.target.value })
+                            }
                             placeholder="+971527875262"
                             className="h-[38px] rounded-[10px] border-[#E4E4E4] bg-white text-[13px] focus-visible:ring-[#EA580C]/30"
                           />
@@ -857,7 +1238,9 @@ export default function ContactPage() {
                         </Label>
                         <Input
                           value={form.email}
-                          onChange={(e) => setForm({ ...form, email: e.target.value })}
+                          onChange={(e) =>
+                            setForm({ ...form, email: e.target.value })
+                          }
                           placeholder="marketing@wwduae.ae"
                           className="h-[42px] rounded-[10px] border-[#E4E4E4] bg-white text-[13px] focus-visible:ring-[#EA580C]/30"
                         />
@@ -868,7 +1251,10 @@ export default function ContactPage() {
 
                 {/* FORM SECTION */}
                 <div className="rounded-[12px] border border-[#E4E4E4] p-[14px]">
-                  {renderSectionHeader("Form Settings", <Send className="h-[16px] w-[16px]" />)}
+                  {renderSectionHeader(
+                    "Form Settings",
+                    <Send className="h-[16px] w-[16px]" />,
+                  )}
                   {sections.form && (
                     <div className="mt-[12px] space-y-[12px]">
                       <div>
@@ -877,10 +1263,22 @@ export default function ContactPage() {
                         </Label>
                         <Input
                           value={form.formTitle}
-                          onChange={(e) => setForm({ ...form, formTitle: e.target.value })}
+                          onChange={(e) =>
+                            setForm({ ...form, formTitle: e.target.value })
+                          }
                           placeholder="Send A Message"
                           className="h-[38px] rounded-[10px] border-[#E4E4E4] bg-white text-[13px] focus-visible:ring-[#EA580C]/30"
                         />
+                        <div className="mt-[4px]">
+                          <InlineLinkManager
+                            links={form.formTitleInlineLinks || []}
+                            onChange={(links) =>
+                              setForm({ ...form, formTitleInlineLinks: links })
+                            }
+                            label="Form Title Inline Links"
+                            description="Text within the form title that will become clickable."
+                          />
+                        </div>
                       </div>
                       <div>
                         <Label className="mb-[4px] block text-[11px] font-medium text-[#2A2A2A]">
@@ -888,10 +1286,25 @@ export default function ContactPage() {
                         </Label>
                         <Input
                           value={form.formSubtitle}
-                          onChange={(e) => setForm({ ...form, formSubtitle: e.target.value })}
+                          onChange={(e) =>
+                            setForm({ ...form, formSubtitle: e.target.value })
+                          }
                           placeholder="We respond within 24 hours"
                           className="h-[38px] rounded-[10px] border-[#E4E4E4] bg-white text-[13px] focus-visible:ring-[#EA580C]/30"
                         />
+                        <div className="mt-[4px]">
+                          <InlineLinkManager
+                            links={form.formSubtitleInlineLinks || []}
+                            onChange={(links) =>
+                              setForm({
+                                ...form,
+                                formSubtitleInlineLinks: links,
+                              })
+                            }
+                            label="Form Subtitle Inline Links"
+                            description="Text within the form subtitle that will become clickable."
+                          />
+                        </div>
                       </div>
                       <div>
                         <Label className="mb-[4px] block text-[11px] font-medium text-[#2A2A2A]">
@@ -899,7 +1312,9 @@ export default function ContactPage() {
                         </Label>
                         <Input
                           value={form.formButtonText}
-                          onChange={(e) => setForm({ ...form, formButtonText: e.target.value })}
+                          onChange={(e) =>
+                            setForm({ ...form, formButtonText: e.target.value })
+                          }
                           placeholder="Send A Message"
                           className="h-[38px] rounded-[10px] border-[#E4E4E4] bg-white text-[13px] focus-visible:ring-[#EA580C]/30"
                         />
@@ -917,12 +1332,26 @@ export default function ContactPage() {
                             >
                               <div className="flex-1">
                                 <div className="flex items-center gap-[6px]">
-                                  <span className="text-[10px] font-medium text-[#999]">#{index + 1}</span>
-                                  <h5 className="text-[12px] font-medium text-[#111111]">{field.name}</h5>
-                                  <span className="text-[10px] text-[#999]">({field.type})</span>
+                                  <span className="text-[10px] font-medium text-[#999]">
+                                    #{index + 1}
+                                  </span>
+                                  <h5 className="text-[12px] font-medium text-[#111111]">
+                                    {field.name}
+                                  </h5>
+                                  <span className="text-[10px] text-[#999]">
+                                    ({field.type})
+                                  </span>
                                   {field.required && (
-                                    <span className="text-[10px] text-[#DC2626]">*</span>
+                                    <span className="text-[10px] text-[#DC2626]">
+                                      *
+                                    </span>
                                   )}
+                                  {field.inlineLinks &&
+                                    field.inlineLinks.length > 0 && (
+                                      <span className="text-[10px] text-[#EA580C]">
+                                        • {field.inlineLinks.length} links
+                                      </span>
+                                    )}
                                 </div>
                                 <p className="mt-[2px] text-[10px] text-[#999]">
                                   Placeholder: {field.placeholder}
@@ -930,15 +1359,17 @@ export default function ContactPage() {
                               </div>
                               <div className="flex shrink-0 gap-[4px] ml-[8px]">
                                 <button
-                                  onClick={() => moveField(index, 'up')}
+                                  onClick={() => moveField(index, "up")}
                                   disabled={index === 0}
                                   className="rounded p-[4px] text-[#999] hover:bg-[#FFF4EC] hover:text-[#EA580C] disabled:opacity-30 disabled:cursor-not-allowed"
                                 >
                                   <ArrowUp className="h-[12px] w-[12px]" />
                                 </button>
                                 <button
-                                  onClick={() => moveField(index, 'down')}
-                                  disabled={index === form.formFields.length - 1}
+                                  onClick={() => moveField(index, "down")}
+                                  disabled={
+                                    index === form.formFields.length - 1
+                                  }
                                   className="rounded p-[4px] text-[#999] hover:bg-[#FFF4EC] hover:text-[#EA580C] disabled:opacity-30 disabled:cursor-not-allowed"
                                 >
                                   <ArrowDown className="h-[12px] w-[12px]" />
@@ -992,7 +1423,9 @@ export default function ContactPage() {
                     disabled={submitting || uploading}
                     className="h-[46px] gap-[8px] rounded-[14px] bg-[#EA580C] text-[14px] font-medium text-white hover:bg-[#EA580C] hover:shadow-[0_14px_30px_rgba(234,88,12,0.3)] sm:h-[48px] sm:w-[160px]"
                   >
-                    {submitting && <Loader2 className="h-[16px] w-[16px] animate-spin" />}
+                    {submitting && (
+                      <Loader2 className="h-[16px] w-[16px] animate-spin" />
+                    )}
                     {contactData ? "Save Changes" : "Create"}
                   </Button>
                 </div>
@@ -1018,11 +1451,13 @@ export default function ContactPage() {
               exit={{ y: 10, opacity: 0, scale: 0.97 }}
               transition={{ duration: 0.2, ease: "easeOut" }}
               onClick={(e) => e.stopPropagation()}
-              className="w-full max-w-[480px] rounded-[20px] bg-white p-[22px] shadow-[0_30px_80px_rgba(0,0,0,0.25)] sm:rounded-[22px] sm:p-[26px]"
+              className="w-full max-w-[500px] rounded-[20px] bg-white p-[22px] shadow-[0_30px_80px_rgba(0,0,0,0.25)] sm:rounded-[22px] sm:p-[26px]"
             >
               <div className="flex items-center justify-between">
                 <h3 className="text-[16px] font-semibold text-[#111111] sm:text-[17px]">
-                  {editingFieldIndex !== null ? "Edit Form Field" : "Add Form Field"}
+                  {editingFieldIndex !== null
+                    ? "Edit Form Field"
+                    : "Add Form Field"}
                 </h3>
                 <button
                   onClick={closeFieldModal}
@@ -1039,7 +1474,9 @@ export default function ContactPage() {
                   </Label>
                   <Input
                     value={tempField.name}
-                    onChange={(e) => setTempField({ ...tempField, name: e.target.value })}
+                    onChange={(e) =>
+                      setTempField({ ...tempField, name: e.target.value })
+                    }
                     placeholder="email"
                     className="h-[42px] rounded-[10px] border-[#E4E4E4] bg-white text-[13px] focus-visible:ring-[#EA580C]/30"
                   />
@@ -1050,7 +1487,9 @@ export default function ContactPage() {
                   </Label>
                   <select
                     value={tempField.type}
-                    onChange={(e) => setTempField({ ...tempField, type: e.target.value })}
+                    onChange={(e) =>
+                      setTempField({ ...tempField, type: e.target.value })
+                    }
                     className="h-[42px] w-full rounded-[10px] border border-[#E4E4E4] bg-white px-[12px] text-[13px] focus-visible:ring-[#EA580C]/30"
                   >
                     {FIELD_TYPES.map((type) => (
@@ -1066,7 +1505,12 @@ export default function ContactPage() {
                   </Label>
                   <Input
                     value={tempField.placeholder}
-                    onChange={(e) => setTempField({ ...tempField, placeholder: e.target.value })}
+                    onChange={(e) =>
+                      setTempField({
+                        ...tempField,
+                        placeholder: e.target.value,
+                      })
+                    }
                     placeholder="Enter your email"
                     className="h-[42px] rounded-[10px] border-[#E4E4E4] bg-white text-[13px] focus-visible:ring-[#EA580C]/30"
                   />
@@ -1074,10 +1518,27 @@ export default function ContactPage() {
                 <div className="flex items-center gap-[8px]">
                   <Switch
                     checked={tempField.required}
-                    onCheckedChange={(checked) => setTempField({ ...tempField, required: checked })}
+                    onCheckedChange={(checked) =>
+                      setTempField({ ...tempField, required: checked })
+                    }
                   />
-                  <Label className="text-[12px] font-medium text-[#2A2A2A]">Required Field</Label>
+                  <Label className="text-[12px] font-medium text-[#2A2A2A]">
+                    Required Field
+                  </Label>
                 </div>
+
+                {/* Field Inline Links */}
+                <div className="mt-[8px]">
+                  <InlineLinkManager
+                    links={tempField.inlineLinks || []}
+                    onChange={(links) =>
+                      setTempField({ ...tempField, inlineLinks: links })
+                    }
+                    label="Field Label Inline Links"
+                    description="Text within this form field label that will become clickable."
+                  />
+                </div>
+
                 <div className="flex gap-[10px] pt-[8px]">
                   <Button
                     variant="outline"
@@ -1125,7 +1586,8 @@ export default function ContactPage() {
                 Delete contact page content?
               </h3>
               <p className="mt-[6px] text-[12px] leading-[1.6] text-[#666666] sm:text-[13px]">
-                All contact page content including form fields will be permanently removed. This can't be undone.
+                All contact page content including form fields will be
+                permanently removed. This can't be undone.
               </p>
 
               <div className="mt-[18px] flex gap-[10px] sm:mt-[20px]">
@@ -1142,7 +1604,9 @@ export default function ContactPage() {
                   disabled={!!deletingId}
                   className="h-[44px] flex-1 gap-[8px] rounded-[12px] bg-[#DC2626] text-[14px] font-medium text-white hover:bg-[#DC2626] sm:h-[46px]"
                 >
-                  {deletingId && <Loader2 className="h-[15px] w-[15px] animate-spin" />}
+                  {deletingId && (
+                    <Loader2 className="h-[15px] w-[15px] animate-spin" />
+                  )}
                   Delete
                 </Button>
               </div>
