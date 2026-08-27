@@ -16,6 +16,13 @@ import {
   Type,
   UploadCloud,
   X,
+  CircleDot,
+  ExternalLink,
+  Link as LinkIcon,
+  Globe,
+  FileText,
+  Layers,
+  Hash,
 } from "lucide-react";
 import api from "@/lib/axios";
 import { fileUpload } from "@/app/api/admin/upload/upload";
@@ -26,6 +33,16 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 
+// ================= TYPES =================
+
+interface InlineLink {
+  text: string;
+  url: string;
+  type: string;
+  openInNewTab: boolean;
+  position: number;
+}
+
 type WorkCategory = "joinery" | "fit-out" | "renovation" | "turnkey";
 
 interface WorkImage {
@@ -35,15 +52,20 @@ interface WorkImage {
   description: string;
   category: WorkCategory;
   order: number;
+  inlineLinks?: InlineLink[];
 }
 
 interface WorksPayload {
   introText: string;
+  introInlineLinks?: InlineLink[];
   title: string;
+  titleInlineLinks?: InlineLink[];
   buttonText: string;
   buttonLink: string;
   featuredTitle: string;
+  featuredTitleInlineLinks?: InlineLink[];
   featuredDescription: string;
+  featuredDescriptionInlineLinks?: InlineLink[];
   featuredImage: string;
   featuredCategory: WorkCategory;
   images: WorkImage[];
@@ -58,6 +80,12 @@ interface Work extends WorksPayload {
 
 type CreateWorksPayload = WorksPayload[] | { works: WorksPayload[] };
 
+const LINK_TYPES = [
+  { value: "page", label: "Page", icon: FileText },
+  { value: "section", label: "Section", icon: Layers },
+  { value: "external", label: "External", icon: Globe },
+];
+
 const CATEGORY_OPTIONS: WorkCategory[] = [
   "joinery",
   "fit-out",
@@ -71,15 +99,20 @@ const EMPTY_IMAGE: WorkImage = {
   description: "",
   category: "joinery",
   order: 0,
+  inlineLinks: [],
 };
 
 const EMPTY_FORM: WorksPayload = {
   introText: "",
+  introInlineLinks: [],
   title: "Our Works",
+  titleInlineLinks: [],
   buttonText: "View Our Works",
   buttonLink: "/our-works",
   featuredTitle: "",
+  featuredTitleInlineLinks: [],
   featuredDescription: "",
+  featuredDescriptionInlineLinks: [],
   featuredImage: "",
   featuredCategory: "joinery",
   images: [],
@@ -92,6 +125,15 @@ function resolveImage(path: string): string {
   if (!path) return "";
   if (path.startsWith("http")) return path;
   return `${IMAGE_BASE_URL}${path.startsWith("/") ? path : `/${path}`}`;
+}
+
+function getLinkTypeIcon(type: string) {
+  const found = LINK_TYPES.find((t) => t.value === type);
+  if (found) {
+    const IconComponent = found.icon;
+    return <IconComponent className="h-3 w-3" />;
+  }
+  return <LinkIcon className="h-3 w-3" />;
 }
 
 function getErrorMessage(err: unknown, fallback: string): string {
@@ -132,16 +174,188 @@ function parseWorksList(data: unknown): Work[] {
 function mapWorkToForm(work: Work): WorksPayload {
   return {
     introText: work.introText || "",
+    introInlineLinks: work.introInlineLinks || [],
     title: work.title || "Our Works",
+    titleInlineLinks: work.titleInlineLinks || [],
     buttonText: work.buttonText || "View Our Works",
     buttonLink: work.buttonLink || "/our-works",
     featuredTitle: work.featuredTitle || "",
+    featuredTitleInlineLinks: work.featuredTitleInlineLinks || [],
     featuredDescription: work.featuredDescription || "",
+    featuredDescriptionInlineLinks: work.featuredDescriptionInlineLinks || [],
     featuredImage: work.featuredImage || "",
     featuredCategory: work.featuredCategory || "joinery",
-    images: [...(work.images || [])].sort((a, b) => (a.order ?? 0) - (b.order ?? 0)),
+    images: [...(work.images || [])]
+      .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
+      .map((img) => ({
+        ...img,
+        inlineLinks: img.inlineLinks || [],
+      })),
     isActive: work.isActive ?? true,
   };
+}
+
+// ================= INLINE LINK MANAGER =================
+
+function InlineLinkManager({
+  links = [],
+  onChange,
+  label = "Inline Links",
+  description = "Text within this content that will become clickable.",
+  hasChanged = false,
+}: {
+  links: InlineLink[];
+  onChange: (links: InlineLink[]) => void;
+  label?: string;
+  description?: string;
+  hasChanged?: boolean;
+}) {
+  const [linkText, setLinkText] = useState("");
+  const [linkUrl, setLinkUrl] = useState("");
+  const [linkType, setLinkType] = useState("page");
+  const [linkNewTab, setLinkNewTab] = useState(false);
+
+  const addLink = () => {
+    if (!linkText.trim() || !linkUrl.trim()) {
+      toast.error("Text and URL are required");
+      return;
+    }
+
+    const duplicate = links.some(
+      (link) => link.text.toLowerCase() === linkText.trim().toLowerCase(),
+    );
+
+    if (duplicate) {
+      toast.error(`"${linkText.trim()}" already has a link`);
+      return;
+    }
+
+    const newLink: InlineLink = {
+      text: linkText.trim(),
+      url: linkUrl.trim(),
+      type: linkType,
+      openInNewTab: linkNewTab,
+      position: links.length,
+    };
+
+    onChange([...links, newLink]);
+    setLinkText("");
+    setLinkUrl("");
+    setLinkType("page");
+    setLinkNewTab(false);
+    toast.success("Inline link added");
+  };
+
+  const removeLink = (index: number) => {
+    const updatedLinks = links.filter((_, i) => i !== index);
+    const reindexedLinks = updatedLinks.map((link, idx) => ({
+      ...link,
+      position: idx,
+    }));
+    onChange(reindexedLinks);
+    toast.success("Inline link removed");
+  };
+
+  return (
+    <div
+      className={`mt-3 border-t border-[#E4C9B4] pt-3 ${hasChanged ? "border-2 border-[#EA580C] rounded-[8px] p-3 bg-[#FFF9F4]" : ""}`}
+    >
+      <div className="flex items-center gap-[6px] mb-2">
+        <Label className="text-xs font-medium text-[#2A2A2A]">{label}</Label>
+        {hasChanged && (
+          <span className="flex items-center gap-[4px] text-[10px] font-medium text-[#EA580C]">
+            <CircleDot className="h-[10px] w-[10px] fill-[#EA580C]" />
+            Changed
+          </span>
+        )}
+      </div>
+      <p className="text-[10px] text-[#888888] mb-2">{description}</p>
+
+      {links.length > 0 && (
+        <div className="mb-2 space-y-1 max-h-[120px] overflow-y-auto">
+          {links.map((link, idx) => (
+            <div
+              key={idx}
+              className="flex items-center justify-between rounded-[8px] bg-white px-3 py-2 text-xs border border-[#E4E4E4]"
+            >
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="font-medium text-[#EA580C]">
+                  "{link.text}"
+                </span>
+                <span className="text-[#999]">→</span>
+                <span className="text-[#666] truncate max-w-[120px]">
+                  {link.url}
+                </span>
+                {link.openInNewTab && (
+                  <span className="text-[9px] text-[#999] flex items-center gap-0.5">
+                    <ExternalLink className="h-2.5 w-2.5" /> new tab
+                  </span>
+                )}
+                <span className="text-[9px] text-[#999]">#{link.position}</span>
+                {getLinkTypeIcon(link.type)}
+              </div>
+              <button
+                type="button"
+                onClick={() => removeLink(idx)}
+                className="text-[#DC2626] hover:text-[#b91c1c]"
+              >
+                <X className="h-3 w-3" />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <div className="grid grid-cols-1 gap-2 xs:grid-cols-4">
+        <div className="xs:col-span-1">
+          <Input
+            value={linkText}
+            onChange={(e) => setLinkText(e.target.value)}
+            placeholder="Text to link"
+            className="h-9 rounded-[8px] text-xs"
+          />
+        </div>
+        <div className="xs:col-span-1">
+          <Input
+            value={linkUrl}
+            onChange={(e) => setLinkUrl(e.target.value)}
+            placeholder="URL"
+            className="h-9 rounded-[8px] text-xs"
+          />
+        </div>
+        <div className="xs:col-span-1">
+          <select
+            value={linkType}
+            onChange={(e) => setLinkType(e.target.value)}
+            className="h-9 w-full rounded-[8px] border border-[#E4E4E4] px-2 text-xs bg-white"
+          >
+            {LINK_TYPES.map((type) => (
+              <option key={type.value} value={type.value}>
+                {type.label}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className="xs:col-span-1 flex gap-1">
+          <Button
+            type="button"
+            onClick={addLink}
+            className="h-9 flex-1 rounded-[8px] bg-[#EA580C] text-white hover:bg-[#EA580C] text-xs px-3"
+          >
+            <Plus className="h-3 w-3" /> Add
+          </Button>
+        </div>
+      </div>
+      <div className="mt-1 flex items-center gap-2">
+        <Switch
+          checked={linkNewTab}
+          onCheckedChange={setLinkNewTab}
+          className="h-4 w-7"
+        />
+        <span className="text-[10px] text-[#666666]">Open in new tab</span>
+      </div>
+    </div>
+  );
 }
 
 export default function HomeWorksAdminPage() {
@@ -153,15 +367,17 @@ export default function HomeWorksAdminPage() {
   const [submitting, setSubmitting] = useState(false);
   const [togglingId, setTogglingId] = useState<string | null>(null);
   const [uploadingFeatured, setUploadingFeatured] = useState(false);
-  const [uploadingGalleryIndex, setUploadingGalleryIndex] = useState<number | null>(
-    null
-  );
+  const [uploadingGalleryIndex, setUploadingGalleryIndex] = useState<
+    number | null
+  >(null);
   const [deleteTarget, setDeleteTarget] = useState<Work | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const [showImageForm, setShowImageForm] = useState(false);
   const [imageDraft, setImageDraft] = useState<WorkImage>(EMPTY_IMAGE);
-  const [editingImageIndex, setEditingImageIndex] = useState<number | null>(null);
+  const [editingImageIndex, setEditingImageIndex] = useState<number | null>(
+    null,
+  );
 
   const featuredInputRef = useRef<HTMLInputElement>(null);
   const galleryInputRef = useRef<HTMLInputElement>(null);
@@ -195,7 +411,8 @@ export default function HomeWorksAdminPage() {
   };
 
   const closeModal = () => {
-    if (submitting || uploadingFeatured || uploadingGalleryIndex !== null) return;
+    if (submitting || uploadingFeatured || uploadingGalleryIndex !== null)
+      return;
     setModalOpen(false);
     setEditingId(null);
     setForm(EMPTY_FORM);
@@ -204,7 +421,9 @@ export default function HomeWorksAdminPage() {
     setImageDraft(EMPTY_IMAGE);
   };
 
-  const handleFeaturedUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFeaturedUpload = async (
+    e: React.ChangeEvent<HTMLInputElement>,
+  ) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -216,14 +435,14 @@ export default function HomeWorksAdminPage() {
     } catch (err: unknown) {
       const message =
         err &&
-          typeof err === "object" &&
-          "response" in err &&
-          err.response &&
-          typeof err.response === "object" &&
-          "data" in err.response &&
-          err.response.data &&
-          typeof err.response.data === "object" &&
-          "message" in err.response.data
+        typeof err === "object" &&
+        "response" in err &&
+        err.response &&
+        typeof err.response === "object" &&
+        "data" in err.response &&
+        err.response.data &&
+        typeof err.response.data === "object" &&
+        "message" in err.response.data
           ? String(err.response.data.message)
           : "Failed to upload featured image";
       toast.error(message);
@@ -233,7 +452,9 @@ export default function HomeWorksAdminPage() {
     }
   };
 
-  const handleGalleryUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleGalleryUpload = async (
+    e: React.ChangeEvent<HTMLInputElement>,
+  ) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -251,13 +472,20 @@ export default function HomeWorksAdminPage() {
   };
 
   const openAddImage = () => {
-    setImageDraft({ ...EMPTY_IMAGE, order: form.images.length });
+    setImageDraft({
+      ...EMPTY_IMAGE,
+      order: form.images.length,
+      inlineLinks: [],
+    });
     setEditingImageIndex(null);
     setShowImageForm(true);
   };
 
   const openEditImage = (index: number) => {
-    setImageDraft(form.images[index]);
+    setImageDraft({
+      ...form.images[index],
+      inlineLinks: form.images[index].inlineLinks || [],
+    });
     setEditingImageIndex(index);
     setShowImageForm(true);
   };
@@ -269,7 +497,11 @@ export default function HomeWorksAdminPage() {
   };
 
   const saveImageDraft = () => {
-    if (!imageDraft.title.trim() || !imageDraft.description.trim() || !imageDraft.url) {
+    if (
+      !imageDraft.title.trim() ||
+      !imageDraft.description.trim() ||
+      !imageDraft.url
+    ) {
       toast.error("Gallery image title, description, and image are required");
       return;
     }
@@ -277,9 +509,15 @@ export default function HomeWorksAdminPage() {
     setForm((prev) => {
       const images = [...prev.images];
       if (editingImageIndex !== null) {
-        images[editingImageIndex] = imageDraft;
+        images[editingImageIndex] = {
+          ...imageDraft,
+          inlineLinks: imageDraft.inlineLinks || [],
+        };
       } else {
-        images.push(imageDraft);
+        images.push({
+          ...imageDraft,
+          inlineLinks: imageDraft.inlineLinks || [],
+        });
       }
       return {
         ...prev,
@@ -312,10 +550,27 @@ export default function HomeWorksAdminPage() {
     try {
       setSubmitting(true);
 
-      const {  ...restForm } = form;
       const payload = {
-        ...restForm,
-        images: form.images.map(({ _id, createdAt, updatedAt, ...rest }: any) => rest),
+        introText: form.introText,
+        introInlineLinks: form.introInlineLinks || [],
+        title: form.title,
+        titleInlineLinks: form.titleInlineLinks || [],
+        buttonText: form.buttonText,
+        buttonLink: form.buttonLink,
+        featuredTitle: form.featuredTitle,
+        featuredTitleInlineLinks: form.featuredTitleInlineLinks || [],
+        featuredDescription: form.featuredDescription,
+        featuredDescriptionInlineLinks:
+          form.featuredDescriptionInlineLinks || [],
+        featuredImage: form.featuredImage,
+        featuredCategory: form.featuredCategory,
+        images: form.images.map(
+          ({ _id, createdAt, updatedAt, ...rest }: any) => ({
+            ...rest,
+            inlineLinks: rest.inlineLinks || [],
+          }),
+        ),
+        isActive: form.isActive,
       };
 
       if (editingId) {
@@ -336,8 +591,10 @@ export default function HomeWorksAdminPage() {
       toast.error(
         getErrorMessage(
           err,
-          editingId ? "Failed to update home works section" : "Failed to create home works section"
-        )
+          editingId
+            ? "Failed to update home works section"
+            : "Failed to create home works section",
+        ),
       );
     } finally {
       setSubmitting(false);
@@ -350,10 +607,14 @@ export default function HomeWorksAdminPage() {
         await api.patch("/home-works", { isActive: !work.isActive });
         setWorksList((prev) =>
           prev.map((item) =>
-            item.title === work.title ? { ...item, isActive: !item.isActive } : item
-          )
+            item.title === work.title
+              ? { ...item, isActive: !item.isActive }
+              : item,
+          ),
         );
-        toast.success(!work.isActive ? "Section activated" : "Section deactivated");
+        toast.success(
+          !work.isActive ? "Section activated" : "Section deactivated",
+        );
       } catch {
         toast.error("Failed to update status");
       }
@@ -363,16 +624,20 @@ export default function HomeWorksAdminPage() {
     try {
       setTogglingId(work._id);
       try {
-        await api.patch(`/home-works/${work._id}`, { isActive: !work.isActive });
+        await api.patch(`/home-works/${work._id}`, {
+          isActive: !work.isActive,
+        });
       } catch {
         await api.patch("/home-works", { isActive: !work.isActive });
       }
       setWorksList((prev) =>
         prev.map((item) =>
-          item._id === work._id ? { ...item, isActive: !item.isActive } : item
-        )
+          item._id === work._id ? { ...item, isActive: !item.isActive } : item,
+        ),
       );
-      toast.success(!work.isActive ? "Section activated" : "Section deactivated");
+      toast.success(
+        !work.isActive ? "Section activated" : "Section deactivated",
+      );
     } catch {
       toast.error("Failed to update status");
     } finally {
@@ -396,8 +661,10 @@ export default function HomeWorksAdminPage() {
       }
       setWorksList((prev) =>
         prev.filter((item) =>
-          deleteTarget._id ? item._id !== deleteTarget._id : item.title !== deleteTarget.title
-        )
+          deleteTarget._id
+            ? item._id !== deleteTarget._id
+            : item.title !== deleteTarget.title,
+        ),
       );
       setDeleteTarget(null);
       toast.success("Home works section deleted");
@@ -406,6 +673,12 @@ export default function HomeWorksAdminPage() {
     } finally {
       setDeletingId(null);
     }
+  };
+
+  // ================= UPDATE INLINE LINKS =================
+
+  const updateImageInlineLinks = (links: InlineLink[]) => {
+    setImageDraft((prev) => ({ ...prev, inlineLinks: links }));
   };
 
   return (
@@ -495,10 +768,11 @@ export default function HomeWorksAdminPage() {
                   <button
                     onClick={() => toggleActive(work)}
                     disabled={togglingId === work._id}
-                    className={`absolute right-[12px] top-[12px] rounded-full px-[10px] py-[5px] text-[11px] font-medium backdrop-blur-sm transition-colors ${work.isActive
+                    className={`absolute right-[12px] top-[12px] rounded-full px-[10px] py-[5px] text-[11px] font-medium backdrop-blur-sm transition-colors ${
+                      work.isActive
                         ? "bg-[#16A34A]/90 text-white"
                         : "bg-black/40 text-white/80"
-                      }`}
+                    }`}
                   >
                     {togglingId === work._id
                       ? "..."
@@ -509,12 +783,19 @@ export default function HomeWorksAdminPage() {
                 </div>
 
                 <CardContent className="p-[16px] sm:p-[20px]">
-                  <h3 className="text-[18px] font-semibold text-[#111111]">{work.title}</h3>
+                  <h3 className="text-[18px] font-semibold text-[#111111]">
+                    {work.title}
+                  </h3>
                   <p className="mt-[8px] line-clamp-2 text-[13px] leading-[1.6] text-[#666666]">
                     {work.introText}
                   </p>
                   <p className="mt-[8px] text-[11px] text-[#999]">
                     {work.images?.length || 0} gallery images
+                    {work.images?.some(
+                      (img) => img.inlineLinks && img.inlineLinks.length > 0,
+                    ) && (
+                      <span className="ml-2 text-[#EA580C]">• with links</span>
+                    )}
                   </p>
 
                   <div className="mt-[12px] rounded-[12px] bg-[#FFF8F3] p-[12px]">
@@ -565,7 +846,7 @@ export default function HomeWorksAdminPage() {
               exit={{ y: 20, opacity: 0, scale: 0.98 }}
               transition={{ duration: 0.25, ease: "easeOut" }}
               onClick={(e) => e.stopPropagation()}
-              className="relative max-h-[94vh] w-full overflow-y-auto rounded-t-[24px] bg-white p-[18px] shadow-[0_30px_80px_rgba(0,0,0,0.25)] xs:p-[22px] sm:max-h-[92vh] sm:max-w-[640px] sm:rounded-[28px] sm:p-[32px] md:max-w-[720px]"
+              className="relative max-h-[94vh] w-full overflow-y-auto rounded-t-[24px] bg-white p-[18px] shadow-[0_30px_80px_rgba(0,0,0,0.25)] xs:p-[22px] sm:max-h-[92vh] sm:max-w-[720px] sm:rounded-[28px] sm:p-[32px] md:max-w-[800px]"
             >
               <div className="flex items-center justify-between">
                 <h2 className="text-[18px] font-semibold text-[#111111] xs:text-[20px] sm:text-[24px]">
@@ -580,31 +861,58 @@ export default function HomeWorksAdminPage() {
               </div>
 
               <div className="mt-[18px] space-y-[14px] sm:mt-[22px] sm:space-y-[16px]">
+                {/* SECTION TITLE */}
                 <div>
                   <Label className="mb-[8px] flex items-center gap-[6px] text-[13px] font-medium text-[#2A2A2A]">
                     <Type className="h-[13px] w-[13px]" /> Section Title
                   </Label>
                   <Input
                     value={form.title}
-                    onChange={(e) => setForm({ ...form, title: e.target.value })}
+                    onChange={(e) =>
+                      setForm({ ...form, title: e.target.value })
+                    }
                     placeholder="Our Works"
                     className="h-[46px] rounded-[12px] border-[#E4E4E4] bg-white text-[14px] focus-visible:ring-[#EA580C]/30 sm:h-[48px]"
                   />
+                  <div className="mt-[8px]">
+                    <InlineLinkManager
+                      links={form.titleInlineLinks || []}
+                      onChange={(links) =>
+                        setForm({ ...form, titleInlineLinks: links })
+                      }
+                      label="Title Inline Links"
+                      description="Text within the section title that will become clickable."
+                    />
+                  </div>
                 </div>
 
+                {/* INTRO TEXT */}
                 <div>
                   <Label className="mb-[8px] flex items-center gap-[6px] text-[13px] font-medium text-[#2A2A2A]">
                     <AlignLeft className="h-[13px] w-[13px]" /> Intro Text
                   </Label>
                   <Textarea
                     value={form.introText}
-                    onChange={(e) => setForm({ ...form, introText: e.target.value })}
+                    onChange={(e) =>
+                      setForm({ ...form, introText: e.target.value })
+                    }
                     placeholder="With over 10 years of experience..."
                     rows={4}
                     className="rounded-[12px] border-[#E4E4E4] bg-white text-[14px] focus-visible:ring-[#EA580C]/30"
                   />
+                  <div className="mt-[8px]">
+                    <InlineLinkManager
+                      links={form.introInlineLinks || []}
+                      onChange={(links) =>
+                        setForm({ ...form, introInlineLinks: links })
+                      }
+                      label="Intro Text Inline Links"
+                      description="Text within the intro text that will become clickable."
+                    />
+                  </div>
                 </div>
 
+                {/* BUTTONS */}
                 <div className="grid grid-cols-1 gap-[12px] xs:grid-cols-2">
                   <div>
                     <Label className="mb-[8px] block text-[13px] font-medium text-[#2A2A2A]">
@@ -612,7 +920,9 @@ export default function HomeWorksAdminPage() {
                     </Label>
                     <Input
                       value={form.buttonText}
-                      onChange={(e) => setForm({ ...form, buttonText: e.target.value })}
+                      onChange={(e) =>
+                        setForm({ ...form, buttonText: e.target.value })
+                      }
                       className="h-[46px] rounded-[12px] border-[#E4E4E4] bg-white text-[14px] focus-visible:ring-[#EA580C]/30 sm:h-[48px]"
                     />
                   </div>
@@ -622,12 +932,15 @@ export default function HomeWorksAdminPage() {
                     </Label>
                     <Input
                       value={form.buttonLink}
-                      onChange={(e) => setForm({ ...form, buttonLink: e.target.value })}
+                      onChange={(e) =>
+                        setForm({ ...form, buttonLink: e.target.value })
+                      }
                       className="h-[46px] rounded-[12px] border-[#E4E4E4] bg-white text-[14px] focus-visible:ring-[#EA580C]/30 sm:h-[48px]"
                     />
                   </div>
                 </div>
 
+                {/* FEATURED WORK */}
                 <div className="rounded-[14px] border border-[#F0D9C8] bg-[#FFF8F3] p-[14px] sm:p-[16px]">
                   <h3 className="text-[14px] font-semibold text-[#111111] sm:text-[15px]">
                     Featured Work
@@ -645,6 +958,19 @@ export default function HomeWorksAdminPage() {
                         }
                         className="h-[46px] rounded-[12px] border-[#E4E4E4] bg-white text-[14px] focus-visible:ring-[#EA580C]/30 sm:h-[48px]"
                       />
+                      <div className="mt-[8px]">
+                        <InlineLinkManager
+                          links={form.featuredTitleInlineLinks || []}
+                          onChange={(links) =>
+                            setForm({
+                              ...form,
+                              featuredTitleInlineLinks: links,
+                            })
+                          }
+                          label="Featured Title Inline Links"
+                          description="Text within the featured title that will become clickable."
+                        />
+                      </div>
                     </div>
 
                     <div>
@@ -654,11 +980,27 @@ export default function HomeWorksAdminPage() {
                       <Textarea
                         value={form.featuredDescription}
                         onChange={(e) =>
-                          setForm({ ...form, featuredDescription: e.target.value })
+                          setForm({
+                            ...form,
+                            featuredDescription: e.target.value,
+                          })
                         }
                         rows={3}
                         className="rounded-[12px] border-[#E4E4E4] bg-white text-[14px] focus-visible:ring-[#EA580C]/30"
                       />
+                      <div className="mt-[8px]">
+                        <InlineLinkManager
+                          links={form.featuredDescriptionInlineLinks || []}
+                          onChange={(links) =>
+                            setForm({
+                              ...form,
+                              featuredDescriptionInlineLinks: links,
+                            })
+                          }
+                          label="Featured Description Inline Links"
+                          description="Text within the featured description that will become clickable."
+                        />
+                      </div>
                     </div>
 
                     <div>
@@ -685,7 +1027,8 @@ export default function HomeWorksAdminPage() {
 
                     <div>
                       <Label className="mb-[8px] flex items-center gap-[6px] text-[13px] font-medium text-[#2A2A2A]">
-                        <ImagePlus className="h-[13px] w-[13px]" /> Featured Image
+                        <ImagePlus className="h-[13px] w-[13px]" /> Featured
+                        Image
                       </Label>
                       {form.featuredImage && (
                         <div className="relative mb-[10px] h-[140px] w-full overflow-hidden rounded-[12px] bg-[#F1E4D8] sm:h-[160px]">
@@ -717,12 +1060,15 @@ export default function HomeWorksAdminPage() {
                         ) : (
                           <UploadCloud className="h-[14px] w-[14px]" />
                         )}
-                        {form.featuredImage ? "Replace Featured Image" : "Upload Featured Image"}
+                        {form.featuredImage
+                          ? "Replace Featured Image"
+                          : "Upload Featured Image"}
                       </Button>
                     </div>
                   </div>
                 </div>
 
+                {/* GALLERY IMAGES */}
                 <div className="rounded-[14px] border border-[#E4E4E4] p-[14px] sm:p-[16px]">
                   <div className="flex flex-col gap-[10px] xs:flex-row xs:items-center xs:justify-between">
                     <h3 className="text-[14px] font-semibold text-[#111111] sm:text-[15px]">
@@ -741,13 +1087,18 @@ export default function HomeWorksAdminPage() {
                   {showImageForm && (
                     <div className="mt-[12px] space-y-[10px] rounded-[12px] border border-[#F0D9C8] bg-[#FFF8F3] p-[12px]">
                       <h4 className="text-[13px] font-semibold text-[#111111]">
-                        {editingImageIndex !== null ? "Edit Gallery Image" : "New Gallery Image"}
+                        {editingImageIndex !== null
+                          ? "Edit Gallery Image"
+                          : "New Gallery Image"}
                       </h4>
 
                       <Input
                         value={imageDraft.title}
                         onChange={(e) =>
-                          setImageDraft((prev) => ({ ...prev, title: e.target.value }))
+                          setImageDraft((prev) => ({
+                            ...prev,
+                            title: e.target.value,
+                          }))
                         }
                         placeholder="Image title"
                         className="h-[44px] rounded-[10px] border-[#E4E4E4] bg-white text-[13px]"
@@ -782,6 +1133,16 @@ export default function HomeWorksAdminPage() {
                           </option>
                         ))}
                       </select>
+
+                      {/* IMAGE INLINE LINKS */}
+                      <div className="mt-[8px]">
+                        <InlineLinkManager
+                          links={imageDraft.inlineLinks || []}
+                          onChange={updateImageInlineLinks}
+                          label="Image Inline Links"
+                          description="Text within this image's title and description that will become clickable."
+                        />
+                      </div>
 
                       {imageDraft.url && (
                         <div className="relative h-[120px] w-full overflow-hidden rounded-[10px] bg-[#F1E4D8]">
@@ -824,7 +1185,9 @@ export default function HomeWorksAdminPage() {
                           onClick={saveImageDraft}
                           className="h-[40px] rounded-[10px] bg-[#EA580C] text-[13px] font-medium text-white hover:bg-[#EA580C]"
                         >
-                          {editingImageIndex !== null ? "Save Image" : "Add Image"}
+                          {editingImageIndex !== null
+                            ? "Save Image"
+                            : "Add Image"}
                         </Button>
 
                         <Button
@@ -866,6 +1229,13 @@ export default function HomeWorksAdminPage() {
                         <div className="min-w-0 flex-1">
                           <p className="text-[10px] font-medium uppercase tracking-wide text-[#C2410C]">
                             {image.category}
+                            {image.inlineLinks &&
+                              image.inlineLinks.length > 0 && (
+                                <span className="ml-2 text-[#EA580C]">
+                                  • {image.inlineLinks.length} link
+                                  {image.inlineLinks.length !== 1 ? "s" : ""}
+                                </span>
+                              )}
                           </p>
                           <p className="truncate text-[13px] font-semibold text-[#111111]">
                             {image.title}
@@ -898,9 +1268,12 @@ export default function HomeWorksAdminPage() {
                   </div>
                 </div>
 
+                {/* ACTIVE SWITCH */}
                 <div className="flex items-center justify-between rounded-[12px] border border-[#E4E4E4] px-[14px] py-[12px]">
                   <div>
-                    <p className="text-[13px] font-medium text-[#111111]">Active</p>
+                    <p className="text-[13px] font-medium text-[#111111]">
+                      Active
+                    </p>
                     <p className="text-[12px] text-[#888888]">
                       Show this section on the website
                     </p>
@@ -913,6 +1286,7 @@ export default function HomeWorksAdminPage() {
                   />
                 </div>
 
+                {/* ACTIONS */}
                 <div className="flex flex-col gap-[10px] pt-[4px] xs:flex-row xs:justify-end">
                   <Button
                     type="button"
@@ -947,6 +1321,7 @@ export default function HomeWorksAdminPage() {
         )}
       </AnimatePresence>
 
+      {/* DELETE CONFIRM */}
       <AnimatePresence>
         {deleteTarget && (
           <motion.div
@@ -967,7 +1342,8 @@ export default function HomeWorksAdminPage() {
                 Delete Home Works Section?
               </h3>
               <p className="mt-[8px] text-[13px] leading-[1.6] text-[#666666]">
-                This will remove &quot;{deleteTarget.title}&quot; and its gallery images.
+                This will remove &quot;{deleteTarget.title}&quot; and its
+                gallery images.
               </p>
               <div className="mt-[18px] flex flex-col gap-[10px] xs:flex-row xs:justify-end">
                 <Button
