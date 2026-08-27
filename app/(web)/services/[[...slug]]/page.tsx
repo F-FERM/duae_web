@@ -1,4 +1,3 @@
-import AboutUs from "../../../components/home/AboutUs";
 import StatsSection from "../../../components/home/CountingSection";
 import Navbar from "../../../components/layout/Navbar";
 import ContactFormSection from "../../../components/services/ContactForm";
@@ -11,6 +10,7 @@ import JoineryWorks from "../../../components/services/JoiningWorks";
 import CallToAction from "../../../components/services/TalktoUs";
 import WhoWeServe from "../../../components/services/WhoWeServe";
 import WhyChooseUsService from "../../../components/services/WhyChooseService";
+import ServiceAbout from "../../../components/services/ServiceAbout";
 import type { Metadata } from "next";
 import { getServiceMetadata } from "../metadata-config";
 
@@ -84,12 +84,12 @@ export default async function Works({
       <WhoWeServe slug={slugPath} />
       <WhatIncluded slug={slugPath} />
       <CallToAction slug={slugPath} />
-      <AboutUs />
+      <ServiceAbout slug={slugPath} />
       <OurProcess slug={slugPath} />
       <OurJoineryMaterials slug={slugPath} />
       <WhyChooseUsService slug={slugPath} />
       <FAQSection slug={slugPath} />
-      <ContactFormSection />
+      <ContactFormSection slug={slugPath} />
     </>
   );
 }
