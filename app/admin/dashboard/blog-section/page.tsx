@@ -20,6 +20,13 @@ import {
   UploadCloud,
   User,
   X,
+  Hash,
+  ExternalLink,
+  Link as LinkIcon,
+  Globe,
+  FileText,
+  Layers,
+  CircleDot,
 } from "lucide-react";
 import api from "@/lib/axios";
 import { fileUpload } from "@/app/api/admin/upload/upload";
@@ -30,15 +37,24 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 
-type BlogContentType = "heading" | "subheading" | "paragraph" | "list";
+type BlogContentType = "heading" | "subheading" | "paragraph" | "list" | "quote" | "image";
+
+interface InlineLinkItem {
+  text: string;
+  url: string;
+  type: string;
+  openInNewTab: boolean;
+  position: number;
+}
 
 interface BlogContent {
-  id: string; // stable id, independent of array position — used as React key
+  id: string;
   type: BlogContentType;
   content: string;
   items: string[];
   isNumbered: boolean;
   level: number;
+  inlineLinks: InlineLinkItem[];
 }
 
 interface Author {
@@ -91,13 +107,20 @@ const CONTENT_TYPES: BlogContentType[] = [
   "subheading",
   "paragraph",
   "list",
+  "quote",
+  "image",
+];
+
+const LINK_TYPES = [
+  { value: "page", label: "Page", icon: FileText },
+  { value: "section", label: "Section", icon: Layers },
+  { value: "external", label: "External", icon: Globe },
 ];
 
 function makeId(): string {
   if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
     return crypto.randomUUID();
   }
-  // Fallback for environments without crypto.randomUUID
   return `id-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
 }
 
@@ -108,6 +131,7 @@ const EMPTY_CONTENT: BlogContent = {
   items: [],
   isNumbered: false,
   level: 2,
+  inlineLinks: [],
 };
 
 const EMPTY_FORM: BlogPayload = {
@@ -162,14 +186,22 @@ function getErrorMessage(err: unknown, fallback: string): string {
   return fallback;
 }
 
-// Ensures every content block has a stable id (backfills legacy records that
-// were saved before the id field existed).
 function withStableIds(content: BlogContent[] | undefined | null): BlogContent[] {
   if (!content) return [];
   return content.map((block) => ({
     ...block,
     id: block.id || makeId(),
+    inlineLinks: block.inlineLinks || [],
   }));
+}
+
+function getLinkTypeIcon(type: string) {
+  const found = LINK_TYPES.find((t) => t.value === type);
+  if (found) {
+    const IconComponent = found.icon;
+    return <IconComponent className="h-3 w-3" />;
+  }
+  return <LinkIcon className="h-3 w-3" />;
 }
 
 export default function BlogAdminPage() {
@@ -193,10 +225,13 @@ export default function BlogAdminPage() {
   const [listItemInput, setListItemInput] = useState("");
   const [showContentForm, setShowContentForm] = useState(false);
   const [contentDraft, setContentDraft] = useState<BlogContent>(EMPTY_CONTENT);
-  // Tracks the block being edited by its stable id (not array index), since
-  // the index of every later block shifts whenever an earlier block is
-  // added or removed.
   const [editingContentId, setEditingContentId] = useState<string | null>(null);
+
+  // Inline link states for content block
+  const [blockLinkText, setBlockLinkText] = useState("");
+  const [blockLinkUrl, setBlockLinkUrl] = useState("");
+  const [blockLinkType, setBlockLinkType] = useState("page");
+  const [blockLinkNewTab, setBlockLinkNewTab] = useState(false);
 
   const thumbInputRef = useRef<HTMLInputElement>(null);
   const detailInputRef = useRef<HTMLInputElement>(null);
@@ -207,7 +242,6 @@ export default function BlogAdminPage() {
     try {
       setLoading(true);
       const res = await api.get<Blog[] | { data?: Blog[]; blogs?: Blog[]; items?: Blog[] }>("/blogs", { params: { limit: "100" } });
-      // API may return a plain array OR a paginated object like { blogs: [...] } or { data: [...] }
       const raw: Blog[] = Array.isArray(res.data)
         ? res.data
         : (res.data as { data?: Blog[]; blogs?: Blog[]; items?: Blog[] }).data ??
@@ -229,10 +263,6 @@ export default function BlogAdminPage() {
     fetchBlogs();
   }, []);
 
-  // The content-block edit/add form renders above the block list. Without
-  // this, clicking "Edit" on a block further down the list opens the form
-  // off-screen (above the current scroll position), which looks like the
-  // button did nothing. Scroll it into view whenever it opens.
   useEffect(() => {
     if (showContentForm && contentFormRef.current) {
       contentFormRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
@@ -289,6 +319,10 @@ export default function BlogAdminPage() {
     setShowContentForm(false);
     setEditingContentId(null);
     setContentDraft(EMPTY_CONTENT);
+    setBlockLinkText("");
+    setBlockLinkUrl("");
+    setBlockLinkType("page");
+    setBlockLinkNewTab(false);
   };
 
   const handleThumbUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -375,19 +409,26 @@ export default function BlogAdminPage() {
   };
 
   const openAddContent = () => {
-    setContentDraft({ ...EMPTY_CONTENT, id: makeId() });
+    setContentDraft({ ...EMPTY_CONTENT, id: makeId(), inlineLinks: [] });
     setEditingContentId(null);
     setListItemInput("");
+    setBlockLinkText("");
+    setBlockLinkUrl("");
+    setBlockLinkType("page");
+    setBlockLinkNewTab(false);
     setShowContentForm(true);
   };
 
   const openEditContent = (index: number) => {
     const block = form.content[index];
-    // Defensive: guarantee an id even if somehow missing
-    const safeBlock = block.id ? block : { ...block, id: makeId() };
+    const safeBlock = block.id ? { ...block, inlineLinks: block.inlineLinks || [] } : { ...block, id: makeId(), inlineLinks: block.inlineLinks || [] };
     setContentDraft(safeBlock);
     setEditingContentId(safeBlock.id);
     setListItemInput("");
+    setBlockLinkText("");
+    setBlockLinkUrl("");
+    setBlockLinkType("page");
+    setBlockLinkNewTab(false);
     setShowContentForm(true);
   };
 
@@ -397,27 +438,96 @@ export default function BlogAdminPage() {
         toast.error("Add at least one list item");
         return;
       }
+    } else if (contentDraft.type === "image") {
+      if (!contentDraft.content.trim()) {
+        toast.error("Image URL is required");
+        return;
+      }
     } else if (!contentDraft.content.trim()) {
       toast.error("Content is required");
       return;
     }
 
+    // Ensure inlineLinks are preserved
+    const draftToSave = {
+      ...contentDraft,
+      inlineLinks: contentDraft.inlineLinks || [],
+    };
+
     setForm((prev) => {
-      const draft = contentDraft.id ? contentDraft : { ...contentDraft, id: makeId() };
       const existingIndex = editingContentId
         ? prev.content.findIndex((b) => b.id === editingContentId)
         : -1;
 
-      const content =
-        existingIndex !== -1
-          ? prev.content.map((b, i) => (i === existingIndex ? draft : b))
-          : [...prev.content, draft];
+      let newContent: BlogContent[];
+      if (existingIndex !== -1) {
+        newContent = prev.content.map((b, i) => 
+          i === existingIndex ? draftToSave : b
+        );
+      } else {
+        newContent = [...prev.content, draftToSave];
+      }
 
-      return { ...prev, content };
+      return { ...prev, content: newContent };
     });
+    
     setShowContentForm(false);
     setEditingContentId(null);
     setContentDraft(EMPTY_CONTENT);
+    setBlockLinkText("");
+    setBlockLinkUrl("");
+    setBlockLinkType("page");
+    setBlockLinkNewTab(false);
+    toast.success("Content block saved");
+  };
+
+  // FIXED: Inline link functions for content block - properly update contentDraft
+  const addInlineLinkToBlock = () => {
+    if (!blockLinkText.trim() || !blockLinkUrl.trim()) {
+      toast.error("Text and URL are required");
+      return;
+    }
+
+    // Check for duplicate text in this block
+    const duplicate = contentDraft.inlineLinks.some(
+      (link) => link.text.toLowerCase() === blockLinkText.trim().toLowerCase()
+    );
+
+    if (duplicate) {
+      toast.error(`"${blockLinkText.trim()}" already has a link in this block`);
+      return;
+    }
+
+    // CRITICAL FIX: Create a new array with the new link and update contentDraft
+    const updatedLinks = [
+      ...contentDraft.inlineLinks,
+      {
+        text: blockLinkText.trim(),
+        url: blockLinkUrl.trim(),
+        type: blockLinkType,
+        openInNewTab: blockLinkNewTab,
+        position: contentDraft.inlineLinks.length,
+      },
+    ];
+
+    setContentDraft((prev) => ({
+      ...prev,
+      inlineLinks: updatedLinks,
+    }));
+
+    // Clear the input fields
+    setBlockLinkText("");
+    setBlockLinkUrl("");
+    setBlockLinkType("page");
+    setBlockLinkNewTab(false);
+    toast.success(`Inline link added: "${blockLinkText.trim()}"`);
+  };
+
+  const removeInlineLinkFromBlock = (index: number) => {
+    setContentDraft((prev) => ({
+      ...prev,
+      inlineLinks: prev.inlineLinks.filter((_, i) => i !== index),
+    }));
   };
 
   const handleSubmit = async () => {
@@ -434,10 +544,23 @@ export default function BlogAdminPage() {
       return toast.error("Add at least one content block");
     }
 
+    // Ensure inlineLinks are preserved in the payload
     const payload = {
       ...form,
       slug: form.slug.trim() || slugify(form.title),
+      content: form.content.map((block) => ({
+        type: block.type,
+        content: block.content,
+        items: block.items || [],
+        isNumbered: block.isNumbered || false,
+        level: block.level || 0,
+        // CRITICAL: Preserve inlineLinks - make sure they are included
+        inlineLinks: block.inlineLinks || [],
+        id: block.id,
+      })),
     };
+
+    console.log("Payload being sent:", JSON.stringify(payload, null, 2));
 
     try {
       setSubmitting(true);
@@ -580,6 +703,12 @@ export default function BlogAdminPage() {
                       <Clock className="h-3 w-3" />
                       {blog.readTime} min
                     </span>
+                    {blog.content.some(b => b.inlineLinks && b.inlineLinks.length > 0) && (
+                      <span className="flex items-center gap-1 text-[#EA580C]">
+                        <Hash className="h-3 w-3" />
+                        Links
+                      </span>
+                    )}
                   </div>
                   <h3 className="mt-2 line-clamp-2 text-[16px] font-semibold text-[#111111]">
                     {blog.title}
@@ -647,6 +776,7 @@ export default function BlogAdminPage() {
                 </div>
               ) : (
                 <div className="mt-5 space-y-5">
+                  {/* Basic Info */}
                   <div className="rounded-[14px] border border-[#E4E4E4] p-4">
                     <h3 className="text-sm font-semibold text-[#111111]">Basic Info</h3>
                     <div className="mt-3 space-y-3">
@@ -720,6 +850,7 @@ export default function BlogAdminPage() {
                     </div>
                   </div>
 
+                  {/* Content Blocks Section */}
                   <div className="rounded-[14px] border border-[#E4E4E4] p-4">
                     <div className="flex items-center justify-between">
                       <h3 className="text-sm font-semibold text-[#111111]">Content Blocks</h3>
@@ -776,7 +907,19 @@ export default function BlogAdminPage() {
                           />
                         )}
 
-                        {contentDraft.type !== "list" ? (
+                        {contentDraft.type === "image" ? (
+                          <Input
+                            value={contentDraft.content}
+                            onChange={(e) =>
+                              setContentDraft((prev) => ({
+                                ...prev,
+                                content: e.target.value,
+                              }))
+                            }
+                            placeholder="Image URL"
+                            className="h-10 rounded-[10px]"
+                          />
+                        ) : contentDraft.type !== "list" ? (
                           <Textarea
                             value={contentDraft.content}
                             onChange={(e) =>
@@ -849,7 +992,107 @@ export default function BlogAdminPage() {
                           </div>
                         )}
 
-                        <div className="flex gap-2">
+                        {/* ================= INLINE LINKS FOR CONTENT BLOCK ================= */}
+                        <div className="mt-3 border-t border-[#E4C9B4] pt-3">
+                          <div className="flex items-center gap-[6px] mb-2">
+                            <Label className="text-xs font-medium text-[#2A2A2A]">
+                              <Hash className="inline h-3 w-3 mr-1" /> Inline Links for this block
+                            </Label>
+                            {contentDraft.inlineLinks && contentDraft.inlineLinks.length > 0 && (
+                              <span className="flex items-center gap-[4px] text-[10px] font-medium text-[#EA580C]">
+                                <CircleDot className="h-[10px] w-[10px] fill-[#EA580C]" />
+                                {contentDraft.inlineLinks.length} link{contentDraft.inlineLinks.length !== 1 ? "s" : ""}
+                              </span>
+                            )}
+                          </div>
+                          <p className="mb-2 text-[10px] text-[#888888]">
+                            Text within this block that will become clickable.
+                          </p>
+
+                          {/* Show existing inline links */}
+                          {contentDraft.inlineLinks && contentDraft.inlineLinks.length > 0 && (
+                            <div className="mb-2 space-y-1 max-h-[120px] overflow-y-auto">
+                              {contentDraft.inlineLinks.map((link, idx) => (
+                                <div
+                                  key={idx}
+                                  className="flex items-center justify-between rounded-[8px] bg-white px-3 py-2 text-xs border border-[#E4E4E4]"
+                                >
+                                  <div className="flex items-center gap-2 flex-wrap">
+                                    <span className="font-medium text-[#EA580C]">"{link.text}"</span>
+                                    <span className="text-[#999]">→</span>
+                                    <span className="text-[#666] truncate max-w-[120px]">{link.url}</span>
+                                    {link.openInNewTab && (
+                                      <span className="text-[9px] text-[#999] flex items-center gap-0.5">
+                                        <ExternalLink className="h-2.5 w-2.5" /> new tab
+                                      </span>
+                                    )}
+                                    <span className="text-[9px] text-[#999]">#{link.position}</span>
+                                    {getLinkTypeIcon(link.type)}
+                                  </div>
+                                  <button
+                                    type="button"
+                                    onClick={() => removeInlineLinkFromBlock(idx)}
+                                    className="text-[#DC2626] hover:text-[#b91c1c]"
+                                  >
+                                    <X className="h-3 w-3" />
+                                  </button>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+
+                          {/* Add inline link to block */}
+                          <div className="grid grid-cols-1 gap-2 xs:grid-cols-4">
+                            <div className="xs:col-span-1">
+                              <Input
+                                value={blockLinkText}
+                                onChange={(e) => setBlockLinkText(e.target.value)}
+                                placeholder="Text to link"
+                                className="h-9 rounded-[8px] text-xs"
+                              />
+                            </div>
+                            <div className="xs:col-span-1">
+                              <Input
+                                value={blockLinkUrl}
+                                onChange={(e) => setBlockLinkUrl(e.target.value)}
+                                placeholder="URL"
+                                className="h-9 rounded-[8px] text-xs"
+                              />
+                            </div>
+                            <div className="xs:col-span-1">
+                              <select
+                                value={blockLinkType}
+                                onChange={(e) => setBlockLinkType(e.target.value)}
+                                className="h-9 w-full rounded-[8px] border border-[#E4E4E4] px-2 text-xs bg-white"
+                              >
+                                {LINK_TYPES.map((type) => (
+                                  <option key={type.value} value={type.value}>
+                                    {type.label}
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
+                            <div className="xs:col-span-1 flex gap-1">
+                              <Button
+                                type="button"
+                                onClick={addInlineLinkToBlock}
+                                className="h-9 flex-1 rounded-[8px] bg-[#EA580C] text-white hover:bg-[#EA580C] text-xs px-3"
+                              >
+                                <Plus className="h-3 w-3" /> Add
+                              </Button>
+                            </div>
+                          </div>
+                          <div className="mt-1 flex items-center gap-2">
+                            <Switch
+                              checked={blockLinkNewTab}
+                              onCheckedChange={setBlockLinkNewTab}
+                              className="h-4 w-7"
+                            />
+                            <span className="text-[10px] text-[#666666]">Open in new tab</span>
+                          </div>
+                        </div>
+
+                        <div className="flex gap-2 mt-2">
                           <Button
                             type="button"
                             onClick={saveContentDraft}
@@ -864,6 +1107,10 @@ export default function BlogAdminPage() {
                               setShowContentForm(false);
                               setEditingContentId(null);
                               setContentDraft(EMPTY_CONTENT);
+                              setBlockLinkText("");
+                              setBlockLinkUrl("");
+                              setBlockLinkType("page");
+                              setBlockLinkNewTab(false);
                             }}
                             className="h-9 rounded-[10px]"
                           >
@@ -892,10 +1139,17 @@ export default function BlogAdminPage() {
                               {block.type === "heading" || block.type === "subheading"
                                 ? ` • L${block.level}`
                                 : ""}
+                              {block.inlineLinks && block.inlineLinks.length > 0 && (
+                                <span className="ml-2 text-[#EA580C]">
+                                  • {block.inlineLinks.length} link{block.inlineLinks.length !== 1 ? "s" : ""}
+                                </span>
+                              )}
                             </p>
                             <p className="mt-1 line-clamp-2 text-sm text-[#333333]">
                               {block.type === "list"
                                 ? block.items.join(", ")
+                                : block.type === "image"
+                                ? `[Image] ${block.content}`
                                 : block.content}
                             </p>
                           </div>
@@ -916,7 +1170,6 @@ export default function BlogAdminPage() {
                                   ...prev,
                                   content: prev.content.filter((_, i) => i !== index),
                                 }));
-                                // If the removed block was open in the editor, close the editor too
                                 if (editingContentId === block.id) {
                                   setShowContentForm(false);
                                   setEditingContentId(null);
@@ -934,6 +1187,7 @@ export default function BlogAdminPage() {
                     </div>
                   </div>
 
+                  {/* Media Section */}
                   <div className="rounded-[14px] border border-[#E4E4E4] p-4">
                     <h3 className="text-sm font-semibold text-[#111111]">Media</h3>
                     <div className="mt-3 space-y-4">
@@ -1035,6 +1289,7 @@ export default function BlogAdminPage() {
                     </div>
                   </div>
 
+                  {/* Author Section */}
                   <div className="rounded-[14px] border border-[#F0D9C8] bg-[#FFF8F3] p-4">
                     <h3 className="flex items-center gap-1.5 text-sm font-semibold text-[#111111]">
                       <User className="h-4 w-4" /> Author
@@ -1098,6 +1353,7 @@ export default function BlogAdminPage() {
                     </div>
                   </div>
 
+                  {/* SEO Section */}
                   <div className="rounded-[14px] border border-[#E4E4E4] p-4">
                     <h3 className="text-sm font-semibold text-[#111111]">SEO</h3>
                     <div className="mt-3 space-y-3">
@@ -1166,6 +1422,7 @@ export default function BlogAdminPage() {
                     </div>
                   </div>
 
+                  {/* Tags & Related Posts */}
                   <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                     <div className="rounded-[14px] border border-[#E4E4E4] p-4">
                       <h3 className="flex items-center gap-1.5 text-sm font-semibold text-[#111111]">
@@ -1251,6 +1508,7 @@ export default function BlogAdminPage() {
                     </div>
                   </div>
 
+                  {/* Published Switch */}
                   <div className="flex items-center justify-between rounded-[12px] border border-[#E4E4E4] px-4 py-3">
                     <div>
                       <p className="text-sm font-medium text-[#111111]">Published</p>
@@ -1264,6 +1522,7 @@ export default function BlogAdminPage() {
                     />
                   </div>
 
+                  {/* Action Buttons */}
                   <div className="flex flex-col gap-2 xs:flex-row xs:justify-end">
                     <Button
                       type="button"
