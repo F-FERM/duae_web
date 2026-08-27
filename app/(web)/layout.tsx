@@ -90,6 +90,9 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
+      <head>
+        <link rel="llms" href="/llms.txt" />
+      </head>
       <body className={`${poppins.variable} bg-white`}>
         <OrganizationJsonLd />
         <GoogleAnalytics />
