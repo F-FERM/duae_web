@@ -27,6 +27,13 @@ import {
   CheckCircle,
   ArrowUp,
   ArrowDown,
+  CircleDot,
+  ExternalLink,
+  Link as LinkIcon,
+  Globe,
+  FileText,
+  Layers,
+  Hash,
 } from "lucide-react";
 
 import api from "@/lib/axios";
@@ -40,12 +47,21 @@ import { fileUpload } from "@/app/api/admin/upload/upload";
 
 // ================= TYPES =================
 
+interface InlineLink {
+  text: string;
+  url: string;
+  type: string;
+  openInNewTab: boolean;
+  position: number;
+}
+
 export interface MilestoneItem {
   _id?: string;
   title: string;
   description: string;
   icon: string;
   order: number;
+  inlineLinks?: InlineLink[];
   createdAt?: string;
   updatedAt?: string;
 }
@@ -67,6 +83,7 @@ export interface AboutUsResponse {
   milestonesSubtitle: string;
   milestones: MilestoneItem[];
   isActive: boolean;
+  inlineLinks?: InlineLink[];
 }
 
 interface AboutUs extends AboutUsResponse {
@@ -75,11 +92,18 @@ interface AboutUs extends AboutUsResponse {
   updatedAt: string;
 }
 
+const LINK_TYPES = [
+  { value: "page", label: "Page", icon: FileText },
+  { value: "section", label: "Section", icon: Layers },
+  { value: "external", label: "External", icon: Globe },
+];
+
 const EMPTY_MILESTONE: MilestoneItem = {
   title: "",
   description: "",
   icon: "fa-solid fa-star",
   order: 0,
+  inlineLinks: [],
 };
 
 const EMPTY_FORM: AboutUsResponse = {
@@ -99,7 +123,180 @@ const EMPTY_FORM: AboutUsResponse = {
   milestonesSubtitle: "",
   milestones: [],
   isActive: true,
+  inlineLinks: [],
 };
+
+function getLinkTypeIcon(type: string) {
+  const found = LINK_TYPES.find((t) => t.value === type);
+  if (found) {
+    const IconComponent = found.icon;
+    return <IconComponent className="h-3 w-3" />;
+  }
+  return <LinkIcon className="h-3 w-3" />;
+}
+
+// ================= INLINE LINK MANAGER =================
+
+function InlineLinkManager({
+  links = [],
+  onChange,
+  label = "Inline Links",
+  description = "Text within this content that will become clickable.",
+  hasChanged = false,
+}: {
+  links: InlineLink[];
+  onChange: (links: InlineLink[]) => void;
+  label?: string;
+  description?: string;
+  hasChanged?: boolean;
+}) {
+  const [linkText, setLinkText] = useState("");
+  const [linkUrl, setLinkUrl] = useState("");
+  const [linkType, setLinkType] = useState("page");
+  const [linkNewTab, setLinkNewTab] = useState(false);
+
+  const addLink = () => {
+    if (!linkText.trim() || !linkUrl.trim()) {
+      toast.error("Text and URL are required");
+      return;
+    }
+
+    const duplicate = links.some(
+      (link) => link.text.toLowerCase() === linkText.trim().toLowerCase(),
+    );
+
+    if (duplicate) {
+      toast.error(`"${linkText.trim()}" already has a link`);
+      return;
+    }
+
+    const newLink: InlineLink = {
+      text: linkText.trim(),
+      url: linkUrl.trim(),
+      type: linkType,
+      openInNewTab: linkNewTab,
+      position: links.length,
+    };
+
+    onChange([...links, newLink]);
+    setLinkText("");
+    setLinkUrl("");
+    setLinkType("page");
+    setLinkNewTab(false);
+    toast.success("Inline link added");
+  };
+
+  const removeLink = (index: number) => {
+    const updatedLinks = links.filter((_, i) => i !== index);
+    const reindexedLinks = updatedLinks.map((link, idx) => ({
+      ...link,
+      position: idx,
+    }));
+    onChange(reindexedLinks);
+    toast.success("Inline link removed");
+  };
+
+  return (
+    <div
+      className={`mt-3 border-t border-[#E4C9B4] pt-3 ${hasChanged ? "border-2 border-[#EA580C] rounded-[8px] p-3 bg-[#FFF9F4]" : ""}`}
+    >
+      <div className="flex items-center gap-[6px] mb-2">
+        <Label className="text-xs font-medium text-[#2A2A2A]">{label}</Label>
+        {hasChanged && (
+          <span className="flex items-center gap-[4px] text-[10px] font-medium text-[#EA580C]">
+            <CircleDot className="h-[10px] w-[10px] fill-[#EA580C]" />
+            Changed
+          </span>
+        )}
+      </div>
+      <p className="text-[10px] text-[#888888] mb-2">{description}</p>
+
+      {links.length > 0 && (
+        <div className="mb-2 space-y-1 max-h-[120px] overflow-y-auto">
+          {links.map((link, idx) => (
+            <div
+              key={idx}
+              className="flex items-center justify-between rounded-[8px] bg-white px-3 py-2 text-xs border border-[#E4E4E4]"
+            >
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="font-medium text-[#EA580C]">
+                  "{link.text}"
+                </span>
+                <span className="text-[#999]">→</span>
+                <span className="text-[#666] truncate max-w-[120px]">
+                  {link.url}
+                </span>
+                {link.openInNewTab && (
+                  <span className="text-[9px] text-[#999] flex items-center gap-0.5">
+                    <ExternalLink className="h-2.5 w-2.5" /> new tab
+                  </span>
+                )}
+                <span className="text-[9px] text-[#999]">#{link.position}</span>
+                {getLinkTypeIcon(link.type)}
+              </div>
+              <button
+                type="button"
+                onClick={() => removeLink(idx)}
+                className="text-[#DC2626] hover:text-[#b91c1c]"
+              >
+                <X className="h-3 w-3" />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <div className="grid grid-cols-1 gap-2 xs:grid-cols-4">
+        <div className="xs:col-span-1">
+          <Input
+            value={linkText}
+            onChange={(e) => setLinkText(e.target.value)}
+            placeholder="Text to link"
+            className="h-9 rounded-[8px] text-xs"
+          />
+        </div>
+        <div className="xs:col-span-1">
+          <Input
+            value={linkUrl}
+            onChange={(e) => setLinkUrl(e.target.value)}
+            placeholder="URL"
+            className="h-9 rounded-[8px] text-xs"
+          />
+        </div>
+        <div className="xs:col-span-1">
+          <select
+            value={linkType}
+            onChange={(e) => setLinkType(e.target.value)}
+            className="h-9 w-full rounded-[8px] border border-[#E4E4E4] px-2 text-xs bg-white"
+          >
+            {LINK_TYPES.map((type) => (
+              <option key={type.value} value={type.value}>
+                {type.label}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className="xs:col-span-1 flex gap-1">
+          <Button
+            type="button"
+            onClick={addLink}
+            className="h-9 flex-1 rounded-[8px] bg-[#EA580C] text-white hover:bg-[#EA580C] text-xs px-3"
+          >
+            <Plus className="h-3 w-3" /> Add
+          </Button>
+        </div>
+      </div>
+      <div className="mt-1 flex items-center gap-2">
+        <Switch
+          checked={linkNewTab}
+          onCheckedChange={setLinkNewTab}
+          className="h-4 w-7"
+        />
+        <span className="text-[10px] text-[#666666]">Open in new tab</span>
+      </div>
+    </div>
+  );
+}
 
 export default function AboutUsPage() {
   const [aboutData, setAboutData] = useState<AboutUs | null>(null);
@@ -113,8 +310,10 @@ export default function AboutUsPage() {
   // Upload states
   const [uploading, setUploading] = useState(false);
   const [uploadingImageTwo, setUploadingImageTwo] = useState(false);
-  const [uploadingMilestoneImageOne, setUploadingMilestoneImageOne] = useState(false);
-  const [uploadingMilestoneImageTwo, setUploadingMilestoneImageTwo] = useState(false);
+  const [uploadingMilestoneImageOne, setUploadingMilestoneImageOne] =
+    useState(false);
+  const [uploadingMilestoneImageTwo, setUploadingMilestoneImageTwo] =
+    useState(false);
 
   // Delete state
   const [deleteTarget, setDeleteTarget] = useState<AboutUs | null>(null);
@@ -122,8 +321,11 @@ export default function AboutUsPage() {
 
   // Milestone modal
   const [milestoneModalOpen, setMilestoneModalOpen] = useState(false);
-  const [editingMilestoneIndex, setEditingMilestoneIndex] = useState<number | null>(null);
-  const [tempMilestone, setTempMilestone] = useState<MilestoneItem>(EMPTY_MILESTONE);
+  const [editingMilestoneIndex, setEditingMilestoneIndex] = useState<
+    number | null
+  >(null);
+  const [tempMilestone, setTempMilestone] =
+    useState<MilestoneItem>(EMPTY_MILESTONE);
 
   // Collapse states
   const [basicExpanded, setBasicExpanded] = useState(true);
@@ -139,7 +341,7 @@ export default function AboutUsPage() {
       let data = null;
       if (Array.isArray(res.data)) {
         data = res.data.length > 0 ? res.data[0] : null;
-      } else if (res.data && typeof res.data === 'object') {
+      } else if (res.data && typeof res.data === "object") {
         data = res.data;
       }
 
@@ -161,12 +363,18 @@ export default function AboutUsPage() {
           milestonesImageOne: data.milestonesImageOne || "",
           milestonesImageTwo: data.milestonesImageTwo || "",
           milestonesSubtitle: data.milestonesSubtitle || "",
-          milestones: data.milestones || [],
+          milestones: (data.milestones || []).map((m: any) => ({
+            ...m,
+            inlineLinks: m.inlineLinks || [],
+          })),
           isActive: data.isActive ?? true,
+          inlineLinks: data.inlineLinks || [],
         });
       }
     } catch (err: any) {
-      toast.error(err?.response?.data?.message || "Failed to load about us data");
+      toast.error(
+        err?.response?.data?.message || "Failed to load about us data",
+      );
     } finally {
       setLoading(false);
     }
@@ -195,8 +403,12 @@ export default function AboutUsPage() {
         milestonesImageOne: aboutData.milestonesImageOne || "",
         milestonesImageTwo: aboutData.milestonesImageTwo || "",
         milestonesSubtitle: aboutData.milestonesSubtitle || "",
-        milestones: aboutData.milestones || [],
+        milestones: (aboutData.milestones || []).map((m: any) => ({
+          ...m,
+          inlineLinks: m.inlineLinks || [],
+        })),
         isActive: aboutData.isActive ?? true,
+        inlineLinks: aboutData.inlineLinks || [],
       });
     } else {
       setForm({ ...EMPTY_FORM });
@@ -205,7 +417,14 @@ export default function AboutUsPage() {
   };
 
   const closeModal = () => {
-    if (submitting || uploading || uploadingImageTwo || uploadingMilestoneImageOne || uploadingMilestoneImageTwo) return;
+    if (
+      submitting ||
+      uploading ||
+      uploadingImageTwo ||
+      uploadingMilestoneImageOne ||
+      uploadingMilestoneImageTwo
+    )
+      return;
     setModalOpen(false);
     if (aboutData) {
       setForm({
@@ -223,8 +442,12 @@ export default function AboutUsPage() {
         milestonesImageOne: aboutData.milestonesImageOne || "",
         milestonesImageTwo: aboutData.milestonesImageTwo || "",
         milestonesSubtitle: aboutData.milestonesSubtitle || "",
-        milestones: aboutData.milestones || [],
+        milestones: (aboutData.milestones || []).map((m: any) => ({
+          ...m,
+          inlineLinks: m.inlineLinks || [],
+        })),
         isActive: aboutData.isActive ?? true,
+        inlineLinks: aboutData.inlineLinks || [],
       });
     } else {
       setForm(EMPTY_FORM);
@@ -246,6 +469,7 @@ export default function AboutUsPage() {
         milestones: form.milestones
           .map(({ _id, createdAt, updatedAt, ...rest }) => rest)
           .sort((a, b) => a.order - b.order),
+        inlineLinks: form.inlineLinks || [],
       };
 
       if (aboutData && aboutData._id) {
@@ -261,7 +485,9 @@ export default function AboutUsPage() {
     } catch (err: any) {
       toast.error(
         err?.response?.data?.message ||
-        (aboutData ? "Failed to update about us" : "Failed to create about us")
+          (aboutData
+            ? "Failed to update about us"
+            : "Failed to create about us"),
       );
     } finally {
       setSubmitting(false);
@@ -277,9 +503,11 @@ export default function AboutUsPage() {
         isActive: !data.isActive,
       });
       setAboutData((prev) =>
-        prev ? { ...prev, isActive: !prev.isActive } : null
+        prev ? { ...prev, isActive: !prev.isActive } : null,
       );
-      toast.success(!data.isActive ? "About us activated" : "About us deactivated");
+      toast.success(
+        !data.isActive ? "About us activated" : "About us deactivated",
+      );
     } catch (err: any) {
       toast.error(err?.response?.data?.message || "Failed to update status");
     } finally {
@@ -289,14 +517,19 @@ export default function AboutUsPage() {
 
   // ================= IMAGE UPLOAD =================
 
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, field: keyof AboutUsResponse | 'milestonesImageOne' | 'milestonesImageTwo') => {
+  const handleImageUpload = async (
+    e: React.ChangeEvent<HTMLInputElement>,
+    field: keyof AboutUsResponse | "milestonesImageOne" | "milestonesImageTwo",
+  ) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
     try {
       const uploadField = field as string;
-      if (uploadField === 'milestonesImageOne') setUploadingMilestoneImageOne(true);
-      else if (uploadField === 'milestonesImageTwo') setUploadingMilestoneImageTwo(true);
+      if (uploadField === "milestonesImageOne")
+        setUploadingMilestoneImageOne(true);
+      else if (uploadField === "milestonesImageTwo")
+        setUploadingMilestoneImageTwo(true);
       else setUploading(true);
 
       const result = await fileUpload(file);
@@ -377,15 +610,14 @@ export default function AboutUsPage() {
     setForm({ ...form, milestones });
   };
 
-  const moveMilestone = (index: number, direction: 'up' | 'down') => {
-    const newIndex = direction === 'up' ? index - 1 : index + 1;
+  const moveMilestone = (index: number, direction: "up" | "down") => {
+    const newIndex = direction === "up" ? index - 1 : index + 1;
     if (newIndex < 0 || newIndex >= form.milestones.length) return;
 
     const newMilestones = [...form.milestones];
     const [movedItem] = newMilestones.splice(index, 1);
     newMilestones.splice(newIndex, 0, movedItem);
 
-    // Update order numbers
     const updatedMilestones = newMilestones.map((item, idx) => ({
       ...item,
       order: idx,
@@ -394,13 +626,25 @@ export default function AboutUsPage() {
     setForm({ ...form, milestones: updatedMilestones });
   };
 
+  // ================= MILESTONE INLINE LINK HANDLERS =================
+
+  const updateMilestoneInlineLinks = (index: number, links: InlineLink[]) => {
+    const milestones = [...form.milestones];
+    milestones[index] = { ...milestones[index], inlineLinks: links };
+    setForm({ ...form, milestones });
+  };
+
+  const updateTempMilestoneInlineLinks = (links: InlineLink[]) => {
+    setTempMilestone({ ...tempMilestone, inlineLinks: links });
+  };
+
   // ================= RENDER HELPERS =================
 
   const renderImageUpload = (
     value: string,
-    field: keyof AboutUsResponse | 'milestonesImageOne' | 'milestonesImageTwo',
+    field: keyof AboutUsResponse | "milestonesImageOne" | "milestonesImageTwo",
     label: string,
-    uploadingState: boolean
+    uploadingState: boolean,
   ) => (
     <div>
       <Label className="mb-[6px] block text-[12px] font-medium text-[#2A2A2A]">
@@ -414,7 +658,9 @@ export default function AboutUsPage() {
         onChange={(e) => handleImageUpload(e, field)}
       />
       <div
-        onClick={() => !uploadingState && document.getElementById(`upload-${field}`)?.click()}
+        onClick={() =>
+          !uploadingState && document.getElementById(`upload-${field}`)?.click()
+        }
         className={`
           relative flex h-[100px] w-full cursor-pointer items-center justify-center overflow-hidden rounded-[12px] border border-dashed border-[#E4C9B4] bg-[#FFF9F4] transition-colors hover:bg-[#FFF4EC]
           ${uploadingState ? "pointer-events-none opacity-70" : ""}
@@ -422,7 +668,13 @@ export default function AboutUsPage() {
       >
         {value ? (
           <>
-            <Image src={value} alt={label} fill unoptimized className="object-cover" />
+            <Image
+              src={value}
+              alt={label}
+              fill
+              unoptimized
+              className="object-cover"
+            />
             <div className="absolute inset-0 flex items-center justify-center bg-black/0 opacity-0 transition-opacity hover:bg-black/40 hover:opacity-100">
               <span className="flex items-center gap-[6px] text-[13px] font-medium text-white">
                 <ImagePlus className="h-[14px] w-[14px]" />
@@ -444,7 +696,9 @@ export default function AboutUsPage() {
       </div>
       <Input
         value={value}
-        onChange={(e) => setForm((prev) => ({ ...prev, [field]: e.target.value }))}
+        onChange={(e) =>
+          setForm((prev) => ({ ...prev, [field]: e.target.value }))
+        }
         placeholder="Or paste image URL"
         className="mt-[4px] h-[36px] rounded-[10px] border-[#E4E4E4] bg-white text-[12px] focus-visible:ring-[#EA580C]/30"
       />
@@ -522,9 +776,10 @@ export default function AboutUsPage() {
                       disabled={togglingId === aboutData._id}
                       className={`
                         rounded-full px-[10px] py-[4px] text-[10px] font-medium backdrop-blur-sm transition-colors sm:text-[11px]
-                        ${aboutData.isActive
-                          ? "bg-[#16A34A]/90 text-white"
-                          : "bg-black/40 text-white/80"
+                        ${
+                          aboutData.isActive
+                            ? "bg-[#16A34A]/90 text-white"
+                            : "bg-black/40 text-white/80"
                         }
                       `}
                     >
@@ -534,6 +789,13 @@ export default function AboutUsPage() {
                           ? "Active"
                           : "Inactive"}
                     </button>
+                    {aboutData.inlineLinks &&
+                      aboutData.inlineLinks.length > 0 && (
+                        <span className="flex items-center gap-[4px] rounded-full bg-[#EA580C]/10 px-[8px] py-[2px] text-[10px] font-medium text-[#EA580C]">
+                          <Hash className="h-[10px] w-[10px]" />
+                          {aboutData.inlineLinks.length} links
+                        </span>
+                      )}
                   </div>
                   <h3 className="mt-[4px] text-[17px] font-semibold text-[#111111] sm:text-[19px] lg:text-[21px] line-clamp-2">
                     {aboutData.title}
@@ -572,25 +834,33 @@ export default function AboutUsPage() {
                   <div className="text-[18px] font-bold text-[#EA580C] sm:text-[20px]">
                     {aboutData.foundedMonth} {aboutData.foundedYear}
                   </div>
-                  <div className="text-[10px] text-[#666] sm:text-[11px]">Founded</div>
+                  <div className="text-[10px] text-[#666] sm:text-[11px]">
+                    Founded
+                  </div>
                 </div>
                 <div className="rounded-[10px] bg-[#FFF9F4] p-[12px] text-center">
                   <div className="text-[18px] font-bold text-[#EA580C] sm:text-[20px]">
                     {aboutData.yearsOfExcellence}+
                   </div>
-                  <div className="text-[10px] text-[#666] sm:text-[11px]">Years of Excellence</div>
+                  <div className="text-[10px] text-[#666] sm:text-[11px]">
+                    Years of Excellence
+                  </div>
                 </div>
                 <div className="rounded-[10px] bg-[#FFF9F4] p-[12px] text-center">
                   <div className="text-[18px] font-bold text-[#EA580C] sm:text-[20px]">
                     {aboutData.teamSize}+
                   </div>
-                  <div className="text-[10px] text-[#666] sm:text-[11px]">Team Members</div>
+                  <div className="text-[10px] text-[#666] sm:text-[11px]">
+                    Team Members
+                  </div>
                 </div>
                 <div className="rounded-[10px] bg-[#FFF9F4] p-[12px] text-center">
                   <div className="text-[13px] font-medium text-[#EA580C] sm:text-[14px]">
                     {aboutData.buttonText}
                   </div>
-                  <div className="text-[10px] text-[#666] sm:text-[11px]">{aboutData.buttonLink}</div>
+                  <div className="text-[10px] text-[#666] sm:text-[11px]">
+                    {aboutData.buttonLink}
+                  </div>
                 </div>
               </div>
 
@@ -598,14 +868,30 @@ export default function AboutUsPage() {
               <div className="mt-[16px] grid grid-cols-1 gap-[12px] sm:grid-cols-2">
                 {aboutData.image && (
                   <div className="relative h-[120px] w-full overflow-hidden rounded-[12px] bg-[#F1E4D8] sm:h-[140px]">
-                    <Image src={aboutData.image} alt="About Image 1" fill unoptimized className="object-cover" />
-                    <div className="absolute bottom-[8px] left-[8px] rounded-full bg-black/50 px-[8px] py-[2px] text-[9px] text-white">Image 1</div>
+                    <Image
+                      src={aboutData.image}
+                      alt="About Image 1"
+                      fill
+                      unoptimized
+                      className="object-cover"
+                    />
+                    <div className="absolute bottom-[8px] left-[8px] rounded-full bg-black/50 px-[8px] py-[2px] text-[9px] text-white">
+                      Image 1
+                    </div>
                   </div>
                 )}
                 {aboutData.imageTwo && (
                   <div className="relative h-[120px] w-full overflow-hidden rounded-[12px] bg-[#F1E4D8] sm:h-[140px]">
-                    <Image src={aboutData.imageTwo} alt="About Image 2" fill unoptimized className="object-cover" />
-                    <div className="absolute bottom-[8px] left-[8px] rounded-full bg-black/50 px-[8px] py-[2px] text-[9px] text-white">Image 2</div>
+                    <Image
+                      src={aboutData.imageTwo}
+                      alt="About Image 2"
+                      fill
+                      unoptimized
+                      className="object-cover"
+                    />
+                    <div className="absolute bottom-[8px] left-[8px] rounded-full bg-black/50 px-[8px] py-[2px] text-[9px] text-white">
+                      Image 2
+                    </div>
                   </div>
                 )}
               </div>
@@ -622,13 +908,30 @@ export default function AboutUsPage() {
                 )}
                 <div className="mt-[10px] grid grid-cols-1 gap-[8px] sm:grid-cols-2">
                   {aboutData.milestones.slice(0, 4).map((milestone, index) => (
-                    <div key={milestone._id || index} className="rounded-[10px] border border-[#E4E4E4] bg-white p-[12px]">
+                    <div
+                      key={milestone._id || index}
+                      className="rounded-[10px] border border-[#E4E4E4] bg-white p-[12px]"
+                    >
                       <div className="flex items-center gap-[8px]">
-                        <span className="font-mono text-[10px] text-[#999]">#{milestone.order + 1}</span>
-                        <h5 className="text-[12px] font-medium text-[#111111] sm:text-[13px]">{milestone.title}</h5>
+                        <span className="font-mono text-[10px] text-[#999]">
+                          #{milestone.order + 1}
+                        </span>
+                        <h5 className="text-[12px] font-medium text-[#111111] sm:text-[13px]">
+                          {milestone.title}
+                        </h5>
+                        {milestone.inlineLinks &&
+                          milestone.inlineLinks.length > 0 && (
+                            <span className="text-[9px] text-[#EA580C]">
+                              • {milestone.inlineLinks.length} links
+                            </span>
+                          )}
                       </div>
-                      <p className="mt-[4px] text-[11px] text-[#666] sm:text-[12px]">{milestone.description}</p>
-                      <div className="mt-[4px] text-[10px] font-mono text-[#999]">{milestone.icon}</div>
+                      <p className="mt-[4px] text-[11px] text-[#666] sm:text-[12px]">
+                        {milestone.description}
+                      </p>
+                      <div className="mt-[4px] text-[10px] font-mono text-[#999]">
+                        {milestone.icon}
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -659,7 +962,7 @@ export default function AboutUsPage() {
               exit={{ y: 20, opacity: 0, scale: 0.98 }}
               transition={{ duration: 0.25, ease: "easeOut" }}
               onClick={(e) => e.stopPropagation()}
-              className="relative max-h-[94vh] w-full overflow-y-auto rounded-t-[24px] bg-white p-[18px] shadow-[0_30px_80px_rgba(0,0,0,0.25)] xs:p-[22px] sm:max-h-[92vh] sm:max-w-[600px] sm:rounded-[28px] sm:p-[32px] md:max-w-[650px]"
+              className="relative max-h-[94vh] w-full overflow-y-auto rounded-t-[24px] bg-white p-[18px] shadow-[0_30px_80px_rgba(0,0,0,0.25)] xs:p-[22px] sm:max-h-[92vh] sm:max-w-[650px] sm:rounded-[28px] sm:p-[32px] md:max-w-[700px]"
             >
               <div className="flex items-center justify-between">
                 <h2 className="text-[18px] font-semibold text-[#111111] xs:text-[20px] sm:text-[24px]">
@@ -680,7 +983,9 @@ export default function AboutUsPage() {
                     onClick={() => setBasicExpanded(!basicExpanded)}
                     className="flex w-full items-center justify-between"
                   >
-                    <h4 className="text-[14px] font-semibold text-[#111111]">Basic Information</h4>
+                    <h4 className="text-[14px] font-semibold text-[#111111]">
+                      Basic Information
+                    </h4>
                     {basicExpanded ? (
                       <ChevronUp className="h-[18px] w-[18px] text-[#666]" />
                     ) : (
@@ -695,7 +1000,9 @@ export default function AboutUsPage() {
                         </Label>
                         <Input
                           value={form.title}
-                          onChange={(e) => setForm({ ...form, title: e.target.value })}
+                          onChange={(e) =>
+                            setForm({ ...form, title: e.target.value })
+                          }
                           placeholder="10+ Years of Excellence..."
                           className="h-[42px] rounded-[10px] border-[#E4E4E4] bg-white text-[13px] focus-visible:ring-[#EA580C]/30"
                         />
@@ -707,10 +1014,24 @@ export default function AboutUsPage() {
                         </Label>
                         <Textarea
                           value={form.description}
-                          onChange={(e) => setForm({ ...form, description: e.target.value })}
+                          onChange={(e) =>
+                            setForm({ ...form, description: e.target.value })
+                          }
                           placeholder="Company description..."
                           rows={4}
                           className="rounded-[10px] border-[#E4E4E4] bg-white text-[13px] focus-visible:ring-[#EA580C]/30"
+                        />
+                      </div>
+
+                      {/* INLINE LINKS FOR ABOUT SECTION */}
+                      <div className="mt-[8px]">
+                        <InlineLinkManager
+                          links={form.inlineLinks || []}
+                          onChange={(links) =>
+                            setForm({ ...form, inlineLinks: links })
+                          }
+                          label="About Section Inline Links"
+                          description="Text within the about title and description that will become clickable."
                         />
                       </div>
 
@@ -721,7 +1042,9 @@ export default function AboutUsPage() {
                           </Label>
                           <Input
                             value={form.buttonText}
-                            onChange={(e) => setForm({ ...form, buttonText: e.target.value })}
+                            onChange={(e) =>
+                              setForm({ ...form, buttonText: e.target.value })
+                            }
                             placeholder="VIEW MORE"
                             className="h-[38px] rounded-[10px] border-[#E4E4E4] bg-white text-[13px] focus-visible:ring-[#EA580C]/30"
                           />
@@ -732,7 +1055,9 @@ export default function AboutUsPage() {
                           </Label>
                           <Input
                             value={form.buttonLink}
-                            onChange={(e) => setForm({ ...form, buttonLink: e.target.value })}
+                            onChange={(e) =>
+                              setForm({ ...form, buttonLink: e.target.value })
+                            }
                             placeholder="/about"
                             className="h-[38px] rounded-[10px] border-[#E4E4E4] bg-white text-[13px] focus-visible:ring-[#EA580C]/30"
                           />
@@ -744,9 +1069,13 @@ export default function AboutUsPage() {
                           <div className="flex items-center gap-[8px]">
                             <Switch
                               checked={form.isActive}
-                              onCheckedChange={(checked) => setForm({ ...form, isActive: checked })}
+                              onCheckedChange={(checked) =>
+                                setForm({ ...form, isActive: checked })
+                              }
                             />
-                            <Label className="text-[12px] font-medium text-[#2A2A2A]">Active</Label>
+                            <Label className="text-[12px] font-medium text-[#2A2A2A]">
+                              Active
+                            </Label>
                           </div>
                         </div>
                       </div>
@@ -756,16 +1085,30 @@ export default function AboutUsPage() {
 
                 {/* IMAGES */}
                 <div className="rounded-[12px] border border-[#E4E4E4] p-[14px]">
-                  <h4 className="text-[14px] font-semibold text-[#111111]">Images</h4>
+                  <h4 className="text-[14px] font-semibold text-[#111111]">
+                    Images
+                  </h4>
                   <div className="mt-[12px] space-y-[12px]">
-                    {renderImageUpload(form.image, 'image', 'Main Image', uploading)}
-                    {renderImageUpload(form.imageTwo, 'imageTwo', 'Image Two', uploadingImageTwo)}
+                    {renderImageUpload(
+                      form.image,
+                      "image",
+                      "Main Image",
+                      uploading,
+                    )}
+                    {renderImageUpload(
+                      form.imageTwo,
+                      "imageTwo",
+                      "Image Two",
+                      uploadingImageTwo,
+                    )}
                   </div>
                 </div>
 
                 {/* COMPANY STATS */}
                 <div className="rounded-[12px] border border-[#E4E4E4] p-[14px]">
-                  <h4 className="text-[14px] font-semibold text-[#111111]">Company Stats</h4>
+                  <h4 className="text-[14px] font-semibold text-[#111111]">
+                    Company Stats
+                  </h4>
                   <div className="mt-[12px] grid grid-cols-2 gap-[12px]">
                     <div>
                       <Label className="mb-[4px] block text-[11px] font-medium text-[#2A2A2A]">
@@ -773,7 +1116,9 @@ export default function AboutUsPage() {
                       </Label>
                       <Input
                         value={form.foundedMonth}
-                        onChange={(e) => setForm({ ...form, foundedMonth: e.target.value })}
+                        onChange={(e) =>
+                          setForm({ ...form, foundedMonth: e.target.value })
+                        }
                         placeholder="February"
                         className="h-[38px] rounded-[10px] border-[#E4E4E4] bg-white text-[13px] focus-visible:ring-[#EA580C]/30"
                       />
@@ -784,7 +1129,9 @@ export default function AboutUsPage() {
                       </Label>
                       <Input
                         value={form.foundedYear}
-                        onChange={(e) => setForm({ ...form, foundedYear: e.target.value })}
+                        onChange={(e) =>
+                          setForm({ ...form, foundedYear: e.target.value })
+                        }
                         placeholder="2015"
                         className="h-[38px] rounded-[10px] border-[#E4E4E4] bg-white text-[13px] focus-visible:ring-[#EA580C]/30"
                       />
@@ -796,7 +1143,12 @@ export default function AboutUsPage() {
                       <Input
                         type="number"
                         value={form.yearsOfExcellence}
-                        onChange={(e) => setForm({ ...form, yearsOfExcellence: Number(e.target.value) })}
+                        onChange={(e) =>
+                          setForm({
+                            ...form,
+                            yearsOfExcellence: Number(e.target.value),
+                          })
+                        }
                         className="h-[38px] rounded-[10px] border-[#E4E4E4] bg-white text-[13px] focus-visible:ring-[#EA580C]/30"
                       />
                     </div>
@@ -807,7 +1159,9 @@ export default function AboutUsPage() {
                       <Input
                         type="number"
                         value={form.teamSize}
-                        onChange={(e) => setForm({ ...form, teamSize: Number(e.target.value) })}
+                        onChange={(e) =>
+                          setForm({ ...form, teamSize: Number(e.target.value) })
+                        }
                         className="h-[38px] rounded-[10px] border-[#E4E4E4] bg-white text-[13px] focus-visible:ring-[#EA580C]/30"
                       />
                     </div>
@@ -837,7 +1191,12 @@ export default function AboutUsPage() {
                         </Label>
                         <Input
                           value={form.milestonesTitle}
-                          onChange={(e) => setForm({ ...form, milestonesTitle: e.target.value })}
+                          onChange={(e) =>
+                            setForm({
+                              ...form,
+                              milestonesTitle: e.target.value,
+                            })
+                          }
                           placeholder="Our Milestones"
                           className="h-[38px] rounded-[10px] border-[#E4E4E4] bg-white text-[13px] focus-visible:ring-[#EA580C]/30"
                         />
@@ -848,7 +1207,12 @@ export default function AboutUsPage() {
                         </Label>
                         <Input
                           value={form.milestonesSubtitle}
-                          onChange={(e) => setForm({ ...form, milestonesSubtitle: e.target.value })}
+                          onChange={(e) =>
+                            setForm({
+                              ...form,
+                              milestonesSubtitle: e.target.value,
+                            })
+                          }
                           placeholder="Recognized Among the Top Global Design Installations"
                           className="h-[38px] rounded-[10px] border-[#E4E4E4] bg-white text-[13px] focus-visible:ring-[#EA580C]/30"
                         />
@@ -856,15 +1220,15 @@ export default function AboutUsPage() {
 
                       {renderImageUpload(
                         form.milestonesImageOne,
-                        'milestonesImageOne',
-                        'Milestones Image One',
-                        uploadingMilestoneImageOne
+                        "milestonesImageOne",
+                        "Milestones Image One",
+                        uploadingMilestoneImageOne,
                       )}
                       {renderImageUpload(
                         form.milestonesImageTwo,
-                        'milestonesImageTwo',
-                        'Milestones Image Two',
-                        uploadingMilestoneImageTwo
+                        "milestonesImageTwo",
+                        "Milestones Image Two",
+                        uploadingMilestoneImageTwo,
                       )}
 
                       <div className="mt-[8px] space-y-[8px]">
@@ -875,22 +1239,36 @@ export default function AboutUsPage() {
                           >
                             <div className="flex-1">
                               <div className="flex items-center gap-[6px]">
-                                <span className="text-[10px] font-medium text-[#999]">#{milestone.order + 1}</span>
-                                <h5 className="text-[12px] font-medium text-[#111111]">{milestone.title}</h5>
+                                <span className="text-[10px] font-medium text-[#999]">
+                                  #{milestone.order + 1}
+                                </span>
+                                <h5 className="text-[12px] font-medium text-[#111111]">
+                                  {milestone.title}
+                                </h5>
+                                {milestone.inlineLinks &&
+                                  milestone.inlineLinks.length > 0 && (
+                                    <span className="text-[9px] text-[#EA580C]">
+                                      • {milestone.inlineLinks.length} links
+                                    </span>
+                                  )}
                               </div>
-                              <p className="mt-[2px] text-[11px] text-[#666] line-clamp-2">{milestone.description}</p>
-                              <div className="mt-[2px] text-[9px] font-mono text-[#999]">{milestone.icon}</div>
+                              <p className="mt-[2px] text-[11px] text-[#666] line-clamp-2">
+                                {milestone.description}
+                              </p>
+                              <div className="mt-[2px] text-[9px] font-mono text-[#999]">
+                                {milestone.icon}
+                              </div>
                             </div>
                             <div className="flex shrink-0 gap-[4px] ml-[8px]">
                               <button
-                                onClick={() => moveMilestone(index, 'up')}
+                                onClick={() => moveMilestone(index, "up")}
                                 disabled={index === 0}
                                 className="rounded p-[4px] text-[#999] hover:bg-[#FFF4EC] hover:text-[#EA580C] disabled:opacity-30 disabled:cursor-not-allowed"
                               >
                                 <ArrowUp className="h-[12px] w-[12px]" />
                               </button>
                               <button
-                                onClick={() => moveMilestone(index, 'down')}
+                                onClick={() => moveMilestone(index, "down")}
                                 disabled={index === form.milestones.length - 1}
                                 className="rounded p-[4px] text-[#999] hover:bg-[#FFF4EC] hover:text-[#EA580C] disabled:opacity-30 disabled:cursor-not-allowed"
                               >
@@ -933,7 +1311,13 @@ export default function AboutUsPage() {
                   <Button
                     variant="outline"
                     onClick={closeModal}
-                    disabled={submitting || uploading || uploadingImageTwo || uploadingMilestoneImageOne || uploadingMilestoneImageTwo}
+                    disabled={
+                      submitting ||
+                      uploading ||
+                      uploadingImageTwo ||
+                      uploadingMilestoneImageOne ||
+                      uploadingMilestoneImageTwo
+                    }
                     className="h-[46px] rounded-[14px] border-[#E4E4E4] text-[14px] font-medium text-[#666666] sm:h-[48px] sm:w-[120px]"
                   >
                     Cancel
@@ -941,10 +1325,18 @@ export default function AboutUsPage() {
 
                   <Button
                     onClick={handleSubmit}
-                    disabled={submitting || uploading || uploadingImageTwo || uploadingMilestoneImageOne || uploadingMilestoneImageTwo}
+                    disabled={
+                      submitting ||
+                      uploading ||
+                      uploadingImageTwo ||
+                      uploadingMilestoneImageOne ||
+                      uploadingMilestoneImageTwo
+                    }
                     className="h-[46px] gap-[8px] rounded-[14px] bg-[#EA580C] text-[14px] font-medium text-white hover:bg-[#EA580C] hover:shadow-[0_14px_30px_rgba(234,88,12,0.3)] sm:h-[48px] sm:w-[160px]"
                   >
-                    {submitting && <Loader2 className="h-[16px] w-[16px] animate-spin" />}
+                    {submitting && (
+                      <Loader2 className="h-[16px] w-[16px] animate-spin" />
+                    )}
                     {aboutData ? "Save Changes" : "Create"}
                   </Button>
                 </div>
@@ -970,11 +1362,13 @@ export default function AboutUsPage() {
               exit={{ y: 10, opacity: 0, scale: 0.97 }}
               transition={{ duration: 0.2, ease: "easeOut" }}
               onClick={(e) => e.stopPropagation()}
-              className="w-full max-w-[480px] rounded-[20px] bg-white p-[22px] shadow-[0_30px_80px_rgba(0,0,0,0.25)] sm:rounded-[22px] sm:p-[26px]"
+              className="w-full max-w-[500px] rounded-[20px] bg-white p-[22px] shadow-[0_30px_80px_rgba(0,0,0,0.25)] sm:rounded-[22px] sm:p-[26px]"
             >
               <div className="flex items-center justify-between">
                 <h3 className="text-[16px] font-semibold text-[#111111] sm:text-[17px]">
-                  {editingMilestoneIndex !== null ? "Edit Milestone" : "Add Milestone"}
+                  {editingMilestoneIndex !== null
+                    ? "Edit Milestone"
+                    : "Add Milestone"}
                 </h3>
                 <button
                   onClick={closeMilestoneModal}
@@ -991,7 +1385,12 @@ export default function AboutUsPage() {
                   </Label>
                   <Input
                     value={tempMilestone.title}
-                    onChange={(e) => setTempMilestone({ ...tempMilestone, title: e.target.value })}
+                    onChange={(e) =>
+                      setTempMilestone({
+                        ...tempMilestone,
+                        title: e.target.value,
+                      })
+                    }
                     placeholder="Featured on ArchDaily"
                     className="h-[42px] rounded-[10px] border-[#E4E4E4] bg-white text-[13px] focus-visible:ring-[#EA580C]/30"
                   />
@@ -1002,19 +1401,40 @@ export default function AboutUsPage() {
                   </Label>
                   <Textarea
                     value={tempMilestone.description}
-                    onChange={(e) => setTempMilestone({ ...tempMilestone, description: e.target.value })}
+                    onChange={(e) =>
+                      setTempMilestone({
+                        ...tempMilestone,
+                        description: e.target.value,
+                      })
+                    }
                     placeholder="Milestone description..."
                     rows={2}
                     className="rounded-[10px] border-[#E4E4E4] bg-white text-[13px] focus-visible:ring-[#EA580C]/30"
                   />
                 </div>
+
+                {/* MILESTONE INLINE LINKS */}
+                <div className="mt-[8px]">
+                  <InlineLinkManager
+                    links={tempMilestone.inlineLinks || []}
+                    onChange={updateTempMilestoneInlineLinks}
+                    label="Milestone Inline Links"
+                    description="Text within this milestone's title and description that will become clickable."
+                  />
+                </div>
+
                 <div>
                   <Label className="mb-[6px] block text-[12px] font-medium text-[#2A2A2A]">
                     Icon (Font Awesome class)
                   </Label>
                   <Input
                     value={tempMilestone.icon}
-                    onChange={(e) => setTempMilestone({ ...tempMilestone, icon: e.target.value })}
+                    onChange={(e) =>
+                      setTempMilestone({
+                        ...tempMilestone,
+                        icon: e.target.value,
+                      })
+                    }
                     placeholder="fa-solid fa-newspaper"
                     className="h-[42px] rounded-[10px] border-[#E4E4E4] bg-white font-mono text-[13px] focus-visible:ring-[#EA580C]/30"
                   />
@@ -1026,7 +1446,12 @@ export default function AboutUsPage() {
                   <Input
                     type="number"
                     value={tempMilestone.order}
-                    onChange={(e) => setTempMilestone({ ...tempMilestone, order: Number(e.target.value) })}
+                    onChange={(e) =>
+                      setTempMilestone({
+                        ...tempMilestone,
+                        order: Number(e.target.value),
+                      })
+                    }
                     className="h-[42px] rounded-[10px] border-[#E4E4E4] bg-white text-[13px] focus-visible:ring-[#EA580C]/30"
                   />
                 </div>
@@ -1077,7 +1502,8 @@ export default function AboutUsPage() {
                 Delete about us content?
               </h3>
               <p className="mt-[6px] text-[12px] leading-[1.6] text-[#666666] sm:text-[13px]">
-                All content including milestones will be permanently removed. This can't be undone.
+                All content including milestones will be permanently removed.
+                This can't be undone.
               </p>
 
               <div className="mt-[18px] flex gap-[10px] sm:mt-[20px]">
@@ -1094,7 +1520,9 @@ export default function AboutUsPage() {
                   disabled={!!deletingId}
                   className="h-[44px] flex-1 gap-[8px] rounded-[12px] bg-[#DC2626] text-[14px] font-medium text-white hover:bg-[#DC2626] sm:h-[46px]"
                 >
-                  {deletingId && <Loader2 className="h-[15px] w-[15px] animate-spin" />}
+                  {deletingId && (
+                    <Loader2 className="h-[15px] w-[15px] animate-spin" />
+                  )}
                   Delete
                 </Button>
               </div>
