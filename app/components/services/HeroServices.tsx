@@ -7,23 +7,34 @@ import { motion } from "framer-motion";
 import api from "@/lib/axios";
 import hero1 from "../../../public/images/slide1.webp";
 import { useServiceAltText } from "@/app/(web)/services/useServiceAltText";
+import { InlineLinkedText } from "../InlineLinkedText";
+
+interface InlineLink {
+  text: string;
+  url: string;
+  type: string;
+  openInNewTab: boolean;
+  position: number;
+}
 
 interface ServiceDetailApiResponse {
   heroTitle: string;
   heroSubtitle: string;
   heroImage: string;
-  heroImageAlt?: string; 
+  heroImageAlt?: string;
   cta?: {
     whatsappText?: string;
   };
+  heroInlineLinks?: InlineLink[];
 }
 
 interface HeroServiceData {
   title: string;
   subtitle: string;
   image: string;
-  imageAlt: string; 
+  imageAlt: string;
   whatsappText: string;
+  heroInlineLinks?: InlineLink[];
 }
 
 const IMAGE_BASE_URL = process.env.NEXT_PUBLIC_IMAGE_URL || "";
@@ -41,6 +52,7 @@ const defaultData: HeroServiceData = {
   image: hero1.src,
   imageAlt: "Wood World Decor - leading joinery company in Dubai",
   whatsappText: "WHATSAPP US",
+  heroInlineLinks: [],
 };
 
 function HeroServiceSkeleton() {
@@ -70,14 +82,17 @@ export default function HeroService({ slug }: { slug: string }) {
     const fetchServiceDetail = async () => {
       try {
         const res = await api.get<ServiceDetailApiResponse>(
-          `/services/detail/${slug}`
+          `/services/detail/${slug}`,
         );
         setData({
           title: res.data.heroTitle,
           subtitle: res.data.heroSubtitle,
           image: resolveImage(res.data.heroImage, hero1.src),
-          imageAlt: res.data.heroImageAlt || "Wood World Decor - leading joinery company in Dubai",
+          imageAlt:
+            res.data.heroImageAlt ||
+            "Wood World Decor - leading joinery company in Dubai",
           whatsappText: res.data.cta?.whatsappText || "WHATSAPP US",
+          heroInlineLinks: res.data.heroInlineLinks || [],
         });
       } catch (err) {
         console.error("Failed to fetch service hero:", err);
@@ -91,6 +106,32 @@ export default function HeroService({ slug }: { slug: string }) {
   }, [slug]);
 
   if (isLoading) return <HeroServiceSkeleton />;
+
+  const heroLinks = data.heroInlineLinks || [];
+
+  // Helper to render text with or without inline links
+  const renderText = (
+    text: string,
+    links: InlineLink[],
+    className: string,
+    linkClassName: string,
+  ) => {
+    // If there are links that match the text, use InlineLinkedText
+    const hasMatchingLink = links.some((link) => text.includes(link.text));
+
+    if (hasMatchingLink) {
+      return (
+        <InlineLinkedText
+          text={text}
+          links={links}
+          linkClassName={linkClassName}
+        />
+      );
+    }
+
+    // Otherwise render plain text
+    return <span className={className}>{text}</span>;
+  };
 
   return (
     <section className="relative mt-0 min-h-[560px] w-full overflow-hidden py-16 sm:py-20 md:-mt-10 md:h-[520px] md:min-h-0 md:py-0 lg:h-[620px]">
@@ -113,13 +154,25 @@ export default function HeroService({ slug }: { slug: string }) {
           transition={{ duration: 0.7 }}
           className="max-w-[560px] text-white"
         >
+          {/* Title - with fallback to plain text */}
           <h1 className="text-3xl font-extrabold leading-tight md:text-5xl">
-            {data.title}
+            {renderText(
+              data.title,
+              heroLinks,
+              "text-3xl font-extrabold leading-tight md:text-5xl text-white",
+              "inline-block cursor-pointer font-extrabold text-white underline decoration-white/30 underline-offset-8 transition-all duration-200 hover:text-[#db5e41] hover:decoration-[#db5e41] focus:outline-none focus:ring-2 focus:ring-[#db5e41] focus:ring-offset-2 focus:ring-offset-black rounded",
+            )}
           </h1>
 
-          <p className="mt-5 text-[16px] leading-7 text-white/90 sm:text-[18px] md:text-[20px]">
-            {data.subtitle}
-          </p>
+          {/* Description - with fallback to plain text */}
+          <div className="mt-5 text-[16px] leading-7 text-white/90 sm:text-[18px] md:text-[20px]">
+            {renderText(
+              data.subtitle,
+              heroLinks,
+              "text-[16px] leading-7 text-white/90 sm:text-[18px] md:text-[20px]",
+              "inline-block cursor-pointer font-medium text-white/90 underline decoration-white/30 underline-offset-4 transition-all duration-200 hover:text-[#db5e41] hover:decoration-[#db5e41] focus:outline-none focus:ring-2 focus:ring-[#db5e41] focus:ring-offset-2 focus:ring-offset-black rounded",
+            )}
+          </div>
 
           <motion.a
             initial={{ opacity: 0, y: 20 }}
