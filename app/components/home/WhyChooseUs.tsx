@@ -15,6 +15,15 @@ import {
 } from "lucide-react";
 import whyBg from "../../../public/images/pattern3.png";
 import api from "@/lib/axios";
+import { InlineLinkedText } from "../InlineLinkedText";
+
+interface InlineLink {
+  text: string;
+  url: string;
+  type: string;
+  openInNewTab: boolean;
+  position: number;
+}
 
 interface WhyChooseApiItem {
   _id: string;
@@ -23,11 +32,13 @@ interface WhyChooseApiItem {
   description: string;
   icon: string;
   order: number;
+  inlineLinks?: InlineLink[];
 }
 
 interface WhyChooseApiResponse {
   title: string;
   items: WhyChooseApiItem[];
+  inlineLinks?: InlineLink[];
 }
 
 interface FeatureItem {
@@ -36,15 +47,16 @@ interface FeatureItem {
   icon: LucideIcon;
   title: string;
   description: string;
+  inlineLinks?: InlineLink[];
 }
 
 interface WhyChooseData {
   heading: string;
   features: FeatureItem[];
+  inlineLinks?: InlineLink[];
 }
 
-// Font Awesome class (from API) -> lucide-react icon. Extend this map as the
-// backend adds new icon values; unmapped icons fall back to Settings below.
+// Font Awesome class (from API) -> lucide-react icon
 const ICON_MAP: Record<string, LucideIcon> = {
   "fa-hammer": Hammer,
   "fa-people-arrows": Users,
@@ -60,13 +72,17 @@ const ICON_MAP: Record<string, LucideIcon> = {
 function resolveIcon(faIconClass: string): LucideIcon {
   const key = (faIconClass || "")
     .split(" ")
-    .find((part) => part.startsWith("fa-") && part !== "fa-solid" && part !== "fa-regular");
+    .find(
+      (part) =>
+        part.startsWith("fa-") && part !== "fa-solid" && part !== "fa-regular",
+    );
   return (key && ICON_MAP[key]) || Settings;
 }
 
 function mapApiToWhyChoose(data: WhyChooseApiResponse): WhyChooseData {
   return {
     heading: data.title,
+    inlineLinks: data.inlineLinks || [],
     features: [...(data.items || [])]
       .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
       .map((item) => ({
@@ -75,12 +91,14 @@ function mapApiToWhyChoose(data: WhyChooseApiResponse): WhyChooseData {
         icon: resolveIcon(item.icon),
         title: item.title,
         description: item.description,
+        inlineLinks: item.inlineLinks || [],
       })),
   };
 }
 
 const defaultData: WhyChooseData = {
   heading: "Why Choose Us",
+  inlineLinks: [],
   features: [
     {
       id: "1",
@@ -89,6 +107,7 @@ const defaultData: WhyChooseData = {
       title: "Expert Craftsmanship",
       description:
         "Every project is handled with precision and detail, ensuring top-quality finishes that stand the test of time.",
+      inlineLinks: [],
     },
     {
       id: "2",
@@ -97,6 +116,7 @@ const defaultData: WhyChooseData = {
       title: "End-to-End Solutions",
       description:
         "From design to execution, we provide complete turnkey services for residential, commercial, and hospitality projects.",
+      inlineLinks: [],
     },
     {
       id: "3",
@@ -105,6 +125,7 @@ const defaultData: WhyChooseData = {
       title: "On-Time Delivery",
       description:
         "We value deadlines and ensure timely project completion without compromising on quality.",
+      inlineLinks: [],
     },
     {
       id: "4",
@@ -113,6 +134,7 @@ const defaultData: WhyChooseData = {
       title: "Trusted Experience",
       description:
         "With 10+ years of experience, Wood World Decor leads joinery fitout companies in Dubai with designs that inspire.",
+      inlineLinks: [],
     },
   ],
 };
@@ -145,7 +167,10 @@ function WhyChooseUsSkeleton() {
 
         <div className="mt-14 grid grid-cols-1 gap-x-10 gap-y-12 sm:mt-16 md:grid-cols-2 md:gap-y-16">
           {[0, 1, 2, 3].map((i) => (
-            <div key={i} className="flex flex-col items-center px-6 pb-10 pt-16 sm:px-10 sm:pt-20">
+            <div
+              key={i}
+              className="flex flex-col items-center px-6 pb-10 pt-16 sm:px-10 sm:pt-20"
+            >
               <div className="mb-6 h-16 w-16 animate-pulse rounded-full bg-white/20 sm:h-20 sm:w-20" />
               <div className="h-6 w-40 animate-pulse rounded-md bg-white/20 sm:h-7 sm:w-48" />
               <div className="mt-4 h-4 w-56 animate-pulse rounded-md bg-white/10" />
@@ -189,7 +214,7 @@ export default function WhyChooseUs() {
       {/* Subtle background texture */}
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_1px_1px,rgba(255,255,255,0.04)_1px,transparent_0)] bg-[length:24px_24px]" />
 
-      {/* Floating dot patterns — fade/scale in on scroll, then float continuously */}
+      {/* Floating dot patterns */}
       <motion.div
         initial={{ opacity: 0, scale: 0.6 }}
         whileInView={{ opacity: 1, scale: 1 }}
@@ -211,7 +236,7 @@ export default function WhyChooseUs() {
       </motion.div>
 
       <div className="relative mx-auto max-w-[1100px] px-4">
-        {/* Heading */}
+        {/* Heading with inline links */}
         <motion.h2
           initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -219,7 +244,11 @@ export default function WhyChooseUs() {
           transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
           className="text-center text-2xl font-extrabold text-white xs:text-3xl sm:text-4xl md:text-5xl"
         >
-          {data.heading}
+          <InlineLinkedText
+            text={data.heading}
+            links={data.inlineLinks || []}
+            linkClassName="inline-block cursor-pointer font-extrabold text-white underline decoration-white/30 underline-offset-4 transition-all duration-200 hover:text-[#db5e41] hover:decoration-[#db5e41] focus:outline-none focus:ring-2 focus:ring-[#db5e41] focus:ring-offset-2 focus:ring-offset-black rounded"
+          />
         </motion.h2>
 
         <div className="relative mt-14 grid grid-cols-1 gap-x-10 gap-y-12 sm:mt-16 md:grid-cols-2 md:gap-y-16 cursor-pointer">
@@ -249,12 +278,20 @@ export default function WhyChooseUs() {
                 </div>
 
                 <h3 className="text-xl font-bold text-white transition-colors duration-500 group-hover:text-[#db5e41] xs:text-[22px] sm:text-3xl">
-                  {feature.title}
+                  <InlineLinkedText
+                    text={feature.title}
+                    links={feature.inlineLinks || []}
+                    linkClassName="inline-block cursor-pointer font-bold text-white underline decoration-white/30 underline-offset-4 transition-all duration-200 hover:text-[#db5e41] hover:decoration-[#db5e41] focus:outline-none focus:ring-2 focus:ring-[#db5e41] focus:ring-offset-2 focus:ring-offset-black rounded"
+                  />
                 </h3>
 
-                <p className="mx-auto mt-4 max-w-[320px] text-sm leading-6 text-white/60 xs:leading-7 sm:text-[18px]">
-                  {feature.description}
-                </p>
+                <div className="mx-auto mt-4 max-w-[320px] text-sm leading-6 text-white/60 xs:leading-7 sm:text-[18px]">
+                  <InlineLinkedText
+                    text={feature.description}
+                    links={feature.inlineLinks || []}
+                    linkClassName="inline-block cursor-pointer font-medium text-white/60 underline decoration-white/30 underline-offset-4 transition-all duration-200 hover:text-[#db5e41] hover:decoration-[#db5e41] focus:outline-none focus:ring-2 focus:ring-[#db5e41] focus:ring-offset-2 focus:ring-offset-black rounded"
+                  />
+                </div>
               </motion.div>
             );
           })}
