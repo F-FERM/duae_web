@@ -828,7 +828,7 @@ export default function BlogAdminPage() {
                             </option>
                           ))}
                         </select>
-                        <Input
+                        {/* <Input
                           type="number"
                           value={form.readTime}
                           onChange={(e) =>
@@ -845,7 +845,7 @@ export default function BlogAdminPage() {
                           }
                           placeholder="Order"
                           className="h-11 rounded-[12px]"
-                        />
+                        /> */}
                       </div>
                     </div>
                   </div>
@@ -1290,7 +1290,7 @@ export default function BlogAdminPage() {
                   </div>
 
                   {/* Author Section */}
-                  <div className="rounded-[14px] border border-[#F0D9C8] bg-[#FFF8F3] p-4">
+                  {/* <div className="rounded-[14px] border border-[#F0D9C8] bg-[#FFF8F3] p-4">
                     <h3 className="flex items-center gap-1.5 text-sm font-semibold text-[#111111]">
                       <User className="h-4 w-4" /> Author
                     </h3>
@@ -1351,7 +1351,7 @@ export default function BlogAdminPage() {
                         Upload Avatar
                       </Button>
                     </div>
-                  </div>
+                  </div> */}
 
                   {/* SEO Section */}
                   <div className="rounded-[14px] border border-[#E4E4E4] p-4">
